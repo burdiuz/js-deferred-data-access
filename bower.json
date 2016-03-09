@@ -1,0 +1,44 @@
+{
+  "name": "deferred-data-access",
+  "description": "",
+  "version": "0.0.1",
+  "main": [
+    "dist/deferred-data-access.min.js"
+  ],
+  "moduleType": [
+    "amd",
+    "globals",
+    "node"
+  ],
+  "license": "MIT",
+  "authors": [
+    "Oleg Galaburda <burdiuz@gmail.com> (http://actualwave.com/)"
+  ],
+  "ignore": [
+    "**/.*",
+    "source",
+    "tests",
+    "gulpfile.js",
+    "karma.conf.js",
+    "package.json",
+    "server.js",
+    "node_modules",
+    "bower_components",
+    "test"
+  ],
+  "keywords": [
+    "data",
+    "access",
+    "deferred",
+    "promise"
+  ],
+  "homepage": "https://github.com/burdiuz/js-deferred-data-access",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/burdiuz/js-deferred-data-access.git"
+  },
+  "dependencies": {
+  },
+  "devDependencies": {
+  }
+}

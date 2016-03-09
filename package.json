@@ -1,0 +1,48 @@
+{
+  "name": "deferred-data-access",
+  "description": "",
+  "version": "0.0.1",
+  "main": "dist/deferred-data-access.min.js",
+  "keywords": [
+    "data",
+    "access",
+    "deferred",
+    "promise"
+  ],
+  "homepage": "https://github.com/burdiuz/js-deferred-data-access",
+  "bugs": {
+    "url": "https://github.com/burdiuz/js-deferred-data-access/issues",
+    "email": "burdiuz@gmail.com"
+  },
+  "license": "MIT",
+  "author": "Oleg Galaburda <burdiuz@gmail.com> (http://actualwave.com/)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/burdiuz/js-deferred-data-access.git"
+  },
+  "dependencies": {
+    "worker-event-dispatcher": "git://github.com/burdiuz/js-worker-event-dispatcher.git"
+  },
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "express": "^4.13.3",
+    "gulp": "^3.9.0",
+    "gulp-include": "^2.1.0",
+    "gulp-rename": "^1.2.2",
+    "gulp-strip-comments": "^2.2.1",
+    "gulp-uglify": "^1.5.1",
+    "karma": "^0.13.16",
+    "karma-coverage": "^0.5.3",
+    "karma-coveralls": "^1.1.2",
+    "karma-firefox-launcher": "^0.1.7",
+    "karma-mocha": "^0.2.1",
+    "karma-sinon-chai": "^1.1.0",
+    "lolex": "^1.4.0",
+    "mocha": "^2.4.5",
+    "sinon": "^1.17.3",
+    "sinon-chai": "^2.8.0"
+  },
+  "scripts": {
+    "test": "./node_modules/.bin/karma start --single-run --browsers Firefox karma.conf.js"
+  }
+}
