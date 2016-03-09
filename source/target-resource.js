@@ -16,53 +16,85 @@ var TargetResource = (function() {
       }
     });
     Object.defineProperty(this, TARGET_DATA, {
-      get: function() {
-        return this.toJSON();
-      }
+      get: get_TARGET_DATA
     });
 
     Object.defineProperties(this, {
+      active: {
+        get: get_active
+      },
       poolId: {
-        get: function() {
-          return this[TARGET_DATA].pool ? this[TARGET_DATA].pool.id : null;
-        }
+        get: get_poolId
       },
       resource: {
-        get: function() {
-          return this[TARGET_DATA].resource;
-        }
+        get: get_resource
       },
       type: {
-        get: function() {
-          return typeof(this.resource);
-        }
+        get: get_type
       },
       id: {
-        get: function() {
-          return this[TARGET_DATA].id;
-        }
+        get: get_id
       }
     });
   }
 
-  TargetResource.prototype.toJSON = function() {
+  function get_TARGET_DATA() {
+    return this.toJSON();
+  }
+
+  function get_active() {
+    return this[TARGET_INTERNALS].active;
+  }
+
+  function get_poolId() {
+    return this[TARGET_INTERNALS].pool ? this[TARGET_INTERNALS].pool.id : null;
+  }
+
+  function get_resource() {
+    return this[TARGET_INTERNALS].resource;
+  }
+
+  function get_type() {
+    return typeof(this.resource);
+  }
+
+  function get_id() {
+    return this[TARGET_INTERNALS].id;
+  }
+
+  function _toJSON() {
     var data = {};
     data[TARGET_DATA] = {
-      id: this.id,
+      id: this[TARGET_INTERNALS].id,
       type: this.type,
       poolId: this.poolId
     };
     return data;
-  };
-  TargetResource.prototype.destroy = function() {
-    if (!this[TARGET_INTERNALS].active) return;
+  }
+
+  function _destroy() {
     var id = this[TARGET_INTERNALS].id;
     var pool = this[TARGET_INTERNALS].pool;
+
+    if (!this[TARGET_INTERNALS].active) return;
+    this[TARGET_INTERNALS].active = false;
+
+    pool.remove(id);
+
     for (var name in this[TARGET_INTERNALS]) {
       delete this[TARGET_INTERNALS][name];
     }
-    pool.remove(id);
-  };
+  }
+
+  TargetResource.prototype.toJSON = _toJSON;
+  TargetResource.prototype.destroy = _destroy;
+
+  function TargetResource_factory(pool, target, id) {
+    id = id || getId();
+    return new TargetResource(pool, target, id);
+  }
+
+  TargetResource.factory = TargetResource_factory;
 
   return TargetResource;
 })();

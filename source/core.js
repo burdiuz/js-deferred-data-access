@@ -46,12 +46,12 @@ var createDeferred = (function() {
 })();
 
 function getPoolResource(id) {
-  return {
-    _targetLink_: {
-      id: id || 0,
-      poolId: TargetPool.instance.id
-    }
+  var data = {};
+  data[TARGET_DATA] = {
+    id: id || 0,
+    poolId: DataAccessInterface.instance.pool.id
   };
+  return data;
 };
 
 function getRAWResource(object) {
@@ -84,7 +84,7 @@ function getLinkId(object) {
 function getResourcePoolId(object) {
   var poolId;
   if (isResource(object)) {
-    poolId = object._targetLink_.poolId;
+    poolId = object[TARGET_DATA].poolId;
   }
   return poolId;
 };
@@ -92,7 +92,7 @@ function getResourcePoolId(object) {
 function getResourceType(object) {
   var type;
   if (isResource(object)) {
-    type = object._targetLink_.type;
+    type = object[TARGET_DATA].type;
   }
   return type;
 };
