@@ -21,12 +21,7 @@ module.exports = function(config) {
       'node_modules/event-dispatcher/dist/event-dispatcher.js',
       'node_modules/messageport-dispatcher/dist/messageport-dispatcher.js',
       'node_modules/worker-event-dispatcher/dist/worker-event-dispatcher.js',
-      'source/interface/utils.js',
-      'source/interface/core.js',
-      'source/interface/target-pool.js',
-      'source/interface/base-interface.js',
-      'source/interface/worker-interface.js',
-      'tests/stubs.js',
+      'source/core.js',
       'tests/*.spec.js'
     ],
 
