@@ -23,7 +23,7 @@ var TargetPool = (function() {
       if (this[MAP_FIELD].has(target)) {
         link = this[MAP_FIELD].get(target);
       } else {
-        link = TargetResource.factory(this, target);
+        link = TargetResource.create(this, target);
         this[MAP_FIELD].set(link.id, link);
         this[MAP_FIELD].set(target, link);
       }
@@ -95,10 +95,16 @@ var TargetPool = (function() {
     return ['object', 'function'];
   }
 
+  function TargetPool_create(){
+    return new TargetPool();
+  }
+
   TargetPool.isValidTarget = TargetPool_isValidTarget;
   TargetPool.setValidTargets = TargetPool_setValidTargets;
   TargetPool.getDefaultValidTargets = TargetPool_getDefaultValidTargets;
+  TargetPool.create = TargetPool_create;
 
+  // setting default valid targets
   TargetPool.setValidTargets(TargetPool.getDefaultValidTargets());
 
   return TargetPool;

@@ -43,7 +43,7 @@ var TargetResource = (function() {
   }
 
   function get_active() {
-    return this[TARGET_INTERNALS].active;
+    return Boolean(this[TARGET_INTERNALS].active);
   }
 
   function get_poolId() {
@@ -76,7 +76,9 @@ var TargetResource = (function() {
     var id = this[TARGET_INTERNALS].id;
     var pool = this[TARGET_INTERNALS].pool;
 
-    if (!this[TARGET_INTERNALS].active) return;
+    if (!this[TARGET_INTERNALS].active) {
+      return;
+    }
     this[TARGET_INTERNALS].active = false;
 
     pool.remove(id);
@@ -89,12 +91,11 @@ var TargetResource = (function() {
   TargetResource.prototype.toJSON = _toJSON;
   TargetResource.prototype.destroy = _destroy;
 
-  function TargetResource_factory(pool, target, id) {
-    id = id || getId();
-    return new TargetResource(pool, target, id);
+  function TargetResource_create(pool, target, id) {
+    return new TargetResource(pool, target, id || getId());
   }
 
-  TargetResource.factory = TargetResource_factory;
+  TargetResource.create = TargetResource_create;
 
   return TargetResource;
 })();

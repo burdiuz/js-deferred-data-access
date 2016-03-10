@@ -18,10 +18,9 @@ module.exports = function(config) {
     Look if possible to run one carma instance for different configs
     */
     files: [
-      'node_modules/event-dispatcher/dist/event-dispatcher.js',
-      'node_modules/messageport-dispatcher/dist/messageport-dispatcher.js',
-      'node_modules/worker-event-dispatcher/dist/worker-event-dispatcher.js',
       'source/core.js',
+      'source/target-resource.js',
+      'source/target-pool.js',
       'tests/*.spec.js'
     ],
 
