@@ -1,7 +1,3 @@
-/**
- * Created by Oleg Galaburda on 10.03.16.
- */
-
 var RequestTargetInternals = (function() {
 
   /**
@@ -110,8 +106,7 @@ var RequestTargetInternals = (function() {
   function _destroy() {
     var promise = null;
     if (this.canBeDestroyed()) {
-      _status = TargetStatus.DESTROYED;
-      //FIXME Should DESTROY_TARGET be a custom command too? How to handle such custom behavior?
+      this.status = TargetStatus.DESTROYED;
       promise = this.sendRequest(CommandType.DESTROY_TARGET);
     } else {
       promise = Promise.reject();
@@ -159,24 +154,6 @@ var RequestTargetInternals = (function() {
   RequestTargetInternals.prototype.toJSON = _toJSON;
 
   //----------- static
-
-  //FIXME move this to WorkerInterface, too specific case
-  function _isTemporary(target, value) {
-    /* TODO this case for Proxies, may be check for proxies support? this will work only if Proxies are enabled.
-     For functions, they are temporary only if they have only CALL command in queue and child promises never created -- this commonly means that this target was used for function call in proxy.
-     For any non-function target object, it will be marked as temporary only if has single item in request queue and child promises never created.
-     */
-    var temp = target.temporary;
-    if (typeof(temp) !== 'boolean') {
-      if (getResourceType(value) === 'function') {
-        //FIXME moving to dynamic command types should somehow solve `temporary` detection
-        temp = target.queue && target.queue.length === 1 && target.queue[0][0].type == CommandType.CALL && !target.hadChildPromises;
-      } else {
-        temp = (target.queue && target.queue.length === 1 && !target.hadChildPromises);
-      }
-    }
-    return temp;
-  }
 
   function _createRequestPackage(type, cmd, value, targetId) {
     return {

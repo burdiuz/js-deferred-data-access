@@ -65,6 +65,3 @@ describe('createDeferred()', function() {
     });
   });
 });
-describe('evaluateRequest()', function() {
-  //FIXME this function will probably be excluded from Deferred Data Access and moved to Worker Interface
-});

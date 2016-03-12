@@ -1,6 +1,3 @@
-//TODO User can decorate RequestTarget by their type! define requestHandlers and from them I can build CommandDescriptors
-// and decorate RequestTargets depending on target type, for object it will be set of GET/SET/CALL, for function -- APPLY
-
 var RequestTargetDecorator = (function() {
 
   /**
