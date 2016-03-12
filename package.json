@@ -21,7 +21,7 @@
     "url": "https://github.com/burdiuz/js-deferred-data-access.git"
   },
   "dependencies": {
-    "worker-event-dispatcher": "git://github.com/burdiuz/js-worker-event-dispatcher.git"
+    "event-dispatcher": "git://github.com/burdiuz/js-event-dispatcher.git"
   },
   "devDependencies": {
     "chai": "^3.5.0",

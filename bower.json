@@ -38,6 +38,7 @@
     "url": "git://github.com/burdiuz/js-deferred-data-access.git"
   },
   "dependencies": {
+    "event-dispatcher": "git://github.com/burdiuz/js-event-dispatcher.git"
   },
   "devDependencies": {
   }
