@@ -6,12 +6,13 @@ var TargetResource = (function() {
    * The object that can be used to send Target to other side
    * @constructor
    */
-  function TargetResource(_pool, _resource, _id) {
+  function TargetResource(_pool, _resource, resourceType, _id) {
     Object.defineProperty(this, TARGET_INTERNALS, { // private read-only property
       value: {
         active: true,
         pool: _pool,
         resource: _resource,
+        type: resourceType,
         id: _id
       }
     });
@@ -55,7 +56,7 @@ var TargetResource = (function() {
   }
 
   function get_type() {
-    return typeof(this.resource);
+    return this[TARGET_INTERNALS].type || typeof(this[TARGET_INTERNALS].resource);
   }
 
   function get_id() {

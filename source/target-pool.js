@@ -33,13 +33,13 @@ var TargetPool = (function() {
 
   //------------ instance
 
-  function _set(target) {
+  function _set(target, type) {
     var link = null;
     if (TargetPool.isValidTarget(target)) {
       if (this[MAP_FIELD].has(target)) {
         link = this[MAP_FIELD].get(target);
       } else {
-        link = TargetResource.create(this, target);
+        link = TargetResource.create(this, target, type || typeof(target));
         this[MAP_FIELD].set(link.id, link);
         this[MAP_FIELD].set(target, link);
         if (this.hasEventListener(TargetPoolEvents.RESOURCE_ADDED)) {

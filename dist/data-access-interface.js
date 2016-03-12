@@ -15,16 +15,7 @@
 }(this, function(EventDispatcher) {
   // here should be injected deferred-data-access.js content
   var CommandType = {
-    GET: 'get',
-    SET: 'set',
-    CALL: 'call',
-    EXEC: 'exec',
-    DESTROY_TARGET: 'destroyTarget'
-  };
-  
-  var ResponseTypes = {
-    RESULT_SUCCESS: 'success',
-    RESULT_FAILURE: 'failure'
+    DESTROY_TARGET: '::destroy.resource'
   };
   
   var TargetStatus = {
@@ -174,12 +165,13 @@
      * The object that can be used to send Target to other side
      * @constructor
      */
-    function TargetResource(_pool, _resource, _id) {
+    function TargetResource(_pool, _resource, resourceType, _id) {
       Object.defineProperty(this, TARGET_INTERNALS, { // private read-only property
         value: {
           active: true,
           pool: _pool,
           resource: _resource,
+          type: resourceType,
           id: _id
         }
       });
@@ -223,7 +215,7 @@
     }
   
     function get_type() {
-      return typeof(this.resource);
+      return this[TARGET_INTERNALS].type || typeof(this[TARGET_INTERNALS].resource);
     }
   
     function get_id() {
@@ -303,13 +295,13 @@
   
     //------------ instance
   
-    function _set(target) {
+    function _set(target, type) {
       var link = null;
       if (TargetPool.isValidTarget(target)) {
         if (this[MAP_FIELD].has(target)) {
           link = this[MAP_FIELD].get(target);
         } else {
-          link = TargetResource.create(this, target);
+          link = TargetResource.create(this, target, type || typeof(target));
           this[MAP_FIELD].set(link.id, link);
           this[MAP_FIELD].set(target, link);
           if (this.hasEventListener(TargetPoolEvents.RESOURCE_ADDED)) {
@@ -521,14 +513,26 @@
    */
   //TODO If RequestTarget, RequestTargetLink or their proxies are passed, they should be converted to RAW links.
   /**
-   * @type _ResourceConverter
+   * @type ResourceConverter
    */
   var ResourceConverter = (function() {
-    //FIXME might be better names for these events
+  
+    var FACTORY_FIELD = Symbol('resource.converter::factory');
+  
     var ResourceConverterEvents = {
       RESOURCE_CREATED: 'resourceCreated',
       RESOURCE_CONVERTED: 'resourceConverted'
     };
+  
+    /**
+     * @param factory {RequestFactory}
+     * @constructor
+     * @extends EventDispatcher
+     */
+    function ResourceConverter(factory) {
+      this[FACTORY_FIELD] = factory;
+      EventDispatcher.apply(this);
+    }
   
     function _resourceToObject(data) {
       var result;
@@ -548,7 +552,7 @@
       return result;
     }
   
-    function _objectToResource(data, requestHandlers) {
+    function _objectToResource(data) {
       var result;
       var poolId = getResourcePoolId(data);
       if (TargetPoolRegistry.isRegistered(poolId)) { // target object is stored in current pool
@@ -557,7 +561,7 @@
           result = data.resource;
         }
       } else { // target object has another origin, should be wrapped
-        result = new RequestTarget(Promise.resolve(data), requestHandlers);
+        result = this[FACTORY_FIELD].create(Promise.resolve(data));
       }
       if (result !== data && this.hasEventListener(ResourceConverterEvents.RESOURCE_CREATED)) {
         this.dispatchEvent(ResourceConverterEvents.RESOURCE_CREATED, {
@@ -568,20 +572,20 @@
       return result;
     }
   
-    function _lookupArray(list, linkConvertHandler, requestHandlers) {
+    function _lookupArray(list, linkConvertHandler) {
       var result = [];
       var length = list.length;
       for (var index = 0; index < length; index++) {
-        result[index] = linkConvertHandler.call(this, list[index], requestHandlers);
+        result[index] = linkConvertHandler.call(this, list[index]);
       }
       return result;
     }
   
-    function _lookupObject(data, linkConvertHandler, requestHandlers) {
+    function _lookupObject(data, linkConvertHandler) {
       var result = {};
       for (var name in data) {
         if (!data.hasOwnProperty(name)) continue;
-        result[name] = linkConvertHandler.call(this, data[name], requestHandlers);
+        result[name] = linkConvertHandler.call(this, data[name]);
       }
       return result;
     }
@@ -600,59 +604,30 @@
       return result;
     }
   
-    function _parse(data, requestHandlers) {
+    function _parse(data) {
       var result = data;
       if (data !== undefined && data !== null) {
         if (isResource(data)) { // if data is link
-          result = this.objectToResource(data, requestHandlers);
+          result = this.objectToResource(data);
         } else if (data instanceof Array) { // if data is Array of values, check its
-          result = this.lookupArray(data, this.objectToResource, requestHandlers);
+          result = this.lookupArray(data, this.objectToResource);
         } else if (data.constructor === Object) {
-          result = this.lookupObject(data, this.objectToResource, requestHandlers);
+          result = this.lookupObject(data, this.objectToResource);
         }
       }
       return result;
     }
   
-    /* these methods are WorkerInterface-specific and should be removed from this project
-     function _prepareToSend(data) {
-     if (data) {
-     data.value = this.toJSON(data.value);
-     }
-     return data;
-     }
+    ResourceConverter.prototype = EventDispatcher.createNoInitPrototype();
+    ResourceConverter.prototype.constructor = ResourceConverter;
+    ResourceConverter.prototype.toJSON = _toJSON;
+    ResourceConverter.prototype.parse = _parse;
+    ResourceConverter.prototype.lookupArray = _lookupArray;
+    ResourceConverter.prototype.lookupObject = _lookupObject;
+    ResourceConverter.prototype.resourceToObject = _resourceToObject;
+    ResourceConverter.prototype.objectToResource = _objectToResource;
   
-     function _prepareToReceive(data, requestHandlers) {
-     if (data) {
-     data.value = this.parse(data.value, requestHandlers);
-     }
-     return data;
-     }
-  
-     ResourceConverter.prototype.prepareToSend = _prepareToSend;
-     ResourceConverter.prototype.prepareToReceive = _prepareToReceive;
-  
-     */
-  
-    /**
-     * @constructor
-     * @extends EventDispatcher
-     * @private
-     */
-    function _ResourceConverter() {
-      EventDispatcher.apply(this);
-    }
-  
-    _ResourceConverter.prototype = EventDispatcher.createNoInitPrototype();
-    _ResourceConverter.prototype.constructor = _ResourceConverter;
-    _ResourceConverter.prototype.toJSON = _toJSON;
-    _ResourceConverter.prototype.parse = _parse;
-    _ResourceConverter.prototype.lookupArray = _lookupArray;
-    _ResourceConverter.prototype.lookupObject = _lookupObject;
-    _ResourceConverter.prototype.resourceToObject = _resourceToObject;
-    _ResourceConverter.prototype.objectToResource = _objectToResource;
-  
-    return new _ResourceConverter();
+    return ResourceConverter;
   })();
   
   /**
@@ -661,8 +636,16 @@
   
   var RequestTargetInternals = (function() {
   
-    function RequestTargetInternals(_promise, _requestHandlers) {
+    /**
+     *
+     * @param _requestTarget {RequestTarget}
+     * @param _promise {Promise}
+     * @param _requestHandlers {RequestHandlers}
+     * @constructor
+     */
+    function RequestTargetInternals(_requestTarget, _promise, _requestHandlers) {
       this._requestHandlers = _requestHandlers;
+      this._requestTarget = _requestTarget;
       this.link = {};
       //INFO this should be not initialized i.e. keep it undefined, this will be checked later
       this.temporary;
@@ -679,7 +662,7 @@
       this.status = TargetStatus.RESOLVED;
       if (isResource(value)) {
         this.link = getResourceData(value);
-        this.temporary = RequestTargetInternals.isTemporary(this, value);
+        this.temporary = this._requestHandlers.isTemporary(this._requestTarget);
         if (this.temporary) {
           this.queue[this.queue.length - 1][1].promise.then(this.destroy.bind(this), this.destroy.bind(this));
         }
@@ -712,15 +695,14 @@
     }
   
     function _sendRequest(type, cmd, value) {
-      var request = null;
-      if (this.hasRequestHandler(type)) {
+      var promise = null;
+      if (this._requestHandlers.hasHandler(type)) {
         var pack = RequestTargetInternals.createRequestPackage(type, cmd, value, this.id);
-        var promise = this._applyRequest(pack, createDeferred());
-        request = RequestTarget.create(promise, this._requestHandlers);
+        promise = this._applyRequest(pack, createDeferred());
       } else {
         throw new Error('Request handler of type "' + type + '" is not registered.');
       }
-      return request;
+      return promise;
     }
   
     function _addToQueue(pack, deferred) {
@@ -748,20 +730,16 @@
     }
   
     function _callRequestHandler(pack, deferred) {
-      var list = ResourceConverter.lookupForPending(pack.value);
-      var handler = this._requestHandlers[pack.type];
+      var list = RequestTarget.lookupForPending(pack.value);
+      var type = pack.type;
       if (list.length) {
         // FIXME Need to test on all platforms: In other browsers this might not work because may need list of Promise objects, not RequestTargets
         Promise.all(list).then(function() {
-          handler(pack, deferred);
+          this._requestHandlers.handle(type, pack, deferred);
         });
       } else {
-        handler(pack, deferred);
+        this._requestHandlers.handle(type, pack, deferred);
       }
-    }
-  
-    function _hasRequestHandler(type) {
-      return this._requestHandlers.hasOwnProperty(type) && typeof(this._requestHandlers[type]) === 'function';
     }
   
   
@@ -813,7 +791,6 @@
   
     RequestTargetInternals.prototype._resolveHandler = _resolveHandler;
     RequestTargetInternals.prototype._rejectHandler = _rejectHandler;
-    RequestTargetInternals.prototype.hasRequestHandler = _hasRequestHandler;
     RequestTargetInternals.prototype._sendQueue = _sendQueue;
     RequestTargetInternals.prototype.sendRequest = _sendRequest;
     RequestTargetInternals.prototype._addToQueue = _addToQueue;
@@ -828,6 +805,7 @@
   
     //----------- static
   
+    //FIXME move this to WorkerInterface, too specific case
     function _isTemporary(target, value) {
       /* TODO this case for Proxies, may be check for proxies support? this will work only if Proxies are enabled.
        For functions, they are temporary only if they have only CALL command in queue and child promises never created -- this commonly means that this target was used for function call in proxy.
@@ -864,20 +842,18 @@
    * Created by Oleg Galaburda on 07.03.16.
    */
   var RequestTarget = (function() {
-    var NOINIT = {};
   
     /**
      * The object that will be available on other side
      * IMPORTANT: Function target is temporary if queue contains single CALL command when target is resolved.
-     * @param _promise
-     * @param requestHandlers
+     * @param _promise {Promise}
+     * @param _requestHandlers {RequestHandlers}
      * @constructor
      */
     function RequestTarget(_promise, _requestHandlers) {
-      if (_promise === NOINIT) return;
   
       Object.defineProperty(this, TARGET_INTERNALS, {
-        value: new RequestTargetInternals(_promise, _requestHandlers)
+        value: new RequestTargetInternals(this, _promise, _requestHandlers)
       });
   
       Object.defineProperties(this, {
@@ -984,8 +960,33 @@
       return target[TARGET_INTERNALS].status;
     }
   
-    function RequestTarget_create(promise, requestHandler) {
-      return new RequestTarget(promise, requestHandler);
+    function RequestTarget_getQueueLength(target) {
+      var queue = target[TARGET_INTERNALS].queue;
+      return queue ? queue.length : 0;
+    }
+  
+    function RequestTarget_getQueueCommands(target) {
+      var length;
+      var result = [];
+      var queue = target[TARGET_INTERNALS].queue;
+      if (queue) {
+        length = queue.length;
+        for (var index = 0; index < length; index++) {
+          result.push(queue[index][0].type);
+        }
+      }
+      return result;
+    }
+  
+    /**
+     *
+     * @param promise {Promise}
+     * @param requestHandlers {RequestHandlers}
+     * @returns {RequestTarget}
+     * @constructor
+     */
+    function RequestTarget_create(promise, requestHandlers) {
+      return new RequestTarget(promise, requestHandlers);
     }
   
     RequestTarget.isActive = RequestTarget_isActive;
@@ -995,6 +996,8 @@
     RequestTarget.lookupForPending = RequestTarget_lookupForPending;
     RequestTarget.isPending = RequestTarget_isPending;
     RequestTarget.getStatus = RequestTarget_getStatus;
+    RequestTarget.getQueueLength = RequestTarget_getQueueLength;
+    RequestTarget.getQueueCommands = RequestTarget_getQueueCommands;
     RequestTarget.create = RequestTarget_create;
   
     return RequestTarget;
@@ -1002,7 +1005,9 @@
   
   var DataAccessInterface = (function() {
   
-    function _DataAccessInterface() {
+    function DataAccessInterface() {
+      var _handlers = RequestHandlers.create();
+      var _factory = RequestFactory.create(_handlers);
       Object.defineProperties(this, {
         poolRegistry: {
           value: TargetPoolRegistry
@@ -1011,12 +1016,20 @@
           value: TargetPoolRegistry.createPool()
         },
         resourceConverter: {
-          value: ResourceConverter
+          value: new ResourceConverter(_factory)
+        },
+        factory: {
+          value: _factory
         },
         IConvertible: {
           value: IConvertible
+        },
+        RequestTarget: {
+          value: RequestTarget
         }
       });
+  
+      this.setHandlers = _handlers.setHandlers;
     }
   
     function _parse(data) {
@@ -1027,10 +1040,10 @@
       return this.resourceConverter.toJSON(data);
     }
   
-    _DataAccessInterface.prototype.parse = _parse;
-    _DataAccessInterface.prototype.toJSON = _toJSON;
+    DataAccessInterface.prototype.parse = _parse;
+    DataAccessInterface.prototype.toJSON = _toJSON;
   
-    return new _DataAccessInterface();
+    return DataAccessInterface;
   })();
   
   

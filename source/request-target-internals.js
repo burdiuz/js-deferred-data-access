@@ -4,8 +4,16 @@
 
 var RequestTargetInternals = (function() {
 
-  function RequestTargetInternals(_promise, _requestHandlers) {
+  /**
+   *
+   * @param _requestTarget {RequestTarget}
+   * @param _promise {Promise}
+   * @param _requestHandlers {RequestHandlers}
+   * @constructor
+   */
+  function RequestTargetInternals(_requestTarget, _promise, _requestHandlers) {
     this._requestHandlers = _requestHandlers;
+    this._requestTarget = _requestTarget;
     this.link = {};
     //INFO this should be not initialized i.e. keep it undefined, this will be checked later
     this.temporary;
@@ -22,7 +30,7 @@ var RequestTargetInternals = (function() {
     this.status = TargetStatus.RESOLVED;
     if (isResource(value)) {
       this.link = getResourceData(value);
-      this.temporary = RequestTargetInternals.isTemporary(this, value);
+      this.temporary = this._requestHandlers.isTemporary(this._requestTarget);
       if (this.temporary) {
         this.queue[this.queue.length - 1][1].promise.then(this.destroy.bind(this), this.destroy.bind(this));
       }
@@ -37,7 +45,7 @@ var RequestTargetInternals = (function() {
     this.status = TargetStatus.REJECTED;
     while (this.queue && this.queue.length) {
       var request = this.queue.shift();
-      request[1].reject(new Error('Target of the call was rejected and callcannot be sent.'));
+      request[1].reject(new Error('Target of the call was rejected and call cannot be sent.'));
     }
     this.queue = null;
     return value;
@@ -49,21 +57,20 @@ var RequestTargetInternals = (function() {
       var pack = request[0];
       var deferred = request[1];
       pack.target = this.link.id;
-      this._callRequestHandler(pack, deferred);
+      this._requestHandlers.handle(this._requestTarget, pack, deferred);
     }
     this.queue = null;
   }
 
   function _sendRequest(type, cmd, value) {
-    var request = null;
-    if (this.hasRequestHandler(type)) {
+    var promise = null;
+    if (this._requestHandlers.hasHandler(type)) {
       var pack = RequestTargetInternals.createRequestPackage(type, cmd, value, this.id);
-      var promise = this._applyRequest(pack, createDeferred());
-      request = RequestTarget.create(promise, this._requestHandlers);
+      promise = this._applyRequest(pack, createDeferred());
     } else {
       throw new Error('Request handler of type "' + type + '" is not registered.');
     }
-    return request;
+    return promise;
   }
 
   function _addToQueue(pack, deferred) {
@@ -73,6 +80,7 @@ var RequestTargetInternals = (function() {
 
   function _applyRequest(pack, deferred) {
     var promise = deferred.promise;
+    var type = pack.type;
     switch (this.status) {
       case TargetStatus.PENDING:
         this._addToQueue(pack, deferred);
@@ -84,27 +92,10 @@ var RequestTargetInternals = (function() {
         promise = Promise.reject(new Error('Target object was destroyed and cannot be used for calls.'));
         break;
       case TargetStatus.RESOLVED:
-        this._callRequestHandler(pack, deferred);
+        this._requestHandlers.handle(this._requestTarget, pack, deferred);
         break;
     }
     return promise;
-  }
-
-  function _callRequestHandler(pack, deferred) {
-    var list = ResourceConverter.lookupForPending(pack.value);
-    var handler = this._requestHandlers[pack.type];
-    if (list.length) {
-      // FIXME Need to test on all platforms: In other browsers this might not work because may need list of Promise objects, not RequestTargets
-      Promise.all(list).then(function() {
-        handler(pack, deferred);
-      });
-    } else {
-      handler(pack, deferred);
-    }
-  }
-
-  function _hasRequestHandler(type) {
-    return this._requestHandlers.hasOwnProperty(type) && typeof(this._requestHandlers[type]) === 'function';
   }
 
 
@@ -156,12 +147,10 @@ var RequestTargetInternals = (function() {
 
   RequestTargetInternals.prototype._resolveHandler = _resolveHandler;
   RequestTargetInternals.prototype._rejectHandler = _rejectHandler;
-  RequestTargetInternals.prototype.hasRequestHandler = _hasRequestHandler;
   RequestTargetInternals.prototype._sendQueue = _sendQueue;
   RequestTargetInternals.prototype.sendRequest = _sendRequest;
   RequestTargetInternals.prototype._addToQueue = _addToQueue;
   RequestTargetInternals.prototype._applyRequest = _applyRequest;
-  RequestTargetInternals.prototype._callRequestHandler = _callRequestHandler;
   RequestTargetInternals.prototype.isActive = _isActive;
   RequestTargetInternals.prototype.canBeDestroyed = _canBeDestroyed;
   RequestTargetInternals.prototype.destroy = _destroy;
@@ -171,6 +160,7 @@ var RequestTargetInternals = (function() {
 
   //----------- static
 
+  //FIXME move this to WorkerInterface, too specific case
   function _isTemporary(target, value) {
     /* TODO this case for Proxies, may be check for proxies support? this will work only if Proxies are enabled.
      For functions, they are temporary only if they have only CALL command in queue and child promises never created -- this commonly means that this target was used for function call in proxy.

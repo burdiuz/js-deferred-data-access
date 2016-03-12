@@ -1,6 +1,8 @@
 var DataAccessInterface = (function() {
 
-  function _DataAccessInterface() {
+  function DataAccessInterface() {
+    var _handlers = RequestHandlers.create();
+    var _factory = RequestFactory.create(_handlers);
     Object.defineProperties(this, {
       poolRegistry: {
         value: TargetPoolRegistry
@@ -9,12 +11,20 @@ var DataAccessInterface = (function() {
         value: TargetPoolRegistry.createPool()
       },
       resourceConverter: {
-        value: ResourceConverter
+        value: ResourceConverter.create(_factory, _handlers)
+      },
+      factory: {
+        value: _factory
       },
       IConvertible: {
         value: IConvertible
+      },
+      RequestTarget: {
+        value: RequestTarget
       }
     });
+
+    this.setHandlers = _handlers.setHandlers;
   }
 
   function _parse(data) {
@@ -25,9 +35,9 @@ var DataAccessInterface = (function() {
     return this.resourceConverter.toJSON(data);
   }
 
-  _DataAccessInterface.prototype.parse = _parse;
-  _DataAccessInterface.prototype.toJSON = _toJSON;
+  DataAccessInterface.prototype.parse = _parse;
+  DataAccessInterface.prototype.toJSON = _toJSON;
 
-  return new _DataAccessInterface();
+  return DataAccessInterface;
 })();
 

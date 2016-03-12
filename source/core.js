@@ -1,14 +1,9 @@
 var CommandType = {
-  GET: 'get',
-  SET: 'set',
-  CALL: 'call',
-  EXEC: 'exec',
-  DESTROY_TARGET: 'destroyTarget'
-};
-
-var ResponseTypes = {
-  RESULT_SUCCESS: 'success',
-  RESULT_FAILURE: 'failure'
+  //INFO Exposed Promise method, cannot be overwritten by command
+  THEN: 'then',
+  //INFO Exposed Promise method, cannot be overwritten by command
+  CATCH: 'catch',
+  DESTROY_TARGET: '::destroy.resource'
 };
 
 var TargetStatus = {
