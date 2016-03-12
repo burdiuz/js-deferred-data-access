@@ -15,7 +15,8 @@ var DataConverter = (function() {
 
   function convertRawToRequestTarget(data, sendRequestHandler) {
     var poolId = RequestTargetLink.getLinkPoolId(data);
-    if (poolId === TargetPool.instance.id) { // target object is stored in current pool
+    //what if user have created more TargetPools?
+    if (TargetPoolRegistry.isRegistered(poolId)) { // target object is stored in current pool
       data = TargetPool.instance.get(RequestTargetLink.getLinkId(data));
       if (data) {
         data = data.target;

@@ -1,4 +1,5 @@
 var TargetPool = (function() {
+
   /**
    * Map private field symbol
    */
@@ -13,6 +14,8 @@ var TargetPool = (function() {
         value: getId()
       }
     });
+
+    TargetPoolRegistry.register(this);
   }
 
   //------------ instance
@@ -61,11 +64,19 @@ var TargetPool = (function() {
     this[MAP_FIELD].clear();
   }
 
+  function _destroy() {
+    this.clear();
+    // intentionally make it not usable after its destroyed
+    this[MAP_FIELD] = null;
+    TargetPoolRegistry.remove(this);
+  }
+
   TargetPool.prototype.set = _set;
   TargetPool.prototype.has = _has;
   TargetPool.prototype.get = _get;
   TargetPool.prototype.remove = _remove;
   TargetPool.prototype.clear = _clear;
+  TargetPool.prototype.destroy = _destroy;
 
   //------------ static
 
@@ -95,13 +106,14 @@ var TargetPool = (function() {
     return ['object', 'function'];
   }
 
-  function TargetPool_create(){
+  function TargetPool_create() {
     return new TargetPool();
   }
 
   TargetPool.isValidTarget = TargetPool_isValidTarget;
   TargetPool.setValidTargets = TargetPool_setValidTargets;
   TargetPool.getDefaultValidTargets = TargetPool_getDefaultValidTargets;
+  TargetPool.exists = isRegistered;
   TargetPool.create = TargetPool_create;
 
   // setting default valid targets
