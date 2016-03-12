@@ -1,39 +1,33 @@
-/**
- * Created by Oleg Galaburda on 25.02.16.
- */
-//=include interface/utils.js
-//=include interface/core.js
-//=include interface/target-pool.js
-//=include interface/base-interface.js
-if (typeof(Proxy) === 'function') {
-  //=include interface/proxy.js
-} else {
-  //=include interface/worker-interface.js
-}
-//=include interface/shared-api.js
-
 var DataAccessInterface = (function() {
 
-  function DataAccessInterface() {
+  function _DataAccessInterface() {
     Object.defineProperties(this, {
+      poolRegistry: {
+        value: TargetPoolRegistry
+      },
       pool: {
-        value: DataAccessInterface_poolFactory()
+        value: TargetPoolRegistry.createPool()
+      },
+      resourceConverter: {
+        value: ResourceConverter
+      },
+      IConvertible: {
+        value: IConvertible
       }
     });
   }
 
-  function DataAccessInterface_poolFactory() {
-    return new TargetPool();
+  function _parse(data) {
+    return this.resourceConverter.parse(data);
   }
 
-  DataAccessInterface.poolFactory = DataAccessInterface_poolFactory;
+  function _toJSON(data) {
+    return this.resourceConverter.toJSON(data);
+  }
 
-  Object.defineProperties(DataAccessInterface, {
-    instance: {
-      value: new DataAccessInterface()
-    }
-  });
+  _DataAccessInterface.prototype.parse = _parse;
+  _DataAccessInterface.prototype.toJSON = _toJSON;
 
-  return DataAccessInterface;
+  return new _DataAccessInterface();
 })();
 

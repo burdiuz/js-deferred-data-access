@@ -91,7 +91,7 @@ var RequestTargetInternals = (function() {
   }
 
   function _callRequestHandler(pack, deferred) {
-    var list = DataConverter.lookupForPending(pack.value);
+    var list = ResourceConverter.lookupForPending(pack.value);
     var handler = this._requestHandlers[pack.type];
     if (list.length) {
       // FIXME Need to test on all platforms: In other browsers this might not work because may need list of Promise objects, not RequestTargets

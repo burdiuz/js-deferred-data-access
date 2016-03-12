@@ -20,7 +20,7 @@ var TargetStatus = {
 
 
 var TARGET_INTERNALS = Symbol('request.target:internals');
-var TARGET_DATA = '_targetLink_';
+var TARGET_DATA = 'resource::data';
 
 var getId = (function() {
   var _base = 'DA/' + String(Date.now()) + '/';
@@ -78,21 +78,31 @@ var createDeferred = (function() {
   return createDeferred;
 })();
 
+/**
+ * Interface for all resource types, these will be treated as resources automatically
+ * @constructor
+ */
+function IConvertible() {
+
+}
+
 function getPoolResource(id) {
   var data = {};
   data[TARGET_DATA] = {
     id: id || 0,
-    poolId: DataAccessInterface.instance.pool.id
+    poolId: DataAccessInterface.pool.id
   };
   return data;
-};
+}
 
 function getRAWResource(object) {
   var data;
   if (object instanceof TargetResource) {
     data = object.toJSON();
   } else if (object instanceof RequestTarget) {
-    data = object[TARGET_INTERNALS].toJSON();
+    data = RequestTarget.toJSON(object);
+  } else if (object instanceof IConvertible || typeof(object) === 'function') {
+    data = DataAccessInterface.pool.set(object).toJSON();
   } else if (isResource(object)) {
     data = object;
   }
@@ -104,7 +114,7 @@ function getResourceData(object) {
   return data ? data[TARGET_DATA] : null;
 }
 
-function getLinkId(object) {
+function getResourceId(object) {
   var id;
   if (object instanceof TargetResource || object instanceof RequestTarget) {
     id = object[TARGET_INTERNALS].id;
@@ -120,7 +130,7 @@ function getResourcePoolId(object) {
     poolId = object[TARGET_DATA].poolId;
   }
   return poolId;
-};
+}
 
 function getResourceType(object) {
   var type;
@@ -128,10 +138,14 @@ function getResourceType(object) {
     type = object[TARGET_DATA].type;
   }
   return type;
-};
+}
 
 function isResource(object) {
   return object instanceof TargetResource ||
     object instanceof RequestTarget ||
     (object && typeof(object[TARGET_DATA]) === 'object' && object[TARGET_DATA]);
-};
+}
+
+function isResourceConvertible(data) {
+  return isResource(data) || typeof(data) === 'function' || data instanceof IConvertible;
+}

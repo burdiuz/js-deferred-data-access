@@ -1,4 +1,4 @@
-/*TODO TargetPool may include proxyEmabled GET/SET to enable/disable Proxies, so user may define proper commands and then force to enable Proxy
+/*TODO TargetPool may include proxyEnabled GET/SET to enable/disable Proxies, so user may define proper commands and then force to enable Proxy
  Maybe better to have ProxyMode = {
  NONE - no proxy support
  SMART - will check if method exists on instance, then call it, if not --send as command
@@ -6,7 +6,6 @@
  }
  */
 WorkerInterface = (function() {
-
   function createHandlers(exclustions) {
     return {
       'get': function(wrapper, name) {

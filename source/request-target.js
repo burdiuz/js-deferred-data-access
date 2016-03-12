@@ -2,6 +2,7 @@
  * Created by Oleg Galaburda on 07.03.16.
  */
 var RequestTarget = (function() {
+  var NOINIT = {};
 
   /**
    * The object that will be available on other side
@@ -11,7 +12,7 @@ var RequestTarget = (function() {
    * @constructor
    */
   function RequestTarget(_promise, _requestHandlers) {
-    if (_promise === RequestTarget.NOINIT) return;
+    if (_promise === NOINIT) return;
 
     Object.defineProperty(this, TARGET_INTERNALS, {
       value: new RequestTargetInternals(_promise, _requestHandlers)
@@ -92,6 +93,35 @@ var RequestTarget = (function() {
     return target[TARGET_INTERNALS].toJSON();
   }
 
+  function RequestTarget_lookupForPending(data) {
+    var result = [];
+    if (typeof(data) === 'object' && data !== null) {
+      function add(value) {
+        if (RequestTarget_isPending(value)) {
+          result.push(value);
+        }
+        return value;
+      }
+
+      if (RequestTarget_isPending(data)) {
+        result.push(data);
+      } else if (data instanceof Array) {
+        convertArrayTo(data, add);
+      } else if (data.constructor === Object) {
+        convertHashTo(data, add);
+      }
+    }
+    return result;
+  }
+
+  function RequestTarget_isPending(value) {
+    return value instanceof RequestTarget && RequestTarget_getStatus(value) == TargetStatus.PENDING;
+  }
+
+  function RequestTarget_getStatus(target) {
+    return target[TARGET_INTERNALS].status;
+  }
+
   function RequestTarget_create(promise, requestHandler) {
     return new RequestTarget(promise, requestHandler);
   }
@@ -100,6 +130,9 @@ var RequestTarget = (function() {
   RequestTarget.canBeDestroyed = RequestTarget_canBeDestroyed;
   RequestTarget.destroy = RequestTarget_destroy;
   RequestTarget.toJSON = RequestTarget_toJSON;
+  RequestTarget.lookupForPending = RequestTarget_lookupForPending;
+  RequestTarget.isPending = RequestTarget_isPending;
+  RequestTarget.getStatus = RequestTarget_getStatus;
   RequestTarget.create = RequestTarget_create;
 
   return RequestTarget;
