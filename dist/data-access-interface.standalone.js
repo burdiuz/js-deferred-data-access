@@ -263,20 +263,30 @@
     return EventDispatcher;
   })();
   // here should be injected deferred-data-access.js content
-  var CommandType = {
+  var CommandType = Object.freeze({
     //INFO Exposed Promise method, cannot be overwritten by command
     THEN: 'then',
     //INFO Exposed Promise method, cannot be overwritten by command
     CATCH: 'catch',
     DESTROY_TARGET: '::destroy.resource'
-  };
+  });
   
-  var TargetStatus = {
+  var TargetStatus = Object.freeze({
     PENDING: 'pending',
     RESOLVED: 'resolved',
     REJECTED: 'rejected',
     DESTROYED: 'destroyed'
-  };
+  });
+  
+  var RequestTargetCommands = Object.freeze({
+    DESTROY: CommandType.DESTROY_TARGET
+  });
+  
+  var ProxyCommands = Object.freeze({
+    GET: 'get',
+    SET: 'set',
+    APPLY: 'apply'
+  });
   
   
   var TARGET_INTERNALS = Symbol('request.target:internals');
@@ -337,6 +347,10 @@
   
     return createDeferred;
   })();
+  
+  function areProxiesAvailable() {
+    return typeof(Proxy) === 'function';
+  }
   
   /**
    * Interface for all resource types, these will be treated as resources automatically
@@ -515,14 +529,14 @@
   
   var TargetPool = (function() {
   
-    var TargetPoolEvents = {
+    var TargetPoolEvents = Object.freeze({
       RESOURCE_ADDED: 'resourceAdded',
       RESOURCE_REMOVED: 'resourceRemoved',
       POOL_CLEAR: 'poolClear',
       POOL_CLEARED: 'poolCleared',
       POOL_DESTROY: 'poolDestroy',
       POOL_DESTROYED: 'poolDestroyed'
-    };
+    });
   
     /**
      * Map private field symbol
@@ -772,10 +786,10 @@
   
     var FACTORY_FIELD = Symbol('resource.converter::factory');
   
-    var ResourceConverterEvents = {
+    var ResourceConverterEvents = Object.freeze({
       RESOURCE_CREATED: 'resourceCreated',
       RESOURCE_CONVERTED: 'resourceConverted'
-    };
+    });
   
     /**
      * @param factory {RequestFactory}
@@ -917,11 +931,16 @@
     }
   
     ResourceConverter.create = ResourceConverter_create;
+    ResourceConverter.Events = ResourceConverterEvents;
   
     return ResourceConverter;
   })();
   
   var RequestHandlers = (function() {
+  
+    var RequestHandlersEvents = Object.freeze({
+      HANDLERS_UPDATED: 'handlersUpdated'
+    });
   
     /**
      * @returns {boolean}
@@ -933,10 +952,11 @@
     /**
      * @constructor
      */
-    function RequestHandlers() {
+    function RequestHandlers(proxyEnabled) {
       var _isTemporary = Default_isTemporary;
       var _handlers = {};
       var _converter;
+      var _available = false;
   
       Object.defineProperties(this, {
         isTemporary: {
@@ -946,6 +966,11 @@
           set: function(value) {
             _isTemporary = typeof(value) === 'function' ? value : Default_isTemporary;
           }
+        },
+        available: {
+          get: function() {
+            return _available;
+          }
         }
       });
   
@@ -954,7 +979,13 @@
       }
   
       function _setHandlers(handlers) {
-        _handlers = RequestHandlers.filterHandlers(handlers);
+        var list = [];
+        handlers = RequestHandlers.filterHandlers(handlers, list);
+        if (proxyEnabled) {
+          RequestHandlers.areProxyHandlersAvailable(handlers, true);
+        }
+        _available = Boolean(list.length);
+        _handlers = handlers;
       }
   
       function _hasHandler(type) {
@@ -1000,7 +1031,7 @@
   
     //------------------- static
   
-    function RequestHandlers_filterHandlers(handlers) {
+    function RequestHandlers_filterHandlers(handlers, names) {
       var typeHandlers = {};
       for (var name in handlers) {
         if (handlers.hasOwnProperty(name)) {
@@ -1008,6 +1039,7 @@
             if (name in CommandType) {
               throw new Error('Name "' + name + '" is reserved and cannot be used as command handler.');
             } else {
+              names.push(name);
               typeHandlers[name] = handlers[name];
             }
           }
@@ -1019,13 +1051,27 @@
     /**
      * @returns {RequestHandlers}
      */
-    function RequestHandlers_create() {
-      return new RequestHandlers();
+    function RequestHandlers_create(proxyEnabled) {
+      return new RequestHandlers(proxyEnabled);
+    }
+  
+    function RequestHandlers_areProxyHandlersAvailable(handlers, throwError) {
+      var result = true;
+      for (var name in ProxyCommands) {
+        if (ProxyCommands.hasOwnProperty(name) && !(ProxyCommands[name] in handlers)) {
+          result = false;
+          if (throwError) {
+            throw new Error('For Proxy interface, handler "' + name + '" should be set.');
+          }
+        }
+      }
+      return result;
     }
   
     RequestHandlers.filterHandlers = RequestHandlers_filterHandlers;
+    RequestHandlers.areProxyHandlersAvailable = RequestHandlers_areProxyHandlersAvailable;
     RequestHandlers.create = RequestHandlers_create;
-  
+    RequestHandlers.Events = RequestHandlersEvents;
     return RequestHandlers;
   })();
   
@@ -1056,7 +1102,9 @@
       function _decorate(request) {
         var handlers = _handlers.getHandlers();
         for (var name in handlers) {
-          request[name] = _getMember(name);
+          if (handlers.hasOwnProperty(name)) {
+            request[name] = _getMember(name);
+          }
         }
         return request;
       }
@@ -1084,19 +1132,27 @@
   /**
    * Created by Oleg Galaburda on 13.03.16.
    */
-  var RequestFactory = (function() {
   
-    var DECORATOR_FIELD = Symbol('request.factory::decorator');
-    var HANDLERS_FIELD = Symbol('request.factory::handlers');
+  var FACTORY_DECORATOR_FIELD = Symbol('request.factory::decorator');
+  
+  var FACTORY_HANDLERS_FIELD = Symbol('request.factory::handlers');
+  
+  var RequestFactory = (function() {
+    var NOINIT = {};
   
     function RequestFactory(handlers) {
-      this[HANDLERS_FIELD] = handlers;
-      this[DECORATOR_FIELD] = new RequestTargetDecorator(this, handlers);
+      if (handlers === NOINIT) {
+        return;
+      }
+      this[FACTORY_HANDLERS_FIELD] = handlers;
+      this[FACTORY_DECORATOR_FIELD] = new RequestTargetDecorator(this, handlers);
     }
   
     function _create(promise) {
-      var request = RequestTarget.create(promise, this[HANDLERS_FIELD]);
-      this[DECORATOR_FIELD].decorate(request);
+      var request = RequestTarget.create(promise, this[FACTORY_HANDLERS_FIELD]);
+      if (this[FACTORY_HANDLERS_FIELD].available) {
+        this[FACTORY_DECORATOR_FIELD].decorate(request);
+      }
       return request;
     }
   
@@ -1108,7 +1164,13 @@
       return new RequestFactory(handlers);
     }
   
+    function RequestFactory_createNoInitPrototype() {
+      return new RequestFactory(NOINIT);
+    }
+  
     RequestFactory.create = RequestFactory_create;
+  
+    RequestFactory.createNoInitProtoype = RequestFactory_createNoInitPrototype;
   
     return RequestFactory;
   })();
@@ -1279,7 +1341,6 @@
       };
     }
   
-    RequestTargetInternals.isTemporary = _isTemporary;
     RequestTargetInternals.createRequestPackage = _createRequestPackage;
   
     return RequestTargetInternals;
@@ -1288,11 +1349,11 @@
   /**
    * Created by Oleg Galaburda on 07.03.16.
    */
+  
   var RequestTarget = (function() {
   
     /**
      * The object that will be available on other side
-     * IMPORTANT: Function target is temporary if queue contains single CALL command when target is resolved.
      * @param _promise {Promise}
      * @param _requestHandlers {RequestHandlers}
      * @constructor
@@ -1336,6 +1397,14 @@
       return value instanceof RequestTarget && RequestTarget_getStatus(value) == TargetStatus.PENDING;
     }
   
+    function RequestTarget_isTemporary(target) {
+      return Boolean(target[TARGET_INTERNALS].temporary);
+    }
+  
+    function RequestTarget_setTemporary(target, value) {
+      target[TARGET_INTERNALS].temporary = Boolean(value);
+    }
+  
     function RequestTarget_getStatus(target) {
       return target[TARGET_INTERNALS].status;
     }
@@ -1358,6 +1427,10 @@
       return result;
     }
   
+    function RequestTarget_hadChildPromises(target) {
+      return target[TARGET_INTERNALS].hadChildPromises;
+    }
+  
     /**
      *
      * @param promise {Promise}
@@ -1374,9 +1447,12 @@
     RequestTarget.destroy = RequestTarget_destroy;
     RequestTarget.toJSON = RequestTarget_toJSON;
     RequestTarget.isPending = RequestTarget_isPending;
+    RequestTarget.isTemporary = RequestTarget_isTemporary;
+    RequestTarget.setTemporary = RequestTarget_setTemporary;
     RequestTarget.getStatus = RequestTarget_getStatus;
     RequestTarget.getQueueLength = RequestTarget_getQueueLength;
     RequestTarget.getQueueCommands = RequestTarget_getQueueCommands;
+    RequestTarget.hadChildPromises = RequestTarget_hadChildPromises;
     RequestTarget.create = RequestTarget_create;
   
     return RequestTarget;
@@ -1384,9 +1460,12 @@
   
   var DataAccessInterface = (function() {
   
-    function DataAccessInterface() {
-      var _handlers = RequestHandlers.create();
-      var _factory = RequestFactory.create(_handlers);
+    function DataAccessInterface(proxyEnabled) {
+      if (proxyEnabled && !areProxiesAvailable()) {
+        throw new Error('Proxies are not available in this environment');
+      }
+      var _handlers = RequestHandlers.create(proxyEnabled);
+      var _factory = (proxyEnabled ? RequestProxyFactory : RequestFactory).create(_handlers);
       Object.defineProperties(this, {
         poolRegistry: {
           value: TargetPoolRegistry
@@ -1400,11 +1479,8 @@
         factory: {
           value: _factory
         },
-        IConvertible: {
-          value: IConvertible
-        },
-        RequestTarget: {
-          value: RequestTarget
+        proxyEnabled: {
+          value: proxyEnabled
         }
       });
   
@@ -1421,6 +1497,20 @@
   
     DataAccessInterface.prototype.parse = _parse;
     DataAccessInterface.prototype.toJSON = _toJSON;
+  
+    //------------------ static
+  
+    function DataAccessInterface_create(proxyEnabled) {
+      return new DataAccessInterface(proxyEnabled);
+    }
+  
+    DataAccessInterface.create = DataAccessInterface_create;
+    DataAccessInterface.IConvertible = IConvertible;
+    DataAccessInterface.RequestTarget = RequestTarget;
+    DataAccessInterface.RequestTargetCommands = RequestTargetCommands;
+    DataAccessInterface.ProxyCommands = ProxyCommands;
+    DataAccessInterface.TargetPoolEvents = TargetPool.Events;
+    DataAccessInterface.ResourceConverterEvents = ResourceConverter.Events;
   
     return DataAccessInterface;
   })();

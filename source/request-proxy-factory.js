@@ -43,11 +43,11 @@ var RequestProxyFactory = (function() {
   }
 
   function Proxy_ownKeys(wrapper) {
-    return Object.getOwnPropertyNames(EXCLUSIONS); // Object.getOwnPropertyNames(exclustions);
+    return Object.getOwnPropertyNames(EXCLUSIONS);
   }
 
   function Proxy_enumerate(wrapper) {
-    return Object.getOwnPropertyNames(EXCLUSIONS); // Object.getOwnPropertyNames(exclustions);
+    return Object.getOwnPropertyNames(EXCLUSIONS);
   }
 
   function Proxy_getOwnPropertyDescriptor(wrapper, name) {
