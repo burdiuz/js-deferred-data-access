@@ -17,7 +17,17 @@
   <script type="text/javascript" src="../source/request-target.js"></script>
   <script type="text/javascript" src="../source/data-access-interface.js"></script>
   <script type="text/javascript">
-
+    var api = new DataAccessInterface();
+    api.setHandlers({
+      get: function(res, cmd, def) {
+        console.log('GET', res, cmd, def);
+      },
+      set: function(res, cmd, def) {
+        console.log('SET', res, cmd, def);
+      }
+    });
+    var request = api.factory.create(Promise.resolve({id: '11111', poolId: '222222', type: 'object'}));
+    request.get('My Command', 'any-value-here');
   </script>
 </head>
 <body>

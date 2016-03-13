@@ -264,6 +264,10 @@
   })();
   // here should be injected deferred-data-access.js content
   var CommandType = {
+    //INFO Exposed Promise method, cannot be overwritten by command
+    THEN: 'then',
+    //INFO Exposed Promise method, cannot be overwritten by command
+    CATCH: 'catch',
     DESTROY_TARGET: '::destroy.resource'
   };
   
@@ -778,9 +782,12 @@
      * @constructor
      * @extends EventDispatcher
      */
-    function ResourceConverter(factory) {
+    function ResourceConverter(factory, handlers) {
       this[FACTORY_FIELD] = factory;
       EventDispatcher.apply(this);
+      if (handlers) {
+        handlers.setConverter(this);
+      }
     }
   
     function _resourceToObject(data) {
@@ -867,21 +874,244 @@
       return result;
     }
   
+    function _lookupForPending(data) {
+      var result = [];
+      if (typeof(data) === 'object' && data !== null) {
+        function add(value) {
+          if (RequestTarget.isPending(value)) {
+            result.push(value);
+          }
+          return value;
+        }
+  
+        if (RequestTarget.isPending(data)) {
+          result.push(data);
+        } else if (data instanceof Array) {
+          this.lookupArray(data, add);
+        } else if (data.constructor === Object) {
+          this.lookupObject(data, add);
+        }
+      }
+      return result;
+    }
+  
     ResourceConverter.prototype = EventDispatcher.createNoInitPrototype();
     ResourceConverter.prototype.constructor = ResourceConverter;
     ResourceConverter.prototype.toJSON = _toJSON;
     ResourceConverter.prototype.parse = _parse;
     ResourceConverter.prototype.lookupArray = _lookupArray;
     ResourceConverter.prototype.lookupObject = _lookupObject;
+    ResourceConverter.prototype.lookupForPending = _lookupForPending;
     ResourceConverter.prototype.resourceToObject = _resourceToObject;
     ResourceConverter.prototype.objectToResource = _objectToResource;
+  
+    //------------------------ static
+  
+    /**
+     * @param factory {RequestFactory}
+     * @param handlers {RequestHandlers}
+     * @returns {ResourceConverter}
+     */
+    function ResourceConverter_create(factory, handlers) {
+      return new ResourceConverter(factory, handlers);
+    }
+  
+    ResourceConverter.create = ResourceConverter_create;
   
     return ResourceConverter;
   })();
   
+  var RequestHandlers = (function() {
+  
+    /**
+     * @returns {boolean}
+     */
+    function Default_isTemporary() {
+      return false;
+    }
+  
+    /**
+     * @constructor
+     */
+    function RequestHandlers() {
+      var _isTemporary = Default_isTemporary;
+      var _handlers = {};
+      var _converter;
+  
+      Object.defineProperties(this, {
+        isTemporary: {
+          get: function() {
+            return _isTemporary;
+          },
+          set: function(value) {
+            _isTemporary = typeof(value) === 'function' ? value : Default_isTemporary;
+          }
+        }
+      });
+  
+      function _setConverter(converter) {
+        _converter = converter;
+      }
+  
+      function _setHandlers(handlers) {
+        _handlers = RequestHandlers.filterHandlers(handlers);
+      }
+  
+      function _hasHandler(type) {
+        return _handlers.hasOwnProperty(type);
+      }
+  
+      function _getHandlers() {
+        return _handlers;
+      }
+  
+      function _getHandler(type) {
+        return _handlers[type] || null;
+      }
+  
+      function _handle(resource, pack, deferred) {
+        var list = _converter ? _converter.lookupForPending(pack.value) : null;
+        if (list && list.length) {
+          // FIXME Need to test on all platforms: In other browsers this might not work because may need list of Promise objects, not RequestTargets
+          Promise.all(list).then(function() {
+            _handleImmediately(resource, pack.type, pack, deferred);
+          });
+        } else {
+          _handleImmediately(resource, pack.type, pack, deferred);
+        }
+      }
+  
+      function _handleImmediately(resource, type, data, deferred) {
+        var handler = _getHandler(type);
+        if (typeof(handler) === 'function') {
+          //INFO result should be applied to deferred.resolve() or deferred.reject()
+          handler(resource, data, deferred);
+        }
+  
+      }
+  
+      this.setConverter = _setConverter;
+      this.setHandlers = _setHandlers;
+      this.hasHandler = _hasHandler;
+      this.getHandlers = _getHandlers;
+      this.getHandler = _getHandler;
+      this.handle = _handle;
+    }
+  
+    //------------------- static
+  
+    function RequestHandlers_filterHandlers(handlers) {
+      var typeHandlers = {};
+      for (var name in handlers) {
+        if (handlers.hasOwnProperty(name)) {
+          if (typeof(handlers[name]) === 'function') {
+            if (name in CommandType) {
+              throw new Error('Name "' + name + '" is reserved and cannot be used as command handler.');
+            } else {
+              typeHandlers[name] = handlers[name];
+            }
+          }
+        }
+      }
+      return typeHandlers;
+    }
+  
+    /**
+     * @returns {RequestHandlers}
+     */
+    function RequestHandlers_create() {
+      return new RequestHandlers();
+    }
+  
+    RequestHandlers.filterHandlers = RequestHandlers_filterHandlers;
+    RequestHandlers.create = RequestHandlers_create;
+  
+    return RequestHandlers;
+  })();
+  
+  var RequestTargetDecorator = (function() {
+  
+    /**
+     *
+     * @param handlers {RequestHandlers}
+     * @constructor
+     */
+    function RequestTargetDecorator(_factory, _handlers) {
+      var _members = {};
+  
+      function _getMember(name) {
+        if (!_members.hasOwnProperty(name)) {
+          _members[name] = (function(type) {
+            function _commandHandler(command, value) {
+              var promise = this[TARGET_INTERNALS].sendRequest(type, command, value);
+              return _factory.create(promise || Promise.reject('Initial request failed and didn\'t result in promise.'));
+            }
+  
+            return _commandHandler;
+          })(name);
+        }
+        return _members[name];
+      }
+  
+      function _decorate(request) {
+        var handlers = _handlers.getHandlers();
+        for (var name in handlers) {
+          request[name] = _getMember(name);
+        }
+        return request;
+      }
+  
+      this.decorate = _decorate;
+    }
+  
+    //------------------- static
+  
+    /**
+     * @param handlers {RequestHandlers}
+     * @returns {RequestTargetDecorator}
+     * @constructor
+     */
+    function RequestTargetDecorator_create(handlers) {
+      return new RequestTargetDecorator(handlers);
+    }
+  
+    RequestTargetDecorator.create = RequestTargetDecorator_create;
+  
+    return RequestTargetDecorator;
+  })();
+  
+  
   /**
-   * Created by Oleg Galaburda on 10.03.16.
+   * Created by Oleg Galaburda on 13.03.16.
    */
+  var RequestFactory = (function() {
+  
+    var DECORATOR_FIELD = Symbol('request.factory::decorator');
+    var HANDLERS_FIELD = Symbol('request.factory::handlers');
+  
+    function RequestFactory(handlers) {
+      this[HANDLERS_FIELD] = handlers;
+      this[DECORATOR_FIELD] = new RequestTargetDecorator(this, handlers);
+    }
+  
+    function _create(promise) {
+      var request = RequestTarget.create(promise, this[HANDLERS_FIELD]);
+      this[DECORATOR_FIELD].decorate(request);
+      return request;
+    }
+  
+    RequestFactory.prototype.create = _create;
+  
+    //------------------- static
+  
+    function RequestFactory_create(handlers) {
+      return new RequestFactory(handlers);
+    }
+  
+    RequestFactory.create = RequestFactory_create;
+  
+    return RequestFactory;
+  })();
   
   var RequestTargetInternals = (function() {
   
@@ -926,7 +1156,7 @@
       this.status = TargetStatus.REJECTED;
       while (this.queue && this.queue.length) {
         var request = this.queue.shift();
-        request[1].reject(new Error('Target of the call was rejected and callcannot be sent.'));
+        request[1].reject(new Error('Target of the call was rejected and call cannot be sent.'));
       }
       this.queue = null;
       return value;
@@ -938,7 +1168,7 @@
         var pack = request[0];
         var deferred = request[1];
         pack.target = this.link.id;
-        this._callRequestHandler(pack, deferred);
+        this._requestHandlers.handle(this._requestTarget, pack, deferred);
       }
       this.queue = null;
     }
@@ -961,6 +1191,7 @@
   
     function _applyRequest(pack, deferred) {
       var promise = deferred.promise;
+      var type = pack.type;
       switch (this.status) {
         case TargetStatus.PENDING:
           this._addToQueue(pack, deferred);
@@ -972,23 +1203,10 @@
           promise = Promise.reject(new Error('Target object was destroyed and cannot be used for calls.'));
           break;
         case TargetStatus.RESOLVED:
-          this._callRequestHandler(pack, deferred);
+          this._requestHandlers.handle(this._requestTarget, pack, deferred);
           break;
       }
       return promise;
-    }
-  
-    function _callRequestHandler(pack, deferred) {
-      var list = RequestTarget.lookupForPending(pack.value);
-      var type = pack.type;
-      if (list.length) {
-        // FIXME Need to test on all platforms: In other browsers this might not work because may need list of Promise objects, not RequestTargets
-        Promise.all(list).then(function() {
-          this._requestHandlers.handle(type, pack, deferred);
-        });
-      } else {
-        this._requestHandlers.handle(type, pack, deferred);
-      }
     }
   
   
@@ -1003,8 +1221,7 @@
     function _destroy() {
       var promise = null;
       if (this.canBeDestroyed()) {
-        _status = TargetStatus.DESTROYED;
-        //FIXME Should DESTROY_TARGET be a custom command too? How to handle such custom behavior?
+        this.status = TargetStatus.DESTROYED;
         promise = this.sendRequest(CommandType.DESTROY_TARGET);
       } else {
         promise = Promise.reject();
@@ -1044,7 +1261,6 @@
     RequestTargetInternals.prototype.sendRequest = _sendRequest;
     RequestTargetInternals.prototype._addToQueue = _addToQueue;
     RequestTargetInternals.prototype._applyRequest = _applyRequest;
-    RequestTargetInternals.prototype._callRequestHandler = _callRequestHandler;
     RequestTargetInternals.prototype.isActive = _isActive;
     RequestTargetInternals.prototype.canBeDestroyed = _canBeDestroyed;
     RequestTargetInternals.prototype.destroy = _destroy;
@@ -1053,24 +1269,6 @@
     RequestTargetInternals.prototype.toJSON = _toJSON;
   
     //----------- static
-  
-    //FIXME move this to WorkerInterface, too specific case
-    function _isTemporary(target, value) {
-      /* TODO this case for Proxies, may be check for proxies support? this will work only if Proxies are enabled.
-       For functions, they are temporary only if they have only CALL command in queue and child promises never created -- this commonly means that this target was used for function call in proxy.
-       For any non-function target object, it will be marked as temporary only if has single item in request queue and child promises never created.
-       */
-      var temp = target.temporary;
-      if (typeof(temp) !== 'boolean') {
-        if (getResourceType(value) === 'function') {
-          //FIXME moving to dynamic command types should somehow solve `temporary` detection
-          temp = target.queue && target.queue.length === 1 && target.queue[0][0].type == CommandType.CALL && !target.hadChildPromises;
-        } else {
-          temp = (target.queue && target.queue.length === 1 && !target.hadChildPromises);
-        }
-      }
-      return temp;
-    }
   
     function _createRequestPackage(type, cmd, value, targetId) {
       return {
@@ -1104,52 +1302,6 @@
       Object.defineProperty(this, TARGET_INTERNALS, {
         value: new RequestTargetInternals(this, _promise, _requestHandlers)
       });
-  
-      Object.defineProperties(this, {
-        id: {
-          get: function() {
-            return _link.id;
-          },
-          configurable: true
-        },
-        target: {
-          get: function() {
-            return this;
-          }
-        },
-        targetType: {
-          get: function() {
-            return _link.type;
-          },
-          configurable: true
-        },
-        poolId: {
-          get: function() {
-            return _link.poolId;
-          },
-          configurable: true
-        },
-        temporary: {
-          get: function() {
-            return _temporary;
-          },
-          //INFO User can set permanent/temporary by hand
-          set: function(value) {
-            if (this.isActive()) {
-              _temporary = Boolean(value);
-              if (_status == TargetStatus.RESOLVED) {
-                _destroy();
-              }
-            }
-          }
-        },
-        status: {
-          get: function() {
-            return _status;
-          },
-          configurable: true
-        }
-      });
     }
   
     function _then() {
@@ -1178,27 +1330,6 @@
   
     function RequestTarget_toJSON(target) {
       return target[TARGET_INTERNALS].toJSON();
-    }
-  
-    function RequestTarget_lookupForPending(data) {
-      var result = [];
-      if (typeof(data) === 'object' && data !== null) {
-        function add(value) {
-          if (RequestTarget_isPending(value)) {
-            result.push(value);
-          }
-          return value;
-        }
-  
-        if (RequestTarget_isPending(data)) {
-          result.push(data);
-        } else if (data instanceof Array) {
-          convertArrayTo(data, add);
-        } else if (data.constructor === Object) {
-          convertHashTo(data, add);
-        }
-      }
-      return result;
     }
   
     function RequestTarget_isPending(value) {
@@ -1242,7 +1373,6 @@
     RequestTarget.canBeDestroyed = RequestTarget_canBeDestroyed;
     RequestTarget.destroy = RequestTarget_destroy;
     RequestTarget.toJSON = RequestTarget_toJSON;
-    RequestTarget.lookupForPending = RequestTarget_lookupForPending;
     RequestTarget.isPending = RequestTarget_isPending;
     RequestTarget.getStatus = RequestTarget_getStatus;
     RequestTarget.getQueueLength = RequestTarget_getQueueLength;
@@ -1265,7 +1395,7 @@
           value: TargetPoolRegistry.createPool()
         },
         resourceConverter: {
-          value: new ResourceConverter(_factory)
+          value: ResourceConverter.create(_factory, _handlers)
         },
         factory: {
           value: _factory

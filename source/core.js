@@ -73,6 +73,10 @@ var createDeferred = (function() {
   return createDeferred;
 })();
 
+function areProxiesAvailable() {
+  return typeof(Proxy) === 'function';
+}
+
 /**
  * Interface for all resource types, these will be treated as resources automatically
  * @constructor

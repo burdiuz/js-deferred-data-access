@@ -23,6 +23,9 @@
   //=include target-pool.js
   //=include target-pool-registry.js
   //=include resource-converter.js
+  //=include request-handlers.js
+  //=include request-target-decorator.js
+  //=include request-factory.js
   //=include request-target-internals.js
   //=include request-target.js
   //=include data-access-interface.js
