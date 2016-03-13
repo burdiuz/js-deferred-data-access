@@ -25,7 +25,9 @@ var RequestTargetDecorator = (function() {
     function _decorate(request) {
       var handlers = _handlers.getHandlers();
       for (var name in handlers) {
-        request[name] = _getMember(name);
+        if (handlers.hasOwnProperty(name)) {
+          request[name] = _getMember(name);
+        }
       }
       return request;
     }

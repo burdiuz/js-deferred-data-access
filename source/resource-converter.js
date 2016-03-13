@@ -9,10 +9,10 @@ var ResourceConverter = (function() {
 
   var FACTORY_FIELD = Symbol('resource.converter::factory');
 
-  var ResourceConverterEvents = {
+  var ResourceConverterEvents = Object.freeze({
     RESOURCE_CREATED: 'resourceCreated',
     RESOURCE_CONVERTED: 'resourceConverted'
-  };
+  });
 
   /**
    * @param factory {RequestFactory}
@@ -154,6 +154,7 @@ var ResourceConverter = (function() {
   }
 
   ResourceConverter.create = ResourceConverter_create;
+  ResourceConverter.Events = ResourceConverterEvents;
 
   return ResourceConverter;
 })();

@@ -164,7 +164,6 @@ var RequestTargetInternals = (function() {
     };
   }
 
-  RequestTargetInternals.isTemporary = _isTemporary;
   RequestTargetInternals.createRequestPackage = _createRequestPackage;
 
   return RequestTargetInternals;

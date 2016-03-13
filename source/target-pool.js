@@ -1,13 +1,13 @@
 var TargetPool = (function() {
 
-  var TargetPoolEvents = {
+  var TargetPoolEvents = Object.freeze({
     RESOURCE_ADDED: 'resourceAdded',
     RESOURCE_REMOVED: 'resourceRemoved',
     POOL_CLEAR: 'poolClear',
     POOL_CLEARED: 'poolCleared',
     POOL_DESTROY: 'poolDestroy',
     POOL_DESTROYED: 'poolDestroyed'
-  };
+  });
 
   /**
    * Map private field symbol

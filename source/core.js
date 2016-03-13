@@ -1,17 +1,27 @@
-var CommandType = {
+var CommandType = Object.freeze({
   //INFO Exposed Promise method, cannot be overwritten by command
   THEN: 'then',
   //INFO Exposed Promise method, cannot be overwritten by command
   CATCH: 'catch',
   DESTROY_TARGET: '::destroy.resource'
-};
+});
 
-var TargetStatus = {
+var TargetStatus = Object.freeze({
   PENDING: 'pending',
   RESOLVED: 'resolved',
   REJECTED: 'rejected',
   DESTROYED: 'destroyed'
-};
+});
+
+var RequestTargetCommands = Object.freeze({
+  DESTROY: CommandType.DESTROY_TARGET
+});
+
+var ProxyCommands = Object.freeze({
+  GET: 'get',
+  SET: 'set',
+  APPLY: 'apply'
+});
 
 
 var TARGET_INTERNALS = Symbol('request.target:internals');

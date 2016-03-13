@@ -1,5 +1,9 @@
 var RequestHandlers = (function() {
 
+  var RequestHandlersEvents = Object.freeze({
+    HANDLERS_UPDATED: 'handlersUpdated'
+  });
+
   /**
    * @returns {boolean}
    */
@@ -10,10 +14,11 @@ var RequestHandlers = (function() {
   /**
    * @constructor
    */
-  function RequestHandlers() {
+  function RequestHandlers(proxyEnabled) {
     var _isTemporary = Default_isTemporary;
     var _handlers = {};
     var _converter;
+    var _available = false;
 
     Object.defineProperties(this, {
       isTemporary: {
@@ -23,6 +28,11 @@ var RequestHandlers = (function() {
         set: function(value) {
           _isTemporary = typeof(value) === 'function' ? value : Default_isTemporary;
         }
+      },
+      available: {
+        get: function() {
+          return _available;
+        }
       }
     });
 
@@ -31,7 +41,13 @@ var RequestHandlers = (function() {
     }
 
     function _setHandlers(handlers) {
-      _handlers = RequestHandlers.filterHandlers(handlers);
+      var list = [];
+      handlers = RequestHandlers.filterHandlers(handlers, list);
+      if (proxyEnabled) {
+        RequestHandlers.areProxyHandlersAvailable(handlers, true);
+      }
+      _available = Boolean(list.length);
+      _handlers = handlers;
     }
 
     function _hasHandler(type) {
@@ -77,7 +93,7 @@ var RequestHandlers = (function() {
 
   //------------------- static
 
-  function RequestHandlers_filterHandlers(handlers) {
+  function RequestHandlers_filterHandlers(handlers, names) {
     var typeHandlers = {};
     for (var name in handlers) {
       if (handlers.hasOwnProperty(name)) {
@@ -85,6 +101,7 @@ var RequestHandlers = (function() {
           if (name in CommandType) {
             throw new Error('Name "' + name + '" is reserved and cannot be used as command handler.');
           } else {
+            names.push(name);
             typeHandlers[name] = handlers[name];
           }
         }
@@ -96,12 +113,26 @@ var RequestHandlers = (function() {
   /**
    * @returns {RequestHandlers}
    */
-  function RequestHandlers_create() {
-    return new RequestHandlers();
+  function RequestHandlers_create(proxyEnabled) {
+    return new RequestHandlers(proxyEnabled);
+  }
+
+  function RequestHandlers_areProxyHandlersAvailable(handlers, throwError) {
+    var result = true;
+    for (var name in ProxyCommands) {
+      if (ProxyCommands.hasOwnProperty(name) && !(ProxyCommands[name] in handlers)) {
+        result = false;
+        if (throwError) {
+          throw new Error('For Proxy interface, handler "' + name + '" should be set.');
+        }
+      }
+    }
+    return result;
   }
 
   RequestHandlers.filterHandlers = RequestHandlers_filterHandlers;
+  RequestHandlers.areProxyHandlersAvailable = RequestHandlers_areProxyHandlersAvailable;
   RequestHandlers.create = RequestHandlers_create;
-
+  RequestHandlers.Events = RequestHandlersEvents;
   return RequestHandlers;
 })();

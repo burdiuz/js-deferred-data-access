@@ -1,11 +1,11 @@
 /**
  * Created by Oleg Galaburda on 07.03.16.
  */
+
 var RequestTarget = (function() {
 
   /**
    * The object that will be available on other side
-   * IMPORTANT: Function target is temporary if queue contains single CALL command when target is resolved.
    * @param _promise {Promise}
    * @param _requestHandlers {RequestHandlers}
    * @constructor
@@ -49,6 +49,14 @@ var RequestTarget = (function() {
     return value instanceof RequestTarget && RequestTarget_getStatus(value) == TargetStatus.PENDING;
   }
 
+  function RequestTarget_isTemporary(target) {
+    return Boolean(target[TARGET_INTERNALS].temporary);
+  }
+
+  function RequestTarget_setTemporary(target, value) {
+    target[TARGET_INTERNALS].temporary = Boolean(value);
+  }
+
   function RequestTarget_getStatus(target) {
     return target[TARGET_INTERNALS].status;
   }
@@ -71,6 +79,10 @@ var RequestTarget = (function() {
     return result;
   }
 
+  function RequestTarget_hadChildPromises(target) {
+    return target[TARGET_INTERNALS].hadChildPromises;
+  }
+
   /**
    *
    * @param promise {Promise}
@@ -87,9 +99,12 @@ var RequestTarget = (function() {
   RequestTarget.destroy = RequestTarget_destroy;
   RequestTarget.toJSON = RequestTarget_toJSON;
   RequestTarget.isPending = RequestTarget_isPending;
+  RequestTarget.isTemporary = RequestTarget_isTemporary;
+  RequestTarget.setTemporary = RequestTarget_setTemporary;
   RequestTarget.getStatus = RequestTarget_getStatus;
   RequestTarget.getQueueLength = RequestTarget_getQueueLength;
   RequestTarget.getQueueCommands = RequestTarget_getQueueCommands;
+  RequestTarget.hadChildPromises = RequestTarget_hadChildPromises;
   RequestTarget.create = RequestTarget_create;
 
   return RequestTarget;

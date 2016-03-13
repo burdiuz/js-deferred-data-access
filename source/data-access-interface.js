@@ -1,8 +1,11 @@
 var DataAccessInterface = (function() {
 
-  function DataAccessInterface() {
-    var _handlers = RequestHandlers.create();
-    var _factory = RequestFactory.create(_handlers);
+  function DataAccessInterface(proxyEnabled) {
+    if (proxyEnabled && !areProxiesAvailable()) {
+      throw new Error('Proxies are not available in this environment');
+    }
+    var _handlers = RequestHandlers.create(proxyEnabled);
+    var _factory = (proxyEnabled ? RequestProxyFactory : RequestFactory).create(_handlers);
     Object.defineProperties(this, {
       poolRegistry: {
         value: TargetPoolRegistry
@@ -16,11 +19,8 @@ var DataAccessInterface = (function() {
       factory: {
         value: _factory
       },
-      IConvertible: {
-        value: IConvertible
-      },
-      RequestTarget: {
-        value: RequestTarget
+      proxyEnabled: {
+        value: proxyEnabled
       }
     });
 
@@ -40,20 +40,17 @@ var DataAccessInterface = (function() {
 
   //------------------ static
 
-  function DataAccessInterface_create(useProxies) {
-    var instance;
-    if (useProxies && !areProxiesAvailable()) {
-      throw new Error('Proxies are not available in this environment');
-    }
-    if (useProxies) {
-      //FIXME continue...
-      instance
-    } else {
-      new DataAccessInterface();
-    }
+  function DataAccessInterface_create(proxyEnabled) {
+    return new DataAccessInterface(proxyEnabled);
   }
 
   DataAccessInterface.create = DataAccessInterface_create;
+  DataAccessInterface.IConvertible = IConvertible;
+  DataAccessInterface.RequestTarget = RequestTarget;
+  DataAccessInterface.RequestTargetCommands = RequestTargetCommands;
+  DataAccessInterface.ProxyCommands = ProxyCommands;
+  DataAccessInterface.TargetPoolEvents = TargetPool.Events;
+  DataAccessInterface.ResourceConverterEvents = ResourceConverter.Events;
 
   return DataAccessInterface;
 })();
