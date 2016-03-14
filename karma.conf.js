@@ -18,7 +18,7 @@ module.exports = function(config) {
      Look if possible to run one carma instance for different configs
      */
     files: [
-      'bower_components/event-dispatcher/dist/event-dispatcher.js',
+      'node_modules/event-dispatcher/dist/event-dispatcher.js',
       'source/core.js',
       'source/target-resource.js',
       'source/resource-pool.js',
