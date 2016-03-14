@@ -11,7 +11,9 @@ describe('getId()', function() {
   });
 
 });
+
 describe('createDeferred()', function() {
+
   describe('When called', function() { //since its factory method
     var deferred;
     beforeEach(function() {
@@ -30,6 +32,7 @@ describe('createDeferred()', function() {
     it('result should have promise', function() {
       expect(deferred.promise).to.be.an.instanceof(Promise);
     });
+
     describe('When deferred resolved', function() {
       beforeEach(function() {
         /**
@@ -49,6 +52,7 @@ describe('createDeferred()', function() {
         expect(deferred.status).to.be.equal(TargetStatus.RESOLVED);
       });
     });
+
     describe('When deferred failed', function() {
       beforeEach(function(done) {
         // promises resolved asynchronously
@@ -63,5 +67,6 @@ describe('createDeferred()', function() {
         expect(deferred.status).to.be.equal(TargetStatus.REJECTED);
       });
     });
+
   });
 });

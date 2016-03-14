@@ -92,8 +92,8 @@ var TargetResource = (function() {
   TargetResource.prototype.toJSON = _toJSON;
   TargetResource.prototype.destroy = _destroy;
 
-  function TargetResource_create(pool, target, id) {
-    return new TargetResource(pool, target, id || getId());
+  function TargetResource_create(pool, target, targetType, id) {
+    return new TargetResource(pool, target, targetType, id || getId());
   }
 
   TargetResource.create = TargetResource_create;

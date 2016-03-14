@@ -2,14 +2,16 @@
  * Created by Oleg Galaburda on 10.03.16.
  */
 describe('TargetResource', function() {
-  var resource, pool, target, id;
+  var resource, pool, target, targetType, id;
   beforeEach(function() {
     pool = {
       id: 'le pool',
       remove: sinon.spy()
     };
+    target = {};
+    targetType = 'target-type';
     id = 'das ID';
-    resource = new TargetResource(pool, target, id);
+    resource = new TargetResource(pool, target, targetType, id);
   });
 
   describe('When created', function() {
@@ -25,8 +27,17 @@ describe('TargetResource', function() {
     it('should have active = true', function() {
       expect(resource.active).to.be.true;
     });
-    it('should have "type" to be target type', function() {
-      expect(resource.type).to.be.equal(typeof target);
+    it('should have "type" to be passed type', function() {
+      expect(resource.type).to.be.equal(targetType);
+    });
+
+    describe('When resource type not specified', function() {
+      beforeEach(function() {
+        resource = new TargetResource(pool, target, null, id);
+      });
+      it('should have "type" to be target type', function() {
+        expect(resource.type).to.be.equal(typeof(target));
+      });
     });
   });
 
@@ -43,7 +54,7 @@ describe('TargetResource', function() {
       expect(data()[TARGET_DATA].poolId).to.be.equal(pool.id);
     });
     it('should contain target type', function() {
-      expect(data()[TARGET_DATA].type).to.be.equal(typeof target);
+      expect(data()[TARGET_DATA].type).to.be.equal(targetType);
     });
   }
 
@@ -98,7 +109,7 @@ describe('TargetResource', function() {
 
   describe('create()', function() {
     it('should create new instance of TargetResource', function() {
-      var resource = TargetResource.create(pool, target, '11111');
+      var resource = TargetResource.create(pool, target, null, '11111');
       expect(resource).to.be.an.instanceof(TargetResource);
       expect(resource.id).to.be.equal('11111');
     });

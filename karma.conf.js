@@ -15,12 +15,22 @@ module.exports = function(config) {
 
     // list of files / patterns to load in the browser
     /*FIXME Create separate config file for Proxies test and add script to travis-ci, how to merge coverage reports?
-    Look if possible to run one carma instance for different configs
-    */
+     Look if possible to run one carma instance for different configs
+     */
     files: [
+      'bower_components/event-dispatcher/dist/event-dispatcher.js',
       'source/core.js',
       'source/target-resource.js',
       'source/target-pool.js',
+      'source/target-pool-registry.js',
+      'source/resource-converter.js',
+      'source/request-handlers.js',
+      'source/request-target-decorator.js',
+      'source/request-factory.js',
+      'source/request-proxy-factory.js',
+      'source/request-target-internals.js',
+      'source/request-target.js',
+      'source/data-access-interface.js',
       'tests/*.spec.js'
     ],
 
