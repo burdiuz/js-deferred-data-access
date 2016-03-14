@@ -6,12 +6,13 @@ var DataAccessInterface = (function() {
     }
     var _handlers = RequestHandlers.create(proxyEnabled);
     var _factory = (proxyEnabled ? RequestProxyFactory : RequestFactory).create(_handlers);
+    var _poolRegistry = ResourcePoolRegistry.create();
     Object.defineProperties(this, {
       poolRegistry: {
-        value: TargetPoolRegistry
+        value: _poolRegistry
       },
       pool: {
-        value: TargetPoolRegistry.createPool()
+        value: _poolRegistry.createPool()
       },
       resourceConverter: {
         value: ResourceConverter.create(_factory, _handlers)
@@ -49,7 +50,7 @@ var DataAccessInterface = (function() {
   DataAccessInterface.RequestTarget = RequestTarget;
   DataAccessInterface.RequestTargetCommands = RequestTargetCommands;
   DataAccessInterface.ProxyCommands = ProxyCommands;
-  DataAccessInterface.TargetPoolEvents = TargetPool.Events;
+  DataAccessInterface.TargetPoolEvents = ResourcePool.Events;
   DataAccessInterface.ResourceConverterEvents = ResourceConverter.Events;
 
   return DataAccessInterface;

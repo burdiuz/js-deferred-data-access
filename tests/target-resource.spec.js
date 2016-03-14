@@ -90,7 +90,7 @@ describe('TargetResource', function() {
     it('should change active to false', function() {
       expect(resource.active).to.be.false;
     });
-    it('should remove itself from owner TargetPool', function() {
+    it('should remove itself from owner ResourcePool', function() {
       expect(pool.remove).to.be.calledOnce;
     });
 
@@ -101,7 +101,7 @@ describe('TargetResource', function() {
       it('should keep active on false', function() {
         expect(resource.active).to.be.false;
       });
-      it('should not call TargetPool.remove()', function() {
+      it('should not call ResourcePool.remove()', function() {
         expect(pool.remove).to.be.calledOnce;
       });
     });

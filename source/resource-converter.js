@@ -1,9 +1,7 @@
 /**
  * Created by Oleg Galaburda on 07.03.16.
  */
-//TODO If RequestTarget, RequestTargetLink or their proxies are passed, they should be converted to RAW links.
 /**
- * @type ResourceConverter
  */
 var ResourceConverter = (function() {
 
@@ -48,8 +46,8 @@ var ResourceConverter = (function() {
   function _objectToResource(data) {
     var result;
     var poolId = getResourcePoolId(data);
-    if (TargetPoolRegistry.isRegistered(poolId)) { // target object is stored in current pool
-      data = TargetPoolRegistry.get(poolId).get(getResourceId(data));
+    if (ResourcePoolRegistry.isRegistered(poolId)) { // target object is stored in current pool
+      data = ResourcePoolRegistry.get(poolId).get(getResourceId(data));
       if (data) {
         result = data.resource;
       }
