@@ -3,85 +3,98 @@
  */
 var ResourcePoolRegistry = (function() {
 
-  var _registry = {};
+  var ResourcePoolRegistryEvents = Object.freeze({
+    RESOURCE_POOL_CREATED: 'resourcePoolCreated',
+    RESOURCE_POOL_REGISTERED: 'resourcePoolRegistered',
+    RESOURCE_POOL_REMOVED: 'resourcePoolRemoved'
+  });
 
-  /**
-   *
-   * @returns {ResourcePool}
-   * @private
-   */
-  function _createPool() {
-    var pool = ResourcePool.create(this);
-    _register(pool);
-    return pool;
-  }
+  var POOLS_FIELD = Symbol('resource.pool.registry::pools');
 
-  /**
-   *
-   * @param pool {ResourcePool}
-   * @private
-   */
-  function _register(pool) {
-    _registry[pool.id] = pool;
-    pool.addEventListener(ResourcePool.Events.POOL_DESTROY, this._poolDestroyListener);
-  }
-
-  /**
-   *
-   * @param poolId {String}
-   * @returns {ResourcePool|null}
-   * @private
-   */
-  function _get(poolId) {
-    return _registry[poolId] || null;
-  }
-
-  /**
-   *
-   * @param pool {ResourcePool|String}
-   * @returns {Boolean}
-   * @private
-   */
-  function _isRegistered(pool) {
-    return _registry.hasOwnProperty(pool instanceof ResourcePool ? pool.id : String(pool));
-  }
-
-  /**
-   *
-   * @param pool {ResourcePool|String}
-   * @returns {Boolean}
-   * @private
-   */
-  function _remove(pool) {
-    var result = false;
-    pool = pool instanceof ResourcePool ? pool : _get(pool);
-    if (pool) {
-      pool.removeEventListener(ResourcePool.Events.POOL_DESTROY, this._poolDestroyListener);
-      result = delete _registry[pool.id];
-    }
-    return result;
-  }
-
-  function __poolDestroyListener(event) {
-    _remove(event.data);
+  function _poolDestroyedListener(event) {
+    this.remove(event.data);
   }
 
   /**
    * @constructor
    */
   function ResourcePoolRegistry() {
-
+    Object.defineProperty(this, POOLS_FIELD, {
+      value: {}
+    });
+    EventDispatcher.apply(this);
+    this._poolDestroyedListener = _poolDestroyedListener.bind(this);
   }
 
+  /**
+   *
+   * @returns {ResourcePool}
+   */
+  function _createPool() {
+    var pool = ResourcePool.create(this);
+    if (this.hasEventListener(ResourcePoolRegistryEvents.RESOURCE_POOL_CREATED)) {
+      this.dispatchEvent(ResourcePoolRegistryEvents.RESOURCE_POOL_CREATED, pool);
+    }
+    this.register(pool);
+    return pool;
+  }
+
+  /**
+   *
+   * @param pool {ResourcePool}
+   */
+  function _register(pool) {
+    if (this[POOLS_FIELD].hasOwnProperty(pool.id)) return;
+    this[POOLS_FIELD][pool.id] = pool;
+    pool.addEventListener(ResourcePool.Events.POOL_DESTROYED, this._poolDestroyedListener);
+    if (this.hasEventListener(ResourcePoolRegistryEvents.RESOURCE_POOL_REGISTERED)) {
+      this.dispatchEvent(ResourcePoolRegistryEvents.RESOURCE_POOL_REGISTERED, pool);
+    }
+  }
+
+  /**
+   *
+   * @param poolId {String}
+   * @returns {ResourcePool|null}
+   */
+  function _get(poolId) {
+    return this[POOLS_FIELD][poolId] || null;
+  }
+
+  /**
+   *
+   * @param pool {ResourcePool|String}
+   * @returns {Boolean}
+   */
+  function _isRegistered(pool) {
+    return this[POOLS_FIELD].hasOwnProperty(pool instanceof ResourcePool ? pool.id : String(pool));
+  }
+
+  /**
+   *
+   * @param pool {ResourcePool|String}
+   * @returns {Boolean}
+   */
+  function _remove(pool) {
+    var result = false;
+    pool = pool instanceof ResourcePool ? pool : this.get(pool);
+    if (pool) {
+      pool.removeEventListener(ResourcePool.Events.POOL_DESTROYED, this._poolDestroyedListener);
+      result = delete this[POOLS_FIELD][pool.id];
+    }
+    if (this.hasEventListener(ResourcePoolRegistryEvents.RESOURCE_POOL_REMOVED)) {
+      this.dispatchEvent(ResourcePoolRegistryEvents.RESOURCE_POOL_REMOVED, pool);
+    }
+    return result;
+  }
+
+  ResourcePoolRegistry.prototype = EventDispatcher.createNoInitPrototype();
+  ResourcePoolRegistry.prototype.constructor = ResourcePoolRegistry;
   ResourcePoolRegistry.prototype.createPool = _createPool;
   ResourcePoolRegistry.prototype.register = _register;
   ResourcePoolRegistry.prototype.get = _get;
   ResourcePoolRegistry.prototype.isRegistered = _isRegistered;
   ResourcePoolRegistry.prototype.remove = _remove;
-  /**
-   * @private
-   */
-  ResourcePoolRegistry.prototype._poolDestroyListener = __poolDestroyListener;
 
   //--------------- static
 
@@ -91,6 +104,7 @@ var ResourcePoolRegistry = (function() {
   }
 
   ResourcePoolRegistry.create = ResourcePoolRegistry_create;
+  ResourcePoolRegistry.Events = ResourcePoolRegistryEvents;
 
   return ResourcePoolRegistry;
 })();
