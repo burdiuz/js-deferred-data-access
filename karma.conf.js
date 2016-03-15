@@ -31,6 +31,7 @@ module.exports = function(config) {
       'source/request-target-internals.js',
       'source/request-target.js',
       'source/data-access-interface.js',
+      'tests/stubs.js',
       'tests/*.spec.js'
     ],
 

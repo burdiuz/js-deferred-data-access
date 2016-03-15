@@ -16,22 +16,17 @@ var ResourcePool = (function() {
    * Map private field symbol
    */
   var MAP_FIELD = Symbol('ResourcePool::map');
-  var REGISTRY_FIELD = Symbol('ResourcePool::registry');
   var validTargets = {};
 
   /**
    * @ignore
    */
-  function ResourcePool(registry) {
-    this[REGISTRY_FIELD] = registry;
+  function ResourcePool() {
     this[MAP_FIELD] = new Map();
 
     Object.defineProperties(this, {
       id: {
         value: getId()
-      },
-      registry: {
-        get: get_registry
       }
     });
 
@@ -39,10 +34,6 @@ var ResourcePool = (function() {
   }
 
   //------------ instance
-
-  function get_registry() {
-    return this[REGISTRY_FIELD];
-  }
 
   function _set(target, type) {
     var link = null;
@@ -106,11 +97,7 @@ var ResourcePool = (function() {
   function _destroy() {
     this.clear();
     // intentionally make it not usable after its destroyed
-    if (this[REGISTRY_FIELD]) {
-      this[REGISTRY_FIELD].remove(this);
-    }
     delete this[MAP_FIELD];
-    delete this[REGISTRY_FIELD];
     if (this.hasEventListener(ResourcePoolEvents.POOL_DESTROYED)) {
       this.dispatchEvent(ResourcePoolEvents.POOL_DESTROYED, this);
     }
@@ -130,7 +117,7 @@ var ResourcePool = (function() {
   //------------ static
 
   function ResourcePool_isValidTarget(target) {
-    return Boolean(target && validTargets[typeof(target)]);
+    return !isResource(target) && Boolean(target && validTargets[typeof(target)]);
   }
 
   /**
@@ -155,6 +142,10 @@ var ResourcePool = (function() {
     return ['object', 'function'];
   }
 
+  /**
+   *
+   * @returns {ResourcePool}
+   */
   function ResourcePool_create() {
     return new ResourcePool();
   }

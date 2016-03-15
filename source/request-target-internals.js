@@ -20,6 +20,30 @@ var RequestTargetInternals = (function() {
       this._resolveHandler.bind(this),
       this._rejectHandler.bind(this)
     );
+
+    Object.defineProperties(this, {
+      poolId: {
+        get: get_poolId
+      },
+      type: {
+        get: get_type
+      },
+      id: {
+        get: get_id
+      }
+    });
+  }
+
+  function get_poolId() {
+    return this.link.poolId || null;
+  }
+
+  function get_type() {
+    return  this.link.type || null;
+  }
+
+  function get_id() {
+    return  this.link.id || null;
   }
 
   function _resolveHandler(value) {

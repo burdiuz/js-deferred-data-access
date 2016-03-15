@@ -48,7 +48,7 @@ var ResourcePoolRegistry = (function() {
    * @returns {ResourcePool}
    */
   function _createPool() {
-    var pool = ResourcePool.create(this);
+    var pool = ResourcePool.create();
     if (this.hasEventListener(ResourcePoolRegistryEvents.RESOURCE_POOL_CREATED)) {
       this.dispatchEvent(ResourcePoolRegistryEvents.RESOURCE_POOL_CREATED, pool);
     }

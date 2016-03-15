@@ -25,17 +25,6 @@ describe('ResourcePool', function() {
     it('should be active', function() {
       expect(pool.isActive()).to.be.true;
     });
-
-    describe('When created with registry', function() {
-      var pool, registry;
-      beforeEach(function() {
-        registry = {};
-        pool = new ResourcePool(registry);
-      });
-      it('should have registry ', function() {
-        expect(pool.registry).to.be.equal(registry);
-      });
-    });
   });
 
   describe('When adding target', function() {
@@ -86,6 +75,24 @@ describe('ResourcePool', function() {
 
         it('should not fire event "' + ResourcePool.Events.RESOURCE_ADDED + '"', function() {
           expect(listener).to.not.be.called;
+        });
+      });
+
+      describe('When adding Resource type', function() {
+        it('should not store to pool RequestTarget', function() {
+          expect(pool.set(__createRequestTarget())).to.be.null;
+        });
+        it('should not store to pool RequestTarget wrapped with Proxy', function() {
+          expect(pool.set(__createRequestTargetProxy())).to.be.null;
+
+        });
+        it('should not store to pool TargetResource', function() {
+          expect(pool.set(__createTargetResource())).to.be.null;
+        });
+        it('should not store to pool RAW resource', function() {
+          var target = {};
+          target[TARGET_DATA] = {};
+          expect(pool.set(target)).to.be.null;
         });
       });
     });
@@ -246,19 +253,6 @@ describe('ResourcePool', function() {
         expect(function() {
           pool.set({});
         }).to.throw(Error);
-      });
-    });
-    describe('When pool with registry', function() {
-      var pool, registry;
-      beforeEach(function() {
-        registry = {
-          remove: sandbox.spy()
-        };
-        pool = new ResourcePool(registry);
-        pool.destroy();
-      });
-      it('should remove pool from registry', function() {
-        expect(registry.remove).to.be.calledOnce;
       });
     });
   });

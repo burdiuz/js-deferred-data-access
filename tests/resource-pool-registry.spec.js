@@ -149,4 +149,15 @@ describe('ResourcePoolRegistry', function() {
     });
   });
 
+  describe('ResourcePoolRegistry.defaultResourcePool', function() {
+    it('should be an instance of ResourcePool', function() {
+      expect(ResourcePoolRegistry.defaultResourcePool).to.be.an.instanceof(ResourcePool);
+    });
+    it('should throw error of destroy() attempt', function() {
+      expect(function() {
+        ResourcePoolRegistry.defaultResourcePool.destroy();
+      }).to.throw(Error);
+    });
+  });
+
 });

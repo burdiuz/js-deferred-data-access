@@ -97,10 +97,10 @@ function IConvertible() {
 
 function getRAWResource(object, pool) {
   pool = pool || ResourcePoolRegistry.defaultResourcePool;
-  var data;
+  var data = null;
   if (object instanceof TargetResource) {
     data = object.toJSON();
-  } else if (object instanceof RequestTarget) {
+  } else if (typeof(object[TARGET_INTERNALS]) === 'object') {
     data = RequestTarget.toJSON(object);
   } else if (object instanceof IConvertible || typeof(object) === 'function') {
     data = pool.set(object).toJSON();
@@ -116,8 +116,9 @@ function getResourceData(object) {
 }
 
 function getResourceId(object) {
-  var id;
-  if (object instanceof TargetResource || object instanceof RequestTarget) {
+  var id = null;
+  //if (object instanceof TargetResource || object instanceof RequestTarget) {
+  if (typeof(object[TARGET_INTERNALS]) === 'object') {
     id = object[TARGET_INTERNALS].id;
   } else if (isResource(object)) {
     id = object[TARGET_DATA].id;
@@ -126,16 +127,20 @@ function getResourceId(object) {
 }
 
 function getResourcePoolId(object) {
-  var poolId;
-  if (isResource(object)) {
+  var poolId = null;
+  if (typeof(object[TARGET_INTERNALS]) === 'object') {
+    poolId = object[TARGET_INTERNALS].poolId;
+  } else if (isResource(object)) {
     poolId = object[TARGET_DATA].poolId;
   }
   return poolId;
 }
 
 function getResourceType(object) {
-  var type;
-  if (isResource(object)) {
+  var type = null;
+  if (typeof(object[TARGET_INTERNALS]) === 'object') {
+    type = object[TARGET_INTERNALS].type;
+  } else if (isResource(object)) {
     type = object[TARGET_DATA].type;
   }
   return type;
@@ -144,7 +149,14 @@ function getResourceType(object) {
 function isResource(object) {
   return object instanceof TargetResource ||
     object instanceof RequestTarget ||
-    (object && typeof(object[TARGET_DATA]) === 'object' && object[TARGET_DATA]);
+    (object && (
+      // this case for RequestTargets and TargetResources which contain data in TARGET_INTERNALS Symbol
+      // We check for their types above but in cases when Proxies are enabled their type will be Function
+      // and verification will come to this case
+      typeof(object[TARGET_INTERNALS]) === 'object' ||
+        // this case for RAW resources passed via JSON conversion, look like {'resource::data': {id: '1111', poolId: '22222'}}
+      typeof(object[TARGET_DATA]) === 'object'
+    ));
 }
 
 function isResourceConvertible(data) {

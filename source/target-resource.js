@@ -11,6 +11,7 @@ var TargetResource = (function() {
       value: {
         active: true,
         pool: _pool,
+        poolId: _pool ? _pool.id : null,
         resource: _resource,
         type: resourceType,
         id: _id
@@ -48,7 +49,7 @@ var TargetResource = (function() {
   }
 
   function get_poolId() {
-    return this[TARGET_INTERNALS].pool ? this[TARGET_INTERNALS].pool.id : null;
+    return this[TARGET_INTERNALS].poolId;
   }
 
   function get_resource() {

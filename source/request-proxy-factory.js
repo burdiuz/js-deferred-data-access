@@ -15,7 +15,7 @@ var RequestProxyFactory = (function() {
     'prototype': true
   };
 
-  function createProxy(target, handlers) {
+  function applyProxy(target, handlers) {
     function RequestTargetProxy() {
     }
 
@@ -73,7 +73,7 @@ var RequestProxyFactory = (function() {
       if (name in target || name in EXCLUSIONS || typeof(name) === 'symbol') {
         value = target[name];
       } else {
-        value = createProxy(
+        value = applyProxy(
           target.get(name),
           handlers
         );
@@ -82,7 +82,7 @@ var RequestProxyFactory = (function() {
     }
 
     function Proxy_apply(wrapper, thisValue, args) {
-      return createProxy(
+      return applyProxy(
         //INFO command is null because target is function we are calling now,
         // thisValue is being ignored for now
         wrapper.target.apply(null, args),
@@ -114,7 +114,7 @@ var RequestProxyFactory = (function() {
   function _create(promise) {
     var instance = this[FACTORY_FIELD].create(promise);
     if (this[FACTORY_HANDLERS_FIELD].available) {
-      instance = createProxy(instance, PROXY_HANDLERS);
+      instance = applyProxy(instance, PROXY_HANDLERS);
     }
     return instance;
   }
@@ -125,11 +125,16 @@ var RequestProxyFactory = (function() {
 
   //------------------- static
 
+  function RequestProxyFactory_applyProxy(target) {
+    return applyProxy(target, PROXY_HANDLERS);
+  }
+
   function RequestProxyFactory_create(useProxies, handlers) {
     return new RequestProxyFactory(useProxies, handlers);
   }
 
   RequestProxyFactory.create = RequestProxyFactory_create;
+  RequestProxyFactory.applyProxy = RequestProxyFactory_applyProxy;
 
   return RequestProxyFactory;
 })();
