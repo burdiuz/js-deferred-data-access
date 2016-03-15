@@ -7,6 +7,8 @@ var ResourceConverter = (function() {
 
   var FACTORY_FIELD = Symbol('resource.converter::factory');
 
+  var POOL_FIELD = Symbol('resource.converter::resourcePool');
+
   var ResourceConverterEvents = Object.freeze({
     RESOURCE_CREATED: 'resourceCreated',
     RESOURCE_CONVERTED: 'resourceConverted'
@@ -17,8 +19,9 @@ var ResourceConverter = (function() {
    * @constructor
    * @extends EventDispatcher
    */
-  function ResourceConverter(factory, handlers) {
+  function ResourceConverter(factory, pool, handlers) {
     this[FACTORY_FIELD] = factory;
+    this[POOL_FIELD] = pool;
     EventDispatcher.apply(this);
     if (handlers) {
       handlers.setConverter(this);
@@ -28,9 +31,7 @@ var ResourceConverter = (function() {
   function _resourceToObject(data) {
     var result;
     if (isResourceConvertible(data)) {
-      //INFO this will never be executed with Proxies because Proxy target is wrapper function,
-      // so `proxy instanceof RequestTarget` will give false
-      result = getRAWResource(data);
+      result = getRAWResource(data, this[POOL_FIELD]);
     } else if (typeof(data.toJSON) === 'function') {
       result = data.toJSON();
     }
@@ -147,8 +148,8 @@ var ResourceConverter = (function() {
    * @param handlers {RequestHandlers}
    * @returns {ResourceConverter}
    */
-  function ResourceConverter_create(factory, handlers) {
-    return new ResourceConverter(factory, handlers);
+  function ResourceConverter_create(factory, pool, handlers) {
+    return new ResourceConverter(factory, pool, handlers);
   }
 
   ResourceConverter.create = ResourceConverter_create;

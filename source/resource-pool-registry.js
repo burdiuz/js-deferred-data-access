@@ -17,6 +17,21 @@ var ResourcePoolRegistry = (function() {
 
   /**
    * @constructor
+   * @extends {ResourcePool}
+   * @private
+   */
+  function _DefaultResourcePool() {
+    ResourcePool.apply(this);
+    //INFO default ResourcePool should not be destroyable;
+    this.destroy = function() {
+      throw new Error('Default ResourcePool cannot be destroyed.');
+    };
+  }
+
+  _DefaultResourcePool.prototype = ResourcePool.prototype;
+
+  /**
+   * @constructor
    */
   function ResourcePoolRegistry() {
     Object.defineProperty(this, POOLS_FIELD, {
@@ -24,6 +39,8 @@ var ResourcePoolRegistry = (function() {
     });
     EventDispatcher.apply(this);
     this._poolDestroyedListener = _poolDestroyedListener.bind(this);
+    // every registry should keep default pool, so you can access from anywhere
+    this.register(ResourcePoolRegistry.defaultResourcePool);
   }
 
   /**
@@ -105,6 +122,7 @@ var ResourcePoolRegistry = (function() {
 
   ResourcePoolRegistry.create = ResourcePoolRegistry_create;
   ResourcePoolRegistry.Events = ResourcePoolRegistryEvents;
+  ResourcePoolRegistry.defaultResourcePool = new _DefaultResourcePool();
 
   return ResourcePoolRegistry;
 })();

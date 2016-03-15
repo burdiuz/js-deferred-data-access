@@ -95,23 +95,15 @@ function IConvertible() {
 
 }
 
-function getPoolResource(id) {
-  var data = {};
-  data[TARGET_DATA] = {
-    id: id || 0,
-    poolId: DataAccessInterface.pool.id
-  };
-  return data;
-}
-
-function getRAWResource(object) {
+function getRAWResource(object, pool) {
+  pool = pool || ResourcePoolRegistry.defaultResourcePool;
   var data;
   if (object instanceof TargetResource) {
     data = object.toJSON();
   } else if (object instanceof RequestTarget) {
     data = RequestTarget.toJSON(object);
   } else if (object instanceof IConvertible || typeof(object) === 'function') {
-    data = DataAccessInterface.pool.set(object).toJSON();
+    data = pool.set(object).toJSON();
   } else if (isResource(object)) {
     data = object;
   }

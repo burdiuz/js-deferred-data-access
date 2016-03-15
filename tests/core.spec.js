@@ -70,3 +70,113 @@ describe('createDeferred()', function() {
 
   });
 });
+
+describe('areProxiesAvailable()', function() {
+  var originalProxyConstructor;
+  before(function() {
+    originalProxyConstructor = window.Proxy;
+    window.Proxy = null;
+  });
+  after(function() {
+    window.Proxy = originalProxyConstructor;
+  });
+  it('should return true when proxies are available', function() {
+    window.Proxy = function() {
+    };
+    expect(areProxiesAvailable()).to.be.true;
+  });
+  it('should return true when proxies are available', function() {
+    window.Proxy = null;
+    expect(areProxiesAvailable()).to.be.false;
+  });
+});
+
+describe('IConvertible()', function() {
+  it('should be instantiable', function() {
+    expect(new IConvertible()).to.be.an('object');
+  });
+});
+
+describe('getRAWResource()', function() {
+  beforeEach(function() {
+
+  });
+
+  describe('When TargetResource passed', function() {
+    beforeEach(function() {
+
+    });
+  });
+
+  describe('When RequestTarget passed', function() {
+    beforeEach(function() {
+
+    });
+  });
+
+  describe('When IConvertible passed', function() {
+    beforeEach(function() {
+
+    });
+
+    describe('When passed with ResourcePool', function() {
+      beforeEach(function() {
+
+      });
+    });
+
+    describe('When passed without ResourcePool', function() {
+      beforeEach(function() {
+
+      });
+    });
+  });
+
+  describe('When Function passed', function() {
+    beforeEach(function() {
+
+    });
+  });
+
+  describe('When raw resource data passed', function() {
+    beforeEach(function() {
+
+    });
+  });
+});
+
+describe('getResourceData()', function() {
+  beforeEach(function() {
+
+  });
+});
+
+describe('getResourceId()', function() {
+  beforeEach(function() {
+
+  });
+});
+
+describe('getResourcePoolId()', function() {
+  beforeEach(function() {
+
+  });
+});
+
+describe('getResourceType()', function() {
+  beforeEach(function() {
+
+  });
+});
+
+describe('isResource()', function() {
+  beforeEach(function() {
+
+  });
+});
+
+describe('isResourceConvertible()', function() {
+  beforeEach(function() {
+
+  });
+});

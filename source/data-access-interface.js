@@ -7,15 +7,16 @@ var DataAccessInterface = (function() {
     var _handlers = RequestHandlers.create(proxyEnabled);
     var _factory = (proxyEnabled ? RequestProxyFactory : RequestFactory).create(_handlers);
     var _poolRegistry = ResourcePoolRegistry.create();
+    var _pool = ResourcePoolRegistry.defaultResourcePool;
     Object.defineProperties(this, {
       poolRegistry: {
         value: _poolRegistry
       },
       pool: {
-        value: _poolRegistry.createPool()
+        value: _pool
       },
       resourceConverter: {
-        value: ResourceConverter.create(_factory, _handlers)
+        value: ResourceConverter.create(_factory, _pool, _handlers)
       },
       factory: {
         value: _factory
