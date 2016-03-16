@@ -20,6 +20,8 @@ var RequestHandlers = (function() {
     var _converter;
     var _available = false;
 
+    proxyEnabled = Boolean(proxyEnabled);
+
     Object.defineProperties(this, {
       isTemporary: {
         get: function() {
@@ -28,6 +30,9 @@ var RequestHandlers = (function() {
         set: function(value) {
           _isTemporary = typeof(value) === 'function' ? value : Default_isTemporary;
         }
+      },
+      proxyEnabled: {
+        value: proxyEnabled
       },
       available: {
         get: function() {
@@ -98,7 +103,7 @@ var RequestHandlers = (function() {
     for (var name in handlers) {
       if (handlers.hasOwnProperty(name)) {
         if (typeof(handlers[name]) === 'function') {
-          if (name in CommandType) {
+          if (name in CommandType.reserved) {
             throw new Error('Name "' + name + '" is reserved and cannot be used as command handler.');
           } else {
             names.push(name);

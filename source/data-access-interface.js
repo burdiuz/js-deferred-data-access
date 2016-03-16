@@ -1,13 +1,20 @@
 var DataAccessInterface = (function() {
 
-  function DataAccessInterface(proxyEnabled) {
+  function DataAccessInterface(proxyEnabled, _poolRegistry, _pool) {
     if (proxyEnabled && !areProxiesAvailable()) {
       throw new Error('Proxies are not available in this environment');
     }
     var _handlers = RequestHandlers.create(proxyEnabled);
     var _factory = (proxyEnabled ? RequestProxyFactory : RequestFactory).create(_handlers);
-    var _poolRegistry = ResourcePoolRegistry.create();
-    var _pool = ResourcePoolRegistry.defaultResourcePool;
+    _poolRegistry = _poolRegistry || ResourcePoolRegistry.create();
+    if (_pool) {
+      //FIXME it should listen for removed/destroyed event and create replacement pool automatically
+      _poolRegistry.register(_pool);
+    } else if (_pool !== undefined) {
+      _pool = _poolRegistry.createPool();
+    } else {
+      _pool = ResourcePoolRegistry.defaultResourcePool;
+    }
     Object.defineProperties(this, {
       poolRegistry: {
         value: _poolRegistry
@@ -22,7 +29,9 @@ var DataAccessInterface = (function() {
         value: _factory
       },
       proxyEnabled: {
-        value: proxyEnabled
+        get: function() {
+          return _handlers.proxyEnabled;
+        }
       }
     });
 

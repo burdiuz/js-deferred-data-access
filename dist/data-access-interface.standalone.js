@@ -54,10 +54,6 @@
       return Event;
     })();
     
-    function isObject(value) {
-      return (typeof value === 'object') && (value !== null);
-    }
-    
     var EventListeners = (function() {
       function add(eventType, handler, priority) {
         var handlers = createList(eventType, priority, this._listeners);
@@ -188,77 +184,112 @@
     
       return EventListeners;
     })();
+    
+    var EVENTDISPATCHER_NOINIT = {};
+    
     /**
      *
      * @param eventPreprocessor {?Function}
      * @constructor
      */
-    function EventDispatcher(eventPreprocessor) {
-      /**
-       * @type {EventListeners}
-       */
-      var _listeners = new EventListeners();
+    var EventDispatcher = (function() {
     
-      function addEventListener(eventType, listener, priority) {
-        _listeners.add(eventType, listener, -priority || 0);
-      }
+      var LISTENERS_FIELD = Symbol('event.dispatcher::listeners');
     
-      function hasEventListener(eventType) {
-        return _listeners.has(eventType);
-      }
+      var PREPROCESSOR_FIELD = Symbol('event.dispatcher::preprocessor');
     
-      function removeEventListener(eventType, listener) {
-        _listeners.remove(eventType, listener);
-      }
-    
-      function removeAllEventListeners(eventType) {
-        _listeners.removeAll(eventType);
-      }
-    
-      function dispatchEvent(event, data) {
-        var eventObject = EventDispatcher.getEvent(event, data);
-        if (eventPreprocessor) {
-          eventObject = eventPreprocessor.call(this, eventObject);
+      function EventDispatcher(eventPreprocessor) {
+        if (eventPreprocessor === EVENTDISPATCHER_NOINIT) {
+          // create noinit prototype
+          return;
         }
-        _listeners.call(eventObject);
+        /**
+         * @type {EventListeners}
+         */
+        Object.defineProperty(this, LISTENERS_FIELD, {
+          value: new EventListeners()
+        });
+        Object.defineProperty(this, PREPROCESSOR_FIELD, {
+          value: eventPreprocessor
+        });
       }
     
-      this.addEventListener = addEventListener;
-      this.hasEventListener = hasEventListener;
-      this.removeEventListener = removeEventListener;
-      this.removeAllEventListeners = removeAllEventListeners;
-      this.dispatchEvent = dispatchEvent;
-    }
     
-    function getEvent(eventOrType, optionalData) {
-      var event = eventOrType;
-      if (!EventDispatcher.isObject(eventOrType)) {
-        event = new EventDispatcher.Event(String(eventOrType), optionalData);
+      function _addEventListener(eventType, listener, priority) {
+        this[LISTENERS_FIELD].add(eventType, listener, -priority || 0);
       }
-      return event;
-    }
     
-    /*
-     function setupOptional(target, name, value) {
-     var cleaner = null;
-     if (name in target) {
-     cleaner = function() {
-     };
-     } else {
-     target[name] = value;
-     cleaner = function() {
-     delete target[name];
-     };
-     }
-     return cleaner;
-     }
-     EventDispatcher.setupOptional = setupOptional;
-     */
+      function _hasEventListener(eventType) {
+        return this[LISTENERS_FIELD].has(eventType);
+      }
     
-    EventDispatcher.isObject = isObject;
+      function _removeEventListener(eventType, listener) {
+        this[LISTENERS_FIELD].remove(eventType, listener);
+      }
     
-    EventDispatcher.getEvent = getEvent;
-    EventDispatcher.Event = Event;
+      function _removeAllEventListeners(eventType) {
+        this[LISTENERS_FIELD].removeAll(eventType);
+      }
+    
+      function _dispatchEvent(event, data) {
+        var eventObject = EventDispatcher.getEvent(event, data);
+        if (this[PREPROCESSOR_FIELD]) {
+          eventObject = this[PREPROCESSOR_FIELD].call(this, eventObject);
+        }
+        this[LISTENERS_FIELD].call(eventObject);
+      }
+    
+      EventDispatcher.prototype.addEventListener = _addEventListener;
+      EventDispatcher.prototype.hasEventListener = _hasEventListener;
+      EventDispatcher.prototype.removeEventListener = _removeEventListener;
+      EventDispatcher.prototype.removeAllEventListeners = _removeAllEventListeners;
+      EventDispatcher.prototype.dispatchEvent = _dispatchEvent;
+    
+      function EventDispatcher_isObject(value) {
+        return (typeof value === 'object') && (value !== null);
+      }
+    
+      function EventDispatcher_getEvent(eventOrType, optionalData) {
+        var event = eventOrType;
+        if (!EventDispatcher.isObject(eventOrType)) {
+          event = new EventDispatcher.Event(String(eventOrType), optionalData);
+        }
+        return event;
+      }
+    
+      function EventDispatcher_create(eventPreprocessor) {
+        return new EventDispatcher(eventPreprocessor);
+      }
+    
+      function EventDispatcher_createNoInitPrototype() {
+        return new EventDispatcher(EVENTDISPATCHER_NOINIT);
+      }
+    
+      /*
+       function setupOptional(target, name, value) {
+       var cleaner = null;
+       if (name in target) {
+       cleaner = function() {
+       };
+       } else {
+       target[name] = value;
+       cleaner = function() {
+       delete target[name];
+       };
+       }
+       return cleaner;
+       }
+       EventDispatcher.setupOptional = setupOptional;
+       */
+    
+      EventDispatcher.isObject = EventDispatcher_isObject;
+    
+      EventDispatcher.getEvent = EventDispatcher_getEvent;
+      EventDispatcher.create = EventDispatcher_create;
+      EventDispatcher.createNoInitPrototype = EventDispatcher_createNoInitPrototype;
+      EventDispatcher.Event = Event;
+      return EventDispatcher;
+    })();
     
     return EventDispatcher;
   })();
@@ -360,23 +391,15 @@
   
   }
   
-  function getPoolResource(id) {
-    var data = {};
-    data[TARGET_DATA] = {
-      id: id || 0,
-      poolId: DataAccessInterface.pool.id
-    };
-    return data;
-  }
-  
-  function getRAWResource(object) {
-    var data;
+  function getRAWResource(object, pool) {
+    pool = pool || ResourcePoolRegistry.defaultResourcePool;
+    var data = null;
     if (object instanceof TargetResource) {
       data = object.toJSON();
-    } else if (object instanceof RequestTarget) {
+    } else if (typeof(object[TARGET_INTERNALS]) === 'object') {
       data = RequestTarget.toJSON(object);
     } else if (object instanceof IConvertible || typeof(object) === 'function') {
-      data = DataAccessInterface.pool.set(object).toJSON();
+      data = pool.set(object).toJSON();
     } else if (isResource(object)) {
       data = object;
     }
@@ -389,8 +412,9 @@
   }
   
   function getResourceId(object) {
-    var id;
-    if (object instanceof TargetResource || object instanceof RequestTarget) {
+    var id = null;
+    //if (object instanceof TargetResource || object instanceof RequestTarget) {
+    if (typeof(object[TARGET_INTERNALS]) === 'object') {
       id = object[TARGET_INTERNALS].id;
     } else if (isResource(object)) {
       id = object[TARGET_DATA].id;
@@ -399,16 +423,20 @@
   }
   
   function getResourcePoolId(object) {
-    var poolId;
-    if (isResource(object)) {
+    var poolId = null;
+    if (typeof(object[TARGET_INTERNALS]) === 'object') {
+      poolId = object[TARGET_INTERNALS].poolId;
+    } else if (isResource(object)) {
       poolId = object[TARGET_DATA].poolId;
     }
     return poolId;
   }
   
   function getResourceType(object) {
-    var type;
-    if (isResource(object)) {
+    var type = null;
+    if (typeof(object[TARGET_INTERNALS]) === 'object') {
+      type = object[TARGET_INTERNALS].type;
+    } else if (isResource(object)) {
       type = object[TARGET_DATA].type;
     }
     return type;
@@ -417,7 +445,14 @@
   function isResource(object) {
     return object instanceof TargetResource ||
       object instanceof RequestTarget ||
-      (object && typeof(object[TARGET_DATA]) === 'object' && object[TARGET_DATA]);
+      (object && (
+        // this case for RequestTargets and TargetResources which contain data in TARGET_INTERNALS Symbol
+        // We check for their types above but in cases when Proxies are enabled their type will be Function
+        // and verification will come to this case
+        typeof(object[TARGET_INTERNALS]) === 'object' ||
+          // this case for RAW resources passed via JSON conversion, look like {'resource::data': {id: '1111', poolId: '22222'}}
+        typeof(object[TARGET_DATA]) === 'object'
+      ));
   }
   
   function isResourceConvertible(data) {
@@ -437,6 +472,7 @@
         value: {
           active: true,
           pool: _pool,
+          poolId: _pool ? _pool.id : null,
           resource: _resource,
           type: resourceType,
           id: _id
@@ -474,7 +510,7 @@
     }
   
     function get_poolId() {
-      return this[TARGET_INTERNALS].pool ? this[TARGET_INTERNALS].pool.id : null;
+      return this[TARGET_INTERNALS].poolId;
     }
   
     function get_resource() {
@@ -518,8 +554,8 @@
     TargetResource.prototype.toJSON = _toJSON;
     TargetResource.prototype.destroy = _destroy;
   
-    function TargetResource_create(pool, target, id) {
-      return new TargetResource(pool, target, id || getId());
+    function TargetResource_create(pool, target, targetType, id) {
+      return new TargetResource(pool, target, targetType, id || getId());
     }
   
     TargetResource.create = TargetResource_create;
@@ -527,264 +563,18 @@
     return TargetResource;
   })();
   
-  var TargetPool = (function() {
-  
-    var TargetPoolEvents = Object.freeze({
-      RESOURCE_ADDED: 'resourceAdded',
-      RESOURCE_REMOVED: 'resourceRemoved',
-      POOL_CLEAR: 'poolClear',
-      POOL_CLEARED: 'poolCleared',
-      POOL_DESTROY: 'poolDestroy',
-      POOL_DESTROYED: 'poolDestroyed'
-    });
-  
-    /**
-     * Map private field symbol
-     */
-    var MAP_FIELD = Symbol('TargetPool::map');
-    var validTargets = {};
-  
-    /**
-     * @constructor
-     * @extends EventDispatcher
-     */
-    function TargetPool() {
-      this[MAP_FIELD] = new Map();
-  
-      Object.defineProperties(this, {
-        id: {
-          value: getId()
-        }
-      });
-  
-      EventDispatcher.apply(this);
-    }
-  
-    //------------ instance
-  
-    function _set(target, type) {
-      var link = null;
-      if (TargetPool.isValidTarget(target)) {
-        if (this[MAP_FIELD].has(target)) {
-          link = this[MAP_FIELD].get(target);
-        } else {
-          link = TargetResource.create(this, target, type || typeof(target));
-          this[MAP_FIELD].set(link.id, link);
-          this[MAP_FIELD].set(target, link);
-          if (this.hasEventListener(TargetPoolEvents.RESOURCE_ADDED)) {
-            this.dispatchEvent(TargetPoolEvents.RESOURCE_ADDED, link);
-          }
-        }
-      }
-      return link;
-    };
-  
-    function _has(target) {
-      return this[MAP_FIELD].has(target);
-    }
-  
-    function _get(target) {
-      return this[MAP_FIELD].get(target);
-    }
-  
-    function _remove(target) {
-      var link = this[MAP_FIELD].get(target);
-      if (link) {
-        this[MAP_FIELD].delete(link.id);
-        this[MAP_FIELD].delete(link.resource);
-        if (this.hasEventListener(TargetPoolEvents.RESOURCE_REMOVED)) {
-          this.dispatchEvent(TargetPoolEvents.RESOURCE_REMOVED, link);
-        }
-        link.destroy();
-      }
-    }
-  
-    function _clear() {
-      if (this.hasEventListener(TargetPoolEvents.POOL_CLEAR)) {
-        this.dispatchEvent(TargetPoolEvents.POOL_CLEAR, this);
-      }
-      var list = this[MAP_FIELD].keys();
-      var length = list.length;
-      for (var index = 0; index < length; index++) {
-        var key = list[index];
-        if (typeof(key) === 'string') {
-          var link = this[MAP_FIELD].get(key);
-          link.destroy();
-        }
-      }
-      this[MAP_FIELD].clear();
-      if (this.hasEventListener(TargetPoolEvents.POOL_CLEARED)) {
-        this.dispatchEvent(TargetPoolEvents.POOL_CLEARED, this);
-      }
-    }
-  
-    function _destroy() {
-      if (this.hasEventListener(TargetPoolEvents.POOL_DESTROY)) {
-        this.dispatchEvent(TargetPoolEvents.POOL_DESTROY, this);
-      }
-      this.clear();
-      // intentionally make it not usable after its destroyed
-      this[MAP_FIELD] = null;
-      TargetPoolRegistry.remove(this);
-      if (this.hasEventListener(TargetPoolEvents.POOL_DESTROYED)) {
-        this.dispatchEvent(TargetPoolEvents.POOL_DESTROYED, this);
-      }
-    }
-  
-    TargetPool.prototype = EventDispatcher.createNoInitPrototype();
-    TargetPool.prototype.constructor = TargetPool;
-  
-    TargetPool.prototype.set = _set;
-    TargetPool.prototype.has = _has;
-    TargetPool.prototype.get = _get;
-    TargetPool.prototype.remove = _remove;
-    TargetPool.prototype.clear = _clear;
-    TargetPool.prototype.destroy = _destroy;
-  
-    //------------ static
-  
-    function TargetPool_isValidTarget(target) {
-      return target && validTargets[typeof(target)];
-    };
-  
-    /**
-     *
-     * @param list {string[]} Types acceptable as resource targets to be stored in TargetPool
-     * @returns void
-     */
-    function TargetPool_setValidTargets(list) {
-      validTargets = {};
-      var length = list.length;
-      for (var index = 0; index < length; index++) {
-        validTargets[list[index]] = true;
-      }
-    }
-  
-    /**
-     *
-     * @returns {string[]} Default types acceptable by TargetPool
-     * @returns Array
-     */
-    function TargetPool_getDefaultValidTargets() {
-      return ['object', 'function'];
-    }
-  
-    function TargetPool_create() {
-      return new TargetPool();
-    }
-  
-    TargetPool.isValidTarget = TargetPool_isValidTarget;
-    TargetPool.setValidTargets = TargetPool_setValidTargets;
-    TargetPool.getDefaultValidTargets = TargetPool_getDefaultValidTargets;
-    TargetPool.create = TargetPool_create;
-    TargetPool.Events = TargetPoolEvents;
-  
-    // setting default valid targets
-    TargetPool.setValidTargets(TargetPool.getDefaultValidTargets());
-  
-    return TargetPool;
-  })();
-  
-  /**
-   * Global registry per environment
-   * @type _TargetPoolRegistry
-   */
-  var TargetPoolRegistry = (function() {
-  
-    var _registry = {};
-  
-    /**
-     *
-     * @returns {TargetPool}
-     * @private
-     */
-    function _createPool() {
-      var pool = TargetPool.create();
-      _register(pool);
-      return pool;
-    }
-  
-    /**
-     *
-     * @param pool {TargetPool}
-     * @private
-     */
-    function _register(pool) {
-      _registry[pool.id] = pool;
-      pool.addEventListener(TargetPool.Events.POOL_DESTROY, this._poolDestroyListener);
-    }
-  
-    /**
-     *
-     * @param poolId {String}
-     * @returns {TargetPool|null}
-     * @private
-     */
-    function _get(poolId) {
-      return _registry[poolId] || null;
-    }
-  
-    /**
-     *
-     * @param pool {TargetPool|String}
-     * @returns {Boolean}
-     * @private
-     */
-    function _isRegistered(pool) {
-      return _registry.hasOwnProperty(pool instanceof TargetPool ? pool.id : String(pool));
-    }
-  
-    /**
-     *
-     * @param pool {TargetPool|String}
-     * @returns {Boolean}
-     * @private
-     */
-    function _remove(pool) {
-      var result = false;
-      pool = pool instanceof TargetPool ? pool : _get(pool);
-      if (pool) {
-        pool.removeEventListener(TargetPool.Events.POOL_DESTROY, this._poolDestroyListener);
-        result = delete _registry[pool.id];
-      }
-      return result;
-    }
-  
-    function __poolDestroyListener(event) {
-      _remove(event.data);
-    }
-  
-    /**
-     * @private
-     * @constructor
-     */
-    function _TargetPoolRegistry() {
-  
-    }
-  
-    _TargetPoolRegistry.prototype.createPool = _createPool;
-    _TargetPoolRegistry.prototype.register = _register;
-    _TargetPoolRegistry.prototype.get = _get;
-    _TargetPoolRegistry.prototype.isRegistered = _isRegistered;
-    _TargetPoolRegistry.prototype.remove = _remove;
-    /**
-     * @private
-     */
-    _TargetPoolRegistry.prototype._poolDestroyListener = __poolDestroyListener;
-  
-    return new _TargetPoolRegistry();
-  })();
-  
+  //=include target-pool.js
+  //=include target-pool-registry.js
   /**
    * Created by Oleg Galaburda on 07.03.16.
    */
-  //TODO If RequestTarget, RequestTargetLink or their proxies are passed, they should be converted to RAW links.
   /**
-   * @type ResourceConverter
    */
   var ResourceConverter = (function() {
   
     var FACTORY_FIELD = Symbol('resource.converter::factory');
+  
+    var POOL_FIELD = Symbol('resource.converter::resourcePool');
   
     var ResourceConverterEvents = Object.freeze({
       RESOURCE_CREATED: 'resourceCreated',
@@ -796,8 +586,9 @@
      * @constructor
      * @extends EventDispatcher
      */
-    function ResourceConverter(factory, handlers) {
+    function ResourceConverter(factory, pool, handlers) {
       this[FACTORY_FIELD] = factory;
+      this[POOL_FIELD] = pool;
       EventDispatcher.apply(this);
       if (handlers) {
         handlers.setConverter(this);
@@ -807,9 +598,7 @@
     function _resourceToObject(data) {
       var result;
       if (isResourceConvertible(data)) {
-        //INFO this will never be executed with Proxies because Proxy target is wrapper function,
-        // so `proxy instanceof RequestTarget` will give false
-        result = getRAWResource(data);
+        result = getRAWResource(data, this[POOL_FIELD]);
       } else if (typeof(data.toJSON) === 'function') {
         result = data.toJSON();
       }
@@ -825,8 +614,8 @@
     function _objectToResource(data) {
       var result;
       var poolId = getResourcePoolId(data);
-      if (TargetPoolRegistry.isRegistered(poolId)) { // target object is stored in current pool
-        data = TargetPoolRegistry.get(poolId).get(getResourceId(data));
+      if (ResourcePoolRegistry.isRegistered(poolId)) { // target object is stored in current pool
+        data = ResourcePoolRegistry.get(poolId).get(getResourceId(data));
         if (data) {
           result = data.resource;
         }
@@ -926,8 +715,8 @@
      * @param handlers {RequestHandlers}
      * @returns {ResourceConverter}
      */
-    function ResourceConverter_create(factory, handlers) {
-      return new ResourceConverter(factory, handlers);
+    function ResourceConverter_create(factory, pool, handlers) {
+      return new ResourceConverter(factory, pool, handlers);
     }
   
     ResourceConverter.create = ResourceConverter_create;
@@ -1197,6 +986,30 @@
         this._resolveHandler.bind(this),
         this._rejectHandler.bind(this)
       );
+  
+      Object.defineProperties(this, {
+        poolId: {
+          get: get_poolId
+        },
+        type: {
+          get: get_type
+        },
+        id: {
+          get: get_id
+        }
+      });
+    }
+  
+    function get_poolId() {
+      return this.link.poolId || null;
+    }
+  
+    function get_type() {
+      return  this.link.type || null;
+    }
+  
+    function get_id() {
+      return  this.link.id || null;
     }
   
     function _resolveHandler(value) {
@@ -1466,15 +1279,17 @@
       }
       var _handlers = RequestHandlers.create(proxyEnabled);
       var _factory = (proxyEnabled ? RequestProxyFactory : RequestFactory).create(_handlers);
+      var _poolRegistry = ResourcePoolRegistry.create();
+      var _pool = ResourcePoolRegistry.defaultResourcePool;
       Object.defineProperties(this, {
         poolRegistry: {
-          value: TargetPoolRegistry
+          value: _poolRegistry
         },
         pool: {
-          value: TargetPoolRegistry.createPool()
+          value: _pool
         },
         resourceConverter: {
-          value: ResourceConverter.create(_factory, _handlers)
+          value: ResourceConverter.create(_factory, _pool, _handlers)
         },
         factory: {
           value: _factory
@@ -1509,7 +1324,7 @@
     DataAccessInterface.RequestTarget = RequestTarget;
     DataAccessInterface.RequestTargetCommands = RequestTargetCommands;
     DataAccessInterface.ProxyCommands = ProxyCommands;
-    DataAccessInterface.TargetPoolEvents = TargetPool.Events;
+    DataAccessInterface.TargetPoolEvents = ResourcePool.Events;
     DataAccessInterface.ResourceConverterEvents = ResourceConverter.Events;
   
     return DataAccessInterface;

@@ -23,6 +23,7 @@ var RequestTargetDecorator = (function() {
     }
 
     function _decorate(request) {
+      if (!_handlers.available) return;
       var handlers = _handlers.getHandlers();
       for (var name in handlers) {
         if (handlers.hasOwnProperty(name)) {
@@ -42,8 +43,8 @@ var RequestTargetDecorator = (function() {
    * @returns {RequestTargetDecorator}
    * @constructor
    */
-  function RequestTargetDecorator_create(handlers) {
-    return new RequestTargetDecorator(handlers);
+  function RequestTargetDecorator_create(factory, handlers) {
+    return new RequestTargetDecorator(factory, handlers);
   }
 
   RequestTargetDecorator.create = RequestTargetDecorator_create;

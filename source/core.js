@@ -1,9 +1,12 @@
 var CommandType = Object.freeze({
-  //INFO Exposed Promise method, cannot be overwritten by command
-  THEN: 'then',
-  //INFO Exposed Promise method, cannot be overwritten by command
-  CATCH: 'catch',
-  DESTROY_TARGET: '::destroy.resource'
+  DESTROY_TARGET: '::destroy.resource',
+  reserved: Object.freeze({
+    //INFO Exposed Promise method, cannot be overwritten by command
+    then: true,
+    //INFO Exposed Promise method, cannot be overwritten by command
+    catch: true,
+    '::destroy.resource': true
+  })
 });
 
 var TargetStatus = Object.freeze({

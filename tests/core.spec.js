@@ -98,13 +98,6 @@ describe('IConvertible()', function() {
 });
 
 describe('getRAWResource()', function() {
-  var sandbox;
-  beforeEach(function() {
-    sandbox = sinon.sandbox.create();
-  });
-  afterEach(function() {
-    sandbox.restore();
-  });
 
   after(function() {
     ResourcePoolRegistry.defaultResourcePool.clear();
