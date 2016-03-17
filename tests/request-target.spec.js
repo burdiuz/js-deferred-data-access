@@ -1,4 +1,3 @@
-'use strict';
 describe('RequestTarget', function() {
   describe('get()', function() {
 

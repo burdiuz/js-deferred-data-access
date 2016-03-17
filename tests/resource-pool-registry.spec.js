@@ -1,4 +1,3 @@
-'use strict';
 describe('ResourcePoolRegistry', function() {
   var registry;
   /**

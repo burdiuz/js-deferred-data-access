@@ -1,4 +1,3 @@
-'use strict';
 describe('RequestTargetDecorator', function() {
   var decorator, resource, factory, handlers;
 
@@ -17,15 +16,11 @@ describe('RequestTargetDecorator', function() {
         return promise;
       })
     }
-    handlers = {
-      available: true,
-      getHandlers: sinon.spy(function() {
-        return {
-          action: sinon.spy(),
-          type: sinon.spy()
-        }
-      })
-    };
+    handlers = RequestHandlers.create();
+    handlers.setHandlers({
+      action: sinon.spy(),
+      type: sinon.spy()
+    });
 
     resource = __createSendCommandRequest();
     decorator = RequestTargetDecorator.create(factory, handlers);
@@ -53,26 +48,11 @@ describe('RequestTargetDecorator', function() {
       });
     });
 
-    describe('When handlers not available', function() {
-      beforeEach(function() {
-        handlers.available = false;
-        resource = __createSendCommandRequest();
-        handlers.getHandlers.reset();
-        decorator.decorate(resource);
-      });
-      it('should not apply handlers', function() {
-        expect(handlers.getHandlers).to.not.be.called;
-        expect(resource.action).to.be.undefined;
-      });
-    });
-
     describe('When handlers changed', function() {
       beforeEach(function() {
-        handlers.getHandlers = sinon.spy(function() {
-          return {
+        handlers.setHandlers({
             updated: sinon.spy()
-          }
-        });
+          });
 
         resource = __createSendCommandRequest();
         decorator.decorate(resource);
@@ -97,7 +77,7 @@ describe('RequestTargetDecorator', function() {
       expect(resource[TARGET_INTERNALS].sendRequest).to.be.calledOnce;
       call = resource[TARGET_INTERNALS].sendRequest.getCall(0);
       expect(call.args).to.be.eql([
-        'type', 'path', 'data'
+        'type', 'type', 'path', 'data'
       ]);
     });
 

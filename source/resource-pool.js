@@ -77,6 +77,7 @@ var ResourcePool = (function() {
     if (this.hasEventListener(ResourcePoolEvents.POOL_CLEAR)) {
       this.dispatchEvent(ResourcePoolEvents.POOL_CLEAR, this);
     }
+    var key;
     var keys = this[MAP_FIELD].keys();
     //FIXME update to for...of loop when it comes to browsers
     while (!(key = keys.next()).done) {

@@ -1,4 +1,3 @@
-'use strict';
 describe('DataConverter', function(){
   describe('prepareToSend()', function(){
 

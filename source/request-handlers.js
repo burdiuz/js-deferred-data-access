@@ -21,7 +21,7 @@ var RequestHandlers = (function() {
       },
       available: {
         get: function() {
-          return _keys.length;
+          return Boolean(_keys.length);
         }
       }
     });
@@ -72,6 +72,8 @@ var RequestHandlers = (function() {
       if (handler instanceof CommandDescriptor) {
         //INFO result should be applied to deferred.resolve() or deferred.reject()
         handler.handle(resource, data, deferred);
+      } else {
+        throw new Error('Command descriptor for "' + name + '" was not found.');
       }
 
     }

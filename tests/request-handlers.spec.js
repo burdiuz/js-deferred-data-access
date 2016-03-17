@@ -1,6 +1,5 @@
-'use strict';
 /*
-All of this should be refactored according to new changes
+ All of this should be refactored according to new changes
  */
 describe('RequestHandlers', function() {
   var handlers, sandbox;
@@ -8,9 +7,7 @@ describe('RequestHandlers', function() {
   function __createProxyCommandHandlers(data, sandbox) {
     data = data || {};
     sandbox = sandbox || sinon;
-    for (var name in ProxyCommands) {
-      data[ProxyCommands[name]] = sandbox.spy();
-    }
+    ProxyCommands.createDescriptors(sandbox.spy(), sandbox.spy(), sandbox.spy(), sandbox.spy(), data);
     return data;
   }
 
@@ -80,11 +77,10 @@ describe('RequestHandlers', function() {
         expect(handlers.getHandler('hijKLNM')).to.be.null;
       });
       it('handlers should be available', function() {
-        expect(handlers.getHandler('hndlr')).to.be.a('function');
-        expect(handlers.getHandlers()).to.be.eql({
-          hndlr: hndlr,
-          hndlrII: hndlrII
-        });
+        expect(handlers.getHandler('hndlr')).to.be.an.instanceof(CommandDescriptor);
+        var allHandlers = handlers.getHandlers();
+        expect(allHandlers.hndlr).to.be.an.instanceof(CommandDescriptor);
+        expect(allHandlers.hndlrII).to.be.an.instanceof(CommandDescriptor);
       });
       it('should filter functions only', function() {
         expect(handlers.hasHandler('fakeHandler')).to.be.false;
@@ -133,9 +129,15 @@ describe('RequestHandlers', function() {
       });
     });
 
+    it('should throw Error non-existent handler', function() {
+      expect(function() {
+        handlers.handle(resource, 'no-type', pack, deferred);
+      }).to.throw(Error);
+    });
+
     describe('When called', function() {
       beforeEach(function() {
-        handlers.handle(resource, pack, deferred);
+        handlers.handle(resource, 'type', pack, deferred);
       });
 
       it('should call type handler', function() {
@@ -162,7 +164,7 @@ describe('RequestHandlers', function() {
           converter.lookupForPending = sandbox.spy(function() {
             return [pending.promise];
           });
-          handlers.handle(resource, pack, deferred);
+          handlers.handle(resource, 'type', pack, deferred);
         });
 
         it('should not call handler immediately', function() {
@@ -190,7 +192,7 @@ describe('RequestHandlers', function() {
             return [];
           });
 
-          handlers.handle(resource, pack, deferred);
+          handlers.handle(resource, 'type', pack, deferred);
         });
 
         it('should check for pending', function() {
@@ -204,25 +206,6 @@ describe('RequestHandlers', function() {
 
     });
 
-  });
-
-  describe('isTemporary', function() {
-    it('should return false by default', function() {
-      expect(handlers.isTemporary(__createRequestTarget())).to.be.false;
-      expect(handlers.isTemporary({})).to.be.false;
-      expect(handlers.isTemporary()).to.be.false;
-    });
-    it('should be writable', function() {
-      var func = function() {
-
-      };
-      handlers.isTemporary = func;
-      expect(handlers.isTemporary).to.be.equal(func);
-    });
-    it('should be function after nullified', function() {
-      handlers.isTemporary = null;
-      expect(handlers.isTemporary).to.be.a('function');
-    });
   });
 
   describe('create()', function() {

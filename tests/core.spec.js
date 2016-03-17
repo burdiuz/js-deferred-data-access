@@ -1,4 +1,3 @@
-'use strict';
 describe('getId()', function() {
   it('Should return string', function() {
     expect(getId()).to.be.a.string;

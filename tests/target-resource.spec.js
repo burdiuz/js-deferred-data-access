@@ -1,4 +1,3 @@
-'use strict';
 describe('TargetResource', function() {
   var resource, pool, target, targetType, id;
   beforeEach(function() {

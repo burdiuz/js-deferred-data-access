@@ -1,4 +1,3 @@
-'use strict';
 describe('RequestFactory', function() {
   var sandbox, resource, factory, decorator, handlers;
   beforeEach(function() {
@@ -30,8 +29,7 @@ describe('RequestFactory', function() {
     });
 
     it('should pass promise and handlers to request', function() {
-      var args = RequestTarget.create.getCall(0);
-      console.log(args);
+      var args = RequestTarget.create.getCall(0).args;
       expect(args[0]).to.be.an.instanceof(Promise);
       expect(args[1]).to.be.equal(handlers);
     });

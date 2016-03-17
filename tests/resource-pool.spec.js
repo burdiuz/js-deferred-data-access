@@ -1,4 +1,3 @@
-'use strict';
 describe('ResourcePool', function() {
   /**
    * @type {ResourcePool}

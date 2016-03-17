@@ -1,4 +1,3 @@
-'use strict';
 describe('ResourceConverter', function() {
   var converter, factory, pool, handlers, sandbox;
   beforeEach(function() {
