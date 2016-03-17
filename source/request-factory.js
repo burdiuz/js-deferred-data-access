@@ -1,7 +1,4 @@
-/**
- * Created by Oleg Galaburda on 13.03.16.
- */
-
+'use strict';
 var FACTORY_DECORATOR_FIELD = Symbol('request.factory::decorator');
 
 var FACTORY_HANDLERS_FIELD = Symbol('request.factory::handlers');
@@ -14,7 +11,7 @@ var RequestFactory = (function() {
       return;
     }
     this[FACTORY_HANDLERS_FIELD] = handlers;
-    this[FACTORY_DECORATOR_FIELD] = new RequestTargetDecorator(this, handlers);
+    this[FACTORY_DECORATOR_FIELD] = RequestTargetDecorator.create(this, handlers);
   }
 
   function _create(promise) {

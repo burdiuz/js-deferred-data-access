@@ -1,3 +1,4 @@
+'use strict';
 var RequestHandlers = (function() {
 
   var RequestHandlersEvents = Object.freeze({
@@ -5,38 +6,22 @@ var RequestHandlers = (function() {
   });
 
   /**
-   * @returns {boolean}
-   */
-  function Default_isTemporary() {
-    return false;
-  }
-
-  /**
    * @constructor
    */
   function RequestHandlers(proxyEnabled) {
-    var _isTemporary = Default_isTemporary;
-    var _handlers = {};
+    var _keys = [];
+    var _descriptors = {};
     var _converter;
-    var _available = false;
 
     proxyEnabled = Boolean(proxyEnabled);
 
     Object.defineProperties(this, {
-      isTemporary: {
-        get: function() {
-          return _isTemporary;
-        },
-        set: function(value) {
-          _isTemporary = typeof(value) === 'function' ? value : Default_isTemporary;
-        }
-      },
       proxyEnabled: {
         value: proxyEnabled
       },
       available: {
         get: function() {
-          return _available;
+          return _keys.length;
         }
       }
     });
@@ -46,74 +31,160 @@ var RequestHandlers = (function() {
     }
 
     function _setHandlers(handlers) {
-      var list = [];
-      handlers = RequestHandlers.filterHandlers(handlers, list);
+      _descriptors = {};
+      RequestHandlers.filterHandlers(handlers, _descriptors);
+      _keys = Object.getOwnPropertyNames(_descriptors).concat(Object.getOwnPropertySymbols(_descriptors));
       if (proxyEnabled) {
-        RequestHandlers.areProxyHandlersAvailable(handlers, true);
+        RequestHandlers.areProxyHandlersAvailable(_descriptors, true);
       }
-      _available = Boolean(list.length);
-      _handlers = handlers;
     }
 
     function _hasHandler(type) {
-      return _handlers.hasOwnProperty(type);
+      return _descriptors.hasOwnProperty(type);
     }
 
     function _getHandlers() {
-      return _handlers;
+      return _descriptors;
+    }
+
+    function _getHandlerNames() {
+      return _keys.slice();
     }
 
     function _getHandler(type) {
-      return _handlers[type] || null;
+      return _descriptors[type] || null;
     }
 
-    function _handle(resource, pack, deferred) {
+    function _handle(resource, name, pack, deferred) {
       var list = _converter ? _converter.lookupForPending(pack.value) : null;
       if (list && list.length) {
         // FIXME Need to test on all platforms: In other browsers this might not work because may need list of Promise objects, not RequestTargets
         Promise.all(list).then(function() {
-          _handleImmediately(resource, pack.type, pack, deferred);
+          _handleImmediately(resource, name, pack, deferred);
         });
       } else {
-        _handleImmediately(resource, pack.type, pack, deferred);
+        _handleImmediately(resource, name, pack, deferred);
       }
     }
 
-    function _handleImmediately(resource, type, data, deferred) {
-      var handler = _getHandler(type);
-      if (typeof(handler) === 'function') {
+    function _handleImmediately(resource, name, data, deferred) {
+      var handler = _getHandler(name);
+      if (handler instanceof CommandDescriptor) {
         //INFO result should be applied to deferred.resolve() or deferred.reject()
-        handler(resource, data, deferred);
+        handler.handle(resource, data, deferred);
       }
 
     }
 
     this.setConverter = _setConverter;
+    /**
+     * @param {Array<Number, CommandDescriptor>, Object<String, Function|CommandDescriptor>} handlers
+     */
     this.setHandlers = _setHandlers;
     this.hasHandler = _hasHandler;
     this.getHandlers = _getHandlers;
+    this.getHandlerNames = _getHandlerNames;
     this.getHandler = _getHandler;
     this.handle = _handle;
+    this[Symbol.iterator] = function() {
+      return new RequestHandlersIterator(this.getHandlers(), this.getHandlerNames());
+    };
+  }
+
+  function RequestHandlersIterator(_data, _keys) {
+    var _length = _keys.length;
+    var _index = -1;
+
+    function _next() {
+      var result;
+      if (++_index >= _length) {
+        result = {done: true};
+      } else {
+        result = {value: _data[_keys[_index]], done: false};
+      }
+      return result;
+    }
+
+    this.next = _next;
+    this[Symbol.iterator] = function() {
+      return this;
+    }.bind(this);
   }
 
   //------------------- static
 
-  function RequestHandlers_filterHandlers(handlers, names) {
-    var typeHandlers = {};
-    for (var name in handlers) {
-      if (handlers.hasOwnProperty(name)) {
-        if (typeof(handlers[name]) === 'function') {
-          if (name in CommandType.reserved) {
-            throw new Error('Name "' + name + '" is reserved and cannot be used as command handler.');
-          } else {
-            names.push(name);
-            typeHandlers[name] = handlers[name];
-          }
+  var RequestHandlers_filterHandlers = (function() {
+    /**
+     * @param {Array} handlers
+     * @param {Object} descriptors
+     * @returns {void}
+     */
+    function filterArray(handlers, descriptors) {
+      var length = handlers.length;
+      for (var index = 0; index < length; index++) {
+        var value = handlers[index];
+        if (value instanceof CommandDescriptor) {
+          applyDescriptor(value, descriptors);
         }
       }
     }
-    return typeHandlers;
-  }
+
+    /**
+     * @param {Object} handlers
+     * @param {Object} descriptors
+     * @returns {void}
+     */
+    function filterHash(handlers, descriptors) {
+      var keys = Object.getOwnPropertyNames(handlers).concat(Object.getOwnPropertySymbols(handlers));
+      var length = keys.length;
+      for (var index = 0; index < length; index++) {
+        var name = keys[index];
+        var value = handlers[name];
+        if (typeof(value) === 'function') {
+          value = CommandDescriptor.create(name, value);
+        }
+        if (value instanceof CommandDescriptor) {
+          applyDescriptor(value, descriptors);
+        }
+      }
+    }
+
+    /**
+     * Checks for CommandDescriptor uniqueness and reserved words usage.
+     * @param {CommandDescriptor} descriptor
+     * @param descriptors
+     */
+    function applyDescriptor(descriptor, descriptors) {
+      var name = descriptor.name;
+      var type = descriptor.type;
+      if (type in Reserved.commands) {
+        throw new Error('Command "' + type + '" is reserved and cannot be used in descriptor.');
+      }
+      if (name in Reserved.names) {
+        throw new Error('Name "' + name + '" is reserved and cannot be used in descriptor.');
+      }
+      if (descriptors.hasOwnProperty(name) && descriptors[name] instanceof CommandDescriptor) {
+        throw new Error('Field names should be unique, "' + String(name) + '" field has duplicates.');
+      }
+      descriptors[name] = descriptor;
+    }
+
+    /**
+     *
+     * @param {Array|Object} handlers
+     * @param {Object<String, CommandDescriptor>} descriptors
+     * @returns {void}
+     */
+    function RequestHandlers_filterHandlers(handlers, descriptors) {
+      if (handlers instanceof Array) {
+        filterArray(handlers, descriptors);
+      } else {
+        filterHash(handlers, descriptors);
+      }
+    }
+
+    return RequestHandlers_filterHandlers;
+  })();
 
   /**
    * @returns {RequestHandlers}
@@ -124,8 +195,11 @@ var RequestHandlers = (function() {
 
   function RequestHandlers_areProxyHandlersAvailable(handlers, throwError) {
     var result = true;
-    for (var name in ProxyCommands) {
-      if (ProxyCommands.hasOwnProperty(name) && !(ProxyCommands[name] in handlers)) {
+    var list = ProxyCommands.list;
+    var length = list.length;
+    for (var index = 0; index < length; index++) {
+      var name = list[index];
+      if (!(ProxyCommands.fields[name] in handlers)) {
         result = false;
         if (throwError) {
           throw new Error('For Proxy interface, handler "' + name + '" should be set.');
@@ -140,4 +214,5 @@ var RequestHandlers = (function() {
   RequestHandlers.create = RequestHandlers_create;
   RequestHandlers.Events = RequestHandlersEvents;
   return RequestHandlers;
-})();
+})
+();

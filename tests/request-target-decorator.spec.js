@@ -1,6 +1,4 @@
-/**
- * Created by Oleg Galaburda on 16.03.16.
- */
+'use strict';
 describe('RequestTargetDecorator', function() {
   var decorator, resource, factory, handlers;
 
@@ -24,7 +22,7 @@ describe('RequestTargetDecorator', function() {
       getHandlers: sinon.spy(function() {
         return {
           action: sinon.spy(),
-          command: sinon.spy()
+          type: sinon.spy()
         }
       })
     };
@@ -38,9 +36,9 @@ describe('RequestTargetDecorator', function() {
       decorator.decorate(resource);
     });
 
-    it('should add command members to target', function() {
+    it('should add type members to target', function() {
       expect(resource.action).to.be.an('function');
-      expect(resource.command).to.be.an('function');
+      expect(resource.type).to.be.an('function');
     });
 
     describe('When decorating other request', function() {
@@ -51,7 +49,7 @@ describe('RequestTargetDecorator', function() {
       });
       it('members should be same handlers', function() {
         expect(newRequest.action).to.be.equal(resource.action);
-        expect(newRequest.command).to.be.equal(resource.command);
+        expect(newRequest.type).to.be.equal(resource.type);
       });
     });
 
@@ -81,7 +79,7 @@ describe('RequestTargetDecorator', function() {
       });
       it('members should be latest handlers', function() {
         expect(resource.updated).to.be.an('function');
-        expect(resource.command).to.be.undefined;
+        expect(resource.type).to.be.undefined;
       });
     });
 
@@ -91,7 +89,7 @@ describe('RequestTargetDecorator', function() {
     var promise;
     beforeEach(function() {
       decorator.decorate(resource);
-      promise = resource.command('path', 'data');
+      promise = resource.type('path', 'data');
     });
 
     it('should send request', function() {
@@ -99,7 +97,7 @@ describe('RequestTargetDecorator', function() {
       expect(resource[TARGET_INTERNALS].sendRequest).to.be.calledOnce;
       call = resource[TARGET_INTERNALS].sendRequest.getCall(0);
       expect(call.args).to.be.eql([
-        'command', 'path', 'data'
+        'type', 'path', 'data'
       ]);
     });
 
@@ -119,7 +117,7 @@ describe('RequestTargetDecorator', function() {
           return Promise.resolve('all ok');
         });
         factory.create.reset();
-        promise = resource.command('path', 'data');
+        promise = resource.type('path', 'data');
       });
       it('should return promise from request', function(done) {
         promise.then(function() {

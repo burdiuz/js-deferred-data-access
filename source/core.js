@@ -1,29 +1,9 @@
-var CommandType = Object.freeze({
-  DESTROY_TARGET: '::destroy.resource',
-  reserved: Object.freeze({
-    //INFO Exposed Promise method, cannot be overwritten by command
-    then: true,
-    //INFO Exposed Promise method, cannot be overwritten by command
-    catch: true,
-    '::destroy.resource': true
-  })
-});
-
+'use strict';
 var TargetStatus = Object.freeze({
   PENDING: 'pending',
   RESOLVED: 'resolved',
   REJECTED: 'rejected',
   DESTROYED: 'destroyed'
-});
-
-var RequestTargetCommands = Object.freeze({
-  DESTROY: CommandType.DESTROY_TARGET
-});
-
-var ProxyCommands = Object.freeze({
-  GET: 'get',
-  SET: 'set',
-  APPLY: 'apply'
 });
 
 

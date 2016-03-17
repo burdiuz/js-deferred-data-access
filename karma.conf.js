@@ -24,6 +24,7 @@ module.exports = function(config) {
       'source/resource-pool.js',
       'source/resource-pool-registry.js',
       'source/resource-converter.js',
+      'source/command-descriptor.js',
       'source/request-handlers.js',
       'source/request-target-decorator.js',
       'source/request-factory.js',

@@ -1,7 +1,7 @@
-/**
- * Created by Oleg Galaburda on 16.03.16.
+'use strict';
+/*
+All of this should be refactored according to new changes
  */
-
 describe('RequestHandlers', function() {
   var handlers, sandbox;
 
@@ -51,7 +51,7 @@ describe('RequestHandlers', function() {
           fakeHandlerII: {}
         });
       });
-      it('should throw an Error for handler of command named with reserved word', function() {
+      it('should throw an Error for handler of type named with reserved word', function() {
         expect(function() {
           handlers.setHandlers({
             then: function() {
@@ -60,7 +60,7 @@ describe('RequestHandlers', function() {
         }).to.throw(Error);
         expect(function() {
           handlers.setHandlers({
-            catch: 'not - a - command'
+            catch: 'not - a - type'
           });
         }).to.not.throw(Error);
       });
@@ -125,11 +125,11 @@ describe('RequestHandlers', function() {
       });
       resource = {};
       pack = {
-        type: 'command'
+        type: 'type'
       };
       deferred = createDeferred();
       handlers.setHandlers({
-        command: commandHandler
+        type: commandHandler
       });
     });
 
@@ -138,11 +138,11 @@ describe('RequestHandlers', function() {
         handlers.handle(resource, pack, deferred);
       });
 
-      it('should call command handler', function() {
+      it('should call type handler', function() {
         expect(commandHandler).to.be.calledOnce;
       });
 
-      it('should pass command parameters into handler', function() {
+      it('should pass type parameters into handler', function() {
         var args = commandHandler.getCall(0).args;
         expect(args).to.be.eql([resource, pack, deferred]);
       });

@@ -1,6 +1,4 @@
-/**
- * Created by Oleg Galaburda on 07.03.16.
- */
+'use strict';
 var TargetResource = (function() {
   /**
    * The object that can be used to send Target to other side

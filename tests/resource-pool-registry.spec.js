@@ -1,6 +1,4 @@
-/**
- * Created by Oleg Galaburda on 14.03.16.
- */
+'use strict';
 describe('ResourcePoolRegistry', function() {
   var registry;
   /**

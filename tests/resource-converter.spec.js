@@ -1,6 +1,4 @@
-/**
- * Created by Oleg Galaburda on 15.03.16.
- */
+'use strict';
 describe('ResourceConverter', function() {
   var converter, factory, pool, handlers, sandbox;
   beforeEach(function() {

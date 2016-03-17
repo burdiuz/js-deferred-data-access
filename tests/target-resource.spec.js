@@ -1,6 +1,4 @@
-/**
- * Created by Oleg Galaburda on 10.03.16.
- */
+'use strict';
 describe('TargetResource', function() {
   var resource, pool, target, targetType, id;
   beforeEach(function() {

@@ -1,7 +1,4 @@
-/**
- * Created by Oleg Galaburda on 07.03.16.
- */
-
+'use strict';
 var RequestTarget = (function() {
 
   /**

@@ -1,8 +1,4 @@
-/**
- * Created by Oleg Galaburda on 07.03.16.
- */
-/**
- */
+'use strict';
 var ResourceConverter = (function() {
 
   var FACTORY_FIELD = Symbol('resource.converter::factory');
@@ -112,14 +108,15 @@ var ResourceConverter = (function() {
 
   function _lookupForPending(data) {
     var result = [];
-    if (typeof(data) === 'object' && data !== null) {
-      function add(value) {
-        if (RequestTarget.isPending(value)) {
-          result.push(value);
-        }
-        return value;
-      }
 
+    function add(value) {
+      if (RequestTarget.isPending(value)) {
+        result.push(value);
+      }
+      return value;
+    }
+
+    if (typeof(data) === 'object' && data !== null) {
       if (RequestTarget.isPending(data)) {
         result.push(data);
       } else if (data instanceof Array) {

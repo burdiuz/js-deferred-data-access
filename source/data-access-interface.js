@@ -1,3 +1,4 @@
+'use strict';
 var DataAccessInterface = (function() {
 
   function DataAccessInterface(proxyEnabled, _poolRegistry, _pool) {
@@ -58,10 +59,13 @@ var DataAccessInterface = (function() {
   DataAccessInterface.create = DataAccessInterface_create;
   DataAccessInterface.IConvertible = IConvertible;
   DataAccessInterface.RequestTarget = RequestTarget;
+  DataAccessInterface.Reserved = Reserved;
   DataAccessInterface.RequestTargetCommands = RequestTargetCommands;
+  DataAccessInterface.CommandDescriptor = CommandDescriptor;
   DataAccessInterface.ProxyCommands = ProxyCommands;
-  DataAccessInterface.TargetPoolEvents = ResourcePool.Events;
-  DataAccessInterface.ResourceConverterEvents = ResourceConverter.Events;
+  DataAccessInterface.ResourcePool = ResourcePool;
+  DataAccessInterface.ResourcePoolRegistry = ResourcePoolRegistry;
+  DataAccessInterface.ResourceConverter = ResourceConverter;
 
   return DataAccessInterface;
 })();

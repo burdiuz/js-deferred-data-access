@@ -1,6 +1,4 @@
-/**
- * Created by Oleg Galaburda on 03.03.16.
- */
+'use strict';
 describe('ResourcePool', function() {
   /**
    * @type {ResourcePool}

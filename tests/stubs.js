@@ -1,6 +1,4 @@
-/**
- * Created by Oleg Galaburda on 15.03.16.
- */
+'use strict';
 function __createRequestTargetData() {
   var target = {};
   target[TARGET_DATA] = {id: '1111', type: 'target-object', poolId: '22222'};

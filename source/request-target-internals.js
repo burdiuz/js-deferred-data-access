@@ -1,3 +1,4 @@
+'use strict';
 var RequestTargetInternals = (function() {
 
   /**
@@ -39,11 +40,11 @@ var RequestTargetInternals = (function() {
   }
 
   function get_type() {
-    return  this.link.type || null;
+    return this.link.type || null;
   }
 
   function get_id() {
-    return  this.link.id || null;
+    return this.link.id || null;
   }
 
   function _resolveHandler(value) {
@@ -74,36 +75,36 @@ var RequestTargetInternals = (function() {
   function _sendQueue() {
     while (this.queue && this.queue.length) {
       var request = this.queue.shift();
-      var pack = request[0];
-      var deferred = request[1];
+      var name = request[0];
+      var pack = request[1];
+      var deferred = request[2];
       pack.target = this.link.id;
-      this._requestHandlers.handle(this._requestTarget, pack, deferred);
+      this._requestHandlers.handle(this._requestTarget, name, pack, deferred);
     }
     this.queue = null;
   }
 
-  function _sendRequest(type, cmd, value) {
+  function _sendRequest(name, type, cmd, value) {
     var promise = null;
-    if (this._requestHandlers.hasHandler(type)) {
+    if (this._requestHandlers.hasHandler(name)) {
       var pack = RequestTargetInternals.createRequestPackage(type, cmd, value, this.id);
-      promise = this._applyRequest(pack, createDeferred());
+      promise = this._applyRequest(name, pack, createDeferred());
     } else {
       throw new Error('Request handler of type "' + type + '" is not registered.');
     }
     return promise;
   }
 
-  function _addToQueue(pack, deferred) {
-    this.queue.push([pack, deferred]);
+  function _addToQueue(name, pack, deferred) {
+    this.queue.push([name, pack, deferred]);
   }
 
 
-  function _applyRequest(pack, deferred) {
+  function _applyRequest(name, pack, deferred) {
     var promise = deferred.promise;
-    var type = pack.type;
     switch (this.status) {
       case TargetStatus.PENDING:
-        this._addToQueue(pack, deferred);
+        this._addToQueue(name, pack, deferred);
         break;
       case TargetStatus.REJECTED:
         promise = Promise.reject(new Error('Target object was rejected and cannot be used for calls.'));
@@ -112,7 +113,7 @@ var RequestTargetInternals = (function() {
         promise = Promise.reject(new Error('Target object was destroyed and cannot be used for calls.'));
         break;
       case TargetStatus.RESOLVED:
-        this._requestHandlers.handle(this._requestTarget, pack, deferred);
+        this._requestHandlers.handle(this._requestTarget, name, pack, deferred);
         break;
     }
     return promise;
@@ -131,7 +132,7 @@ var RequestTargetInternals = (function() {
     var promise = null;
     if (this.canBeDestroyed()) {
       this.status = TargetStatus.DESTROYED;
-      promise = this.sendRequest(CommandType.DESTROY_TARGET);
+      promise = this.sendRequest(RequestTargetCommands.DESTROY);
     } else {
       promise = Promise.reject();
     }

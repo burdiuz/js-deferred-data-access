@@ -1,6 +1,4 @@
-/**
- * Created by Oleg Galaburda on 13.03.16.
- */
+'use strict';
 var RequestProxyFactory = (function() {
 
   var FACTORY_FIELD = Symbol('request.proxy.factory::factory');
@@ -29,7 +27,7 @@ var RequestProxyFactory = (function() {
     if (name in target || name in EXCLUSIONS || typeof(name) === 'symbol') {
       result = target[name] = value;
     } else {
-      result = target.set(name, value);
+      result = target[ProxyCommands.fields.set](name, value);
     }
     return result;
   }
@@ -74,7 +72,7 @@ var RequestProxyFactory = (function() {
         value = target[name];
       } else {
         value = applyProxy(
-          target.get(name),
+          target[ProxyCommands.fields.get](name),
           handlers
         );
       }
@@ -83,9 +81,9 @@ var RequestProxyFactory = (function() {
 
     function Proxy_apply(wrapper, thisValue, args) {
       return applyProxy(
-        //INFO command is null because target is function we are calling now,
+        //INFO type is null because target is function we are calling now,
         // thisValue is being ignored for now
-        wrapper.target.apply(null, args),
+        wrapper.target[ProxyCommands.fields.apply](null, args),
         handlers
       );
     }
