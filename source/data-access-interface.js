@@ -24,7 +24,7 @@ var DataAccessInterface = (function() {
         value: _pool
       },
       resourceConverter: {
-        value: ResourceConverter.create(_factory, _pool, _handlers)
+        value: ResourceConverter.create(_factory, _poolRegistry, _pool, _handlers)
       },
       factory: {
         value: _factory

@@ -1,6 +1,3 @@
-/*
- All of this should be refactored according to new changes
- */
 describe('RequestHandlers', function() {
   var handlers, sandbox;
 
@@ -82,10 +79,44 @@ describe('RequestHandlers', function() {
         expect(allHandlers.hndlr).to.be.an.instanceof(CommandDescriptor);
         expect(allHandlers.hndlrII).to.be.an.instanceof(CommandDescriptor);
       });
+      it('handlers names should be listed', function() {
+        expect(handlers.getHandlerNames()).to.contain('hndlr');
+        expect(handlers.getHandlerNames()).to.contain('hndlrII');
+      });
       it('should filter functions only', function() {
         expect(handlers.hasHandler('fakeHandler')).to.be.false;
         expect(handlers.hasHandler('fakeHandlerII')).to.be.false;
       });
+    });
+  });
+
+  describe('Iterator', function() {
+    'use strict';
+    var handlers;
+    beforeEach(function() {
+      handlers = RequestHandlers.create();
+      handlers.setHandlers({
+        hndl1: function() {
+        },
+        hndl2: function() {
+        }
+      });
+    });
+    it('should be able to generate Iterators', function() {
+      var iterator = handlers[Symbol.iterator]();
+      expect(iterator).to.be.an('object');
+      expect(iterator.next).to.be.a('function');
+    });
+    it('Iterator should go through all handlers', function() {
+      var iterator = handlers[Symbol.iterator]();
+      var item = iterator.next();
+      expect(item.value).to.be.an.instanceof(CommandDescriptor);
+      expect(item.done).to.be.false;
+      var item = iterator.next();
+      expect(item.value).to.be.an.instanceof(CommandDescriptor);
+      expect(item.done).to.be.false;
+      var item = iterator.next();
+      expect(item.done).to.be.true;
     });
   });
 

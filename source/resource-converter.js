@@ -1,23 +1,41 @@
 'use strict';
 var ResourceConverter = (function() {
 
+  /**
+   * @private
+   */
   var FACTORY_FIELD = Symbol('resource.converter::factory');
 
+  /**
+   * @private
+   */
+  var REGISTRY_FIELD = Symbol('resource.converter::resourcePoolRegistry');
+
+  /**
+   * @private
+   */
   var POOL_FIELD = Symbol('resource.converter::resourcePool');
 
+  /**
+   * @private
+   */
   var ResourceConverterEvents = Object.freeze({
     RESOURCE_CREATED: 'resourceCreated',
     RESOURCE_CONVERTED: 'resourceConverted'
   });
 
   /**
-   * @param factory {RequestFactory}
-   * @constructor
+   * @param {RequestFactory} factory
+   * @param {ResourcePoolRegistry} registry
+   * @param {ResourcePool} pool
+   * @param {RequestHandlers} handlers
    * @extends EventDispatcher
+   * @constructor
    */
-  function ResourceConverter(factory, pool, handlers) {
+  function ResourceConverter(factory, registry, pool, handlers) {
     this[FACTORY_FIELD] = factory;
     this[POOL_FIELD] = pool;
+    this[REGISTRY_FIELD] = registry;
     EventDispatcher.apply(this);
     if (handlers) {
       handlers.setConverter(this);
@@ -26,30 +44,38 @@ var ResourceConverter = (function() {
 
   function _resourceToObject(data) {
     var result;
+
     if (isResourceConvertible(data)) {
       result = getRAWResource(data, this[POOL_FIELD]);
     } else if (typeof(data.toJSON) === 'function') {
       result = data.toJSON();
+    } else {
+      result = data;
     }
+
     if (result !== data && this.hasEventListener(ResourceConverterEvents.RESOURCE_CONVERTED)) {
       this.dispatchEvent(ResourceConverterEvents.RESOURCE_CONVERTED, {
         data: data,
         result: result
       });
     }
+
     return result;
   }
 
   function _objectToResource(data) {
-    var result;
-    var poolId = getResourcePoolId(data);
-    if (ResourcePoolRegistry.isRegistered(poolId)) { // target object is stored in current pool
-      data = ResourcePoolRegistry.get(poolId).get(getResourceId(data));
-      if (data) {
-        result = data.resource;
+    var result = data;
+    var poolId;
+    if (isResource(data)) {
+      poolId = getResourcePoolId(data);
+      if (this[REGISTRY_FIELD].isRegistered(poolId)) { // target object is stored in current pool
+        var target = this[REGISTRY_FIELD].get(poolId).get(getResourceId(data));
+        if (target) {
+          result = target.resource;
+        }
+      } else { // target object has another origin, should be wrapped
+        result = this[FACTORY_FIELD].create(Promise.resolve(data));
       }
-    } else { // target object has another origin, should be wrapped
-      result = this[FACTORY_FIELD].create(Promise.resolve(data));
     }
     if (result !== data && this.hasEventListener(ResourceConverterEvents.RESOURCE_CREATED)) {
       this.dispatchEvent(ResourceConverterEvents.RESOURCE_CREATED, {
@@ -141,12 +167,14 @@ var ResourceConverter = (function() {
   //------------------------ static
 
   /**
-   * @param factory {RequestFactory}
-   * @param handlers {RequestHandlers}
+   * @param {RequestFactory} factory
+   * @param {ResourcePoolRegistry} registry
+   * @param {ResourcePool} pool
+   * @param {RequestHandlers} handlers
    * @returns {ResourceConverter}
    */
-  function ResourceConverter_create(factory, pool, handlers) {
-    return new ResourceConverter(factory, pool, handlers);
+  function ResourceConverter_create(factory, registry, pool, handlers) {
+    return new ResourceConverter(factory, registry, pool, handlers);
   }
 
   ResourceConverter.create = ResourceConverter_create;

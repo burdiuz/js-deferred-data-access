@@ -12,6 +12,11 @@ function __createRequestTarget(promise) {
 function __createRequestTargetProxy(promise) {
   return RequestProxyFactory.applyProxy(RequestTarget.create(promise !== undefined ? promise : __createDataResolvedPromise(), {}));
 }
-function __createTargetResource() {
-  return TargetResource.create({id: '111111'}, {}, 'target-type', '2222222');
+function __createTargetResourceData() {
+  var target = {};
+  target[TARGET_DATA] = {id: '2222222', type: 'target-type', poolId: '111111'};
+  return target;
+}
+function __createTargetResource(resource) {
+  return TargetResource.create({id: '111111'}, resource || {}, 'target-type', '2222222');
 }
