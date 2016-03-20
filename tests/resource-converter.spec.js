@@ -1,5 +1,10 @@
 describe('ResourceConverter', function() {
-  var converter, factory, registry, pool, handlers, sandbox;
+  /**
+   * @type {ResourceConverter}
+   */
+  var converter;
+  var factory, registry, pool, handlers;
+  var sandbox;
   var isRegistered, requestTarget, targetResource;
   beforeEach(function() {
     sandbox = sinon.sandbox.create();
@@ -17,10 +22,10 @@ describe('ResourceConverter', function() {
       })
     };
     registry = {
-      isRegistered: sinon.spy(function() {
+      isRegistered: sandbox.spy(function() {
         return isRegistered;
       }),
-      get: sinon.spy(function() {
+      get: sandbox.spy(function() {
         return pool;
       })
     };
@@ -39,19 +44,189 @@ describe('ResourceConverter', function() {
     });
   });
 
-
   describe('toJSON()', function() {
-
+    describe('When Array passed', function() {
+      var source, result, actualResult;
+      beforeEach(function() {
+        source = [{}];
+        result = [{}];
+        sandbox.stub(converter, 'lookupArray').returns(result);
+        actualResult = converter.toJSON(source);
+      });
+      it('should call lookupArray() once', function() {
+        expect(converter.lookupArray).to.be.calledOnce;
+      });
+      it('should pass to lookupArray() data and handler', function() {
+        var args = converter.lookupArray.getCall(0).args;
+        expect(args[0]).to.be.equal(source);
+        expect(args[1]).to.be.equal(converter.resourceToObject);
+      });
+      it('should return result of array processing', function() {
+        expect(actualResult).to.be.equal(result);
+      });
+    });
+    describe('When Object passed', function() {
+      describe('When RAW Object passed', function() {
+        var source, result, actualResult;
+        beforeEach(function() {
+          source = {data: {}};
+          result = {};
+          sandbox.stub(converter, 'lookupObject').returns(result);
+          actualResult = converter.toJSON(source);
+        });
+        it('should call lookupObject() once', function() {
+          expect(converter.lookupObject).to.be.calledOnce;
+        });
+        it('should pass to lookupObject() data and handler', function() {
+          var args = converter.lookupObject.getCall(0).args;
+          expect(args[0]).to.be.equal(source);
+          expect(args[1]).to.be.equal(converter.resourceToObject);
+        });
+        it('should return result of hash processing', function() {
+          expect(actualResult).to.be.equal(result);
+        });
+      });
+      describe('When extended Object passed', function() {
+        var classFunc, source, result;
+        beforeEach(function() {
+          classFunc = function() {
+          };
+          source = new classFunc();
+          result = converter.toJSON(source);
+        });
+        it('should skip data processing', function() {
+          expect(result).to.be.equal(source);
+        });
+      });
+      describe('When IConvertible passed', function() {
+        var source, result, actualResult;
+        beforeEach(function() {
+          source = new IConvertible();
+          result = {data: 'something'};
+          sandbox.stub(converter, 'resourceToObject').returns(result);
+          actualResult = converter.toJSON(source);
+        });
+        it('should call resourceToObject() once', function() {
+          expect(converter.resourceToObject).to.be.calledOnce;
+        });
+        it('should pass to resourceToObject() data', function() {
+          var args = converter.resourceToObject.getCall(0).args;
+          expect(args[0]).to.be.equal(source);
+        });
+        it('should result into RAW resource', function() {
+          expect(actualResult).to.be.equal(result);
+        });
+      });
+      describe('When Function passed', function() {
+        var source, result, actualResult;
+        beforeEach(function() {
+          source = function() {
+          };
+          result = {data: 'something'};
+          sandbox.stub(converter, 'resourceToObject').returns(result);
+          actualResult = converter.toJSON(source);
+        });
+        it('should call resourceToObject() once', function() {
+          expect(converter.resourceToObject).to.be.calledOnce;
+        });
+        it('should pass to resourceToObject() data', function() {
+          var args = converter.resourceToObject.getCall(0).args;
+          expect(args[0]).to.be.equal(source);
+        });
+        it('should result into RAW resource', function() {
+          expect(actualResult).to.be.equal(result);
+        });
+      });
+      describe('When Resource passed', function() {
+        var source, result, actualResult;
+        beforeEach(function() {
+          source = __createTargetResource();
+          result = {data: 'something'};
+          sandbox.stub(converter, 'resourceToObject').returns(result);
+          actualResult = converter.toJSON(source);
+        });
+        it('should call resourceToObject() once', function() {
+          expect(converter.resourceToObject).to.be.calledOnce;
+        });
+        it('should pass to resourceToObject() data', function() {
+          var args = converter.resourceToObject.getCall(0).args;
+          expect(args[0]).to.be.equal(source);
+        });
+        it('should result into RAW resource', function() {
+          expect(actualResult).to.be.equal(result);
+        });
+      });
+    });
   });
 
   describe('parse()', function() {
-
+    describe('When Array passed', function() {
+      var source, result, actualResult;
+      beforeEach(function() {
+        source = [{}];
+        result = [{}];
+        sandbox.stub(converter, 'lookupArray').returns(result);
+        actualResult = converter.parse(source);
+      });
+      it('should call lookupArray() once', function() {
+        expect(converter.lookupArray).to.be.calledOnce;
+      });
+      it('should pass to lookupArray() data and handler', function() {
+        var args = converter.lookupArray.getCall(0).args;
+        expect(args[0]).to.be.equal(source);
+        expect(args[1]).to.be.equal(converter.objectToResource);
+      });
+      it('should return result of array processing', function() {
+        expect(actualResult).to.be.equal(result);
+      });
+    });
+    describe('When Object passed', function() {
+      describe('When RAW Object passed', function() {
+        var source, result, actualResult;
+        beforeEach(function() {
+          source = {data: {}};
+          result = {};
+          sandbox.stub(converter, 'lookupObject').returns(result);
+          actualResult = converter.parse(source);
+        });
+        it('should call lookupObject() once', function() {
+          expect(converter.lookupObject).to.be.calledOnce;
+        });
+        it('should pass to lookupObject() data and handler', function() {
+          var args = converter.lookupObject.getCall(0).args;
+          expect(args[0]).to.be.equal(source);
+          expect(args[1]).to.be.equal(converter.objectToResource);
+        });
+        it('should return result of hash processing', function() {
+          expect(actualResult).to.be.equal(result);
+        });
+      });
+      describe('When Resource Object passed', function() {
+        var source, result, actualResult;
+        beforeEach(function() {
+          source = __createTargetResourceData();
+          result = {data: 'something'};
+          sandbox.stub(converter, 'objectToResource').returns(result);
+          actualResult = converter.parse(source);
+        });
+        it('should call objectToResource() once', function() {
+          expect(converter.objectToResource).to.be.calledOnce;
+        });
+        it('should pass to objectToResource() data', function() {
+          var args = converter.objectToResource.getCall(0).args;
+          expect(args[0]).to.be.equal(source);
+        });
+        it('should result into resolved resource target', function() {
+          expect(actualResult).to.be.equal(result);
+        });
+      });
+    });
   });
 
   describe('lookupArray()', function() {
     var handler, result;
     beforeEach(function() {
-      handler = sinon.spy(function(num) {
+      handler = sandbox.spy(function(num) {
         return --num;
       });
       result = converter.lookupArray([1, 2, 3], handler);
@@ -79,10 +254,18 @@ describe('ResourceConverter', function() {
   describe('lookupObject()', function() {
     var handler, result;
     beforeEach(function() {
-      handler = sinon.spy(function(num) {
+      handler = sandbox.spy(function(num) {
         return ++num;
       });
-      result = converter.lookupObject({one: 1, two: 2, three: 3}, handler);
+      function MyClass(){}
+      MyClass.prototype.one1 = 1;
+      MyClass.prototype.two2 = 2;
+      MyClass.prototype.three3 = 3;
+      var object = new MyClass();
+      object.one = 1;
+      object.two = 2;
+      object.three = 3;
+      result = converter.lookupObject(object, handler);
     });
     it('should call handler for each value', function() {
       expect(handler).to.be.calledThrice;
@@ -94,7 +277,7 @@ describe('ResourceConverter', function() {
       expect([1, 2, 3]).to.include(one);
       expect([1, 2, 3]).to.include(two);
       expect([1, 2, 3]).to.include(three);
-      assert(one != two != three, 'each value passed once');
+      assert(one != two && two != three && one != three, 'each value passed once');
     });
     it('should apply handler to converter', function() {
       expect(handler).to.be.calledOn(converter);
@@ -107,13 +290,72 @@ describe('ResourceConverter', function() {
   });
 
   describe('lookupForPending()', function() {
-
+    describe('When Pending resource passed', function() {
+      var source, result;
+      beforeEach(function() {
+        source = __createRequestTarget();
+        //sandbox.stub(RequestTarget, 'isPending').returns(true);
+        result = converter.lookupForPending(source);
+      });
+      it('should result in list with only source object in it', function() {
+        expect(result[0]).to.be.equal(source);
+      });
+    });
+    describe('When Resolved resource passed', function() {
+      var source, result, promise;
+      beforeEach(function(done) {
+        promise = __createDataResolvedPromise();
+        source = __createRequestTarget(promise);
+        promise.then(function() {
+          result = converter.lookupForPending();
+          done();
+        });
+      });
+      it('should result in empty list', function() {
+        expect(result).to.be.empty;
+      });
+    });
+    describe('When Array of Pending resources passed', function() {
+      var source, result;
+      beforeEach(function() {
+        source = [{}, {}, __createRequestTarget(), {}, __createRequestTarget(), {}, {}, __createRequestTarget()];
+        result = converter.lookupForPending(source);
+      });
+      it('should result in list with only source object in it', function() {
+        expect(result).to.have.length(3);
+        expect(result[0]).to.be.an.instanceof(RequestTarget);
+        expect(result[1]).to.be.an.instanceof(RequestTarget);
+        expect(result[2]).to.be.an.instanceof(RequestTarget);
+      });
+    });
+    describe('When Hash of Pending resources passed', function() {
+      var source, result;
+      beforeEach(function() {
+        source = {
+          first: {},
+          second: function() {
+          },
+          third: new IConvertible(),
+          fourth: {},
+          fifth: __createRequestTarget(),
+          sixth: {},
+          seventh: {},
+          eighth: __createRequestTarget()
+        };
+        result = converter.lookupForPending(source);
+      });
+      it('should result in list with only source object in it', function() {
+        expect(result).to.have.length(2);
+        expect(result[0]).to.be.an.instanceof(RequestTarget);
+        expect(result[1]).to.be.an.instanceof(RequestTarget);
+      });
+    });
   });
 
   describe('resourceToObject()', function() {
     var source, result, referenceResult, listener;
     beforeEach(function() {
-      listener = sinon.spy();
+      listener = sandbox.spy();
       converter.addEventListener(ResourceConverter.Events.RESOURCE_CONVERTED, listener);
     });
 
@@ -186,7 +428,7 @@ describe('ResourceConverter', function() {
       beforeEach(function() {
         source = {
           anything: '1111',
-          toJSON: sinon.spy(function() {
+          toJSON: sandbox.spy(function() {
             return {evenMore: 'anything'};
           })
         };
@@ -212,7 +454,7 @@ describe('ResourceConverter', function() {
   describe('objectToResource()', function() {
     var source, result, referenceResult, listener;
     beforeEach(function() {
-      listener = sinon.spy();
+      listener = sandbox.spy();
       converter.addEventListener(ResourceConverter.Events.RESOURCE_CREATED, listener);
     });
 

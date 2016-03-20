@@ -107,7 +107,7 @@ var ResourceConverter = (function() {
   function _toJSON(data) {
     var result = data;
     if (data !== undefined && data !== null) {
-      if (isResourceConvertible(data)) { // if data is link
+      if (isResourceConvertible(data)) { // if data is RequestTarget, TargetResource, IConvertible, Function or RAW resource data
         result = this.resourceToObject(data);
       } else if (data instanceof Array) { // if data is Array of values, check its
         result = this.lookupArray(data, this.resourceToObject);
@@ -121,7 +121,7 @@ var ResourceConverter = (function() {
   function _parse(data) {
     var result = data;
     if (data !== undefined && data !== null) {
-      if (isResource(data)) { // if data is link
+      if (isResource(data)) { // if data is RAW resource data
         result = this.objectToResource(data);
       } else if (data instanceof Array) { // if data is Array of values, check its
         result = this.lookupArray(data, this.objectToResource);

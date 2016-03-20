@@ -1,53 +1,38 @@
 describe('RequestTarget', function() {
-  describe('get()', function() {
+  describe('isActive', function() {
 
   });
-  describe('set()', function() {
+  describe('canBeDestroyed', function() {
 
   });
-  describe('call()', function() {
+  describe('destroy', function() {
 
   });
-  describe('execute()', function() {
+  describe('toJSON', function() {
 
   });
-  describe('_addToQueue()', function() {
+  describe('isPending', function() {
 
   });
-  describe('then()', function() {
+  describe('isTemporary', function() {
 
   });
-  describe('catch()', function() {
+  describe('setTemporary', function() {
 
   });
-  describe('destroy()', function() {
+  describe('getStatus', function() {
 
   });
-  describe('canBeDestroyed()', function() {
+  describe('getQueueLength', function() {
 
   });
-  describe('isActive()', function() {
+  describe('getQueueCommands', function() {
 
   });
-  describe('toJSON()', function() {
+  describe('hadChildPromises', function() {
 
   });
-  describe('_sendRequest()', function() {
-
-  });
-  describe('_applyRequest()', function() {
-
-  });
-  describe('_sendRequestHandlerPrecondition()', function() {
-
-  });
-  describe('status', function() {
-
-  });
-  describe('temporary', function() {
-
-  });
-  describe('target', function() {
+  describe('create', function() {
 
   });
 });
