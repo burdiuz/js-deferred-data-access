@@ -27,46 +27,48 @@ var RequestTarget = (function() {
 
   //------------- static
   function RequestTarget_isActive(target) {
-    return target[TARGET_INTERNALS].isActive();
+    return target && target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].isActive() : false;
   }
 
   function RequestTarget_canBeDestroyed(target) {
-    return target[TARGET_INTERNALS].canBeDestroyed();
+    return target && target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].canBeDestroyed() : false;
   }
 
   function RequestTarget_destroy(target) {
-    return target[TARGET_INTERNALS].destroy();
+    //FIXME might be better to return rejected promise
+    return target && target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].destroy() : null;
   }
 
   function RequestTarget_toJSON(target) {
-    return target[TARGET_INTERNALS].toJSON();
+    return target && target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].toJSON() : null;
   }
 
   function RequestTarget_isPending(value) {
-    return value instanceof RequestTarget && RequestTarget_getStatus(value) == TargetStatus.PENDING;
+    return RequestTarget_getStatus(value) == TargetStatus.PENDING;
   }
 
   function RequestTarget_isTemporary(target) {
-    return Boolean(target[TARGET_INTERNALS].temporary);
+    return Boolean(target && target[TARGET_INTERNALS] && target[TARGET_INTERNALS].temporary);
   }
 
   function RequestTarget_setTemporary(target, value) {
-    target[TARGET_INTERNALS].temporary = Boolean(value);
+    if (target && target[TARGET_INTERNALS]) {
+      target[TARGET_INTERNALS].temporary = Boolean(value);
+    }
   }
 
   function RequestTarget_getStatus(target) {
-    return target[TARGET_INTERNALS].status;
+    return target && target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].status : null;
   }
 
   function RequestTarget_getQueueLength(target) {
-    var queue = target[TARGET_INTERNALS].queue;
-    return queue ? queue.length : 0;
+    return target && target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].queue.length : 0;
   }
 
   function RequestTarget_getQueueCommands(target) {
     var length;
     var result = [];
-    var queue = target[TARGET_INTERNALS].queue;
+    var queue = target && target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].queue : null;
     if (queue) {
       length = queue.length;
       for (var index = 0; index < length; index++) {
@@ -77,7 +79,21 @@ var RequestTarget = (function() {
   }
 
   function RequestTarget_hadChildPromises(target) {
-    return target[TARGET_INTERNALS].hadChildPromises;
+    return Boolean(target && target[TARGET_INTERNALS] && target[TARGET_INTERNALS].hadChildPromises);
+  }
+
+  function RequestTarget_getRawPromise(target) {
+    return target && target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].promise : null;
+  }
+
+  function RequestTarget_getChildren(target) {
+    var list = target && target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].children : null;
+    return list ? list.slice() : [];
+  }
+
+  function RequestTarget_getChildrenCount(target) {
+    var list = target && target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].children : null;
+    return list ? list.length : 0;
   }
 
   /**
@@ -102,6 +118,9 @@ var RequestTarget = (function() {
   RequestTarget.getQueueLength = RequestTarget_getQueueLength;
   RequestTarget.getQueueCommands = RequestTarget_getQueueCommands;
   RequestTarget.hadChildPromises = RequestTarget_hadChildPromises;
+  RequestTarget.getRawPromise = RequestTarget_getRawPromise;
+  RequestTarget.getChildren = RequestTarget_getChildren;
+  RequestTarget.getChildrenCount = RequestTarget_getChildrenCount;
   RequestTarget.create = RequestTarget_create;
 
   return RequestTarget;

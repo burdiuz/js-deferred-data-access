@@ -9,14 +9,15 @@ var RequestTargetInternals = (function() {
    * @constructor
    */
   function RequestTargetInternals(_requestTarget, _promise, _requestHandlers) {
-    this._requestHandlers = _requestHandlers;
-    this._requestTarget = _requestTarget;
+    this.requestHandlers = _requestHandlers;
+    this.requestTarget = _requestTarget;
     this.link = {};
     //INFO this should be not initialized i.e. keep it undefined, this will be checked later
     this.temporary;
     this.hadChildPromises = false;
     this.status = TargetStatus.PENDING;
     this.queue = [];
+    this.children = [];
     this.promise = _promise.then(
       this._resolveHandler.bind(this),
       this._rejectHandler.bind(this)
@@ -51,7 +52,9 @@ var RequestTargetInternals = (function() {
     this.status = TargetStatus.RESOLVED;
     if (isResource(value)) {
       this.link = getResourceData(value);
-      this.temporary = this._requestHandlers.isTemporary(this._requestTarget);
+      //FIXME isTemporary should be called after(or before?) each child request response, the property might be obsolete
+      // not sure about this mechanism of marking targets temporary and then GC'ing them
+      this.temporary = this.requestHandlers.isTemporary(this.requestTarget);
       if (this.temporary) {
         this.queue[this.queue.length - 1][1].promise.then(this.destroy.bind(this), this.destroy.bind(this));
       }
@@ -79,14 +82,14 @@ var RequestTargetInternals = (function() {
       var pack = request[1];
       var deferred = request[2];
       pack.target = this.link.id;
-      this._requestHandlers.handle(this._requestTarget, name, pack, deferred);
+      this._handleRequest(name, pack, deferred);
     }
     this.queue = null;
   }
 
   function _sendRequest(name, type, cmd, value) {
     var promise = null;
-    if (this._requestHandlers.hasHandler(name)) {
+    if (this.requestHandlers.hasHandler(name)) {
       var pack = RequestTargetInternals.createRequestPackage(type, cmd, value, this.id);
       promise = this._applyRequest(name, pack, createDeferred());
     } else {
@@ -113,10 +116,30 @@ var RequestTargetInternals = (function() {
         promise = Promise.reject(new Error('Target object was destroyed and cannot be used for calls.'));
         break;
       case TargetStatus.RESOLVED:
-        this._requestHandlers.handle(this._requestTarget, name, pack, deferred);
+        this._handleRequest(name, pack, deferred);
         break;
     }
     return promise;
+  }
+
+  function _handleRequest(name, pack, deferred) {
+    this.requestHandlers.handle(this.requestTarget, name, pack, deferred);
+  }
+
+  function _registerChild(childRequestTarget) {
+    var handler = _onChildHandled.bind(this, childRequestTarget);
+    var promise = RequestTarget.getRawPromise(childRequestTarget);
+    this.children.push(childRequestTarget);
+    promise.then(handler, handler);
+  }
+
+  function _onChildHandled(childRequestTarget) {
+    if (this.children) {
+      var index = this.children.indexOf(childRequestTarget);
+      if (index >= 0) {
+        this.children.splice(index, 1);
+      }
+    }
   }
 
 
@@ -132,8 +155,10 @@ var RequestTargetInternals = (function() {
     var promise = null;
     if (this.canBeDestroyed()) {
       this.status = TargetStatus.DESTROYED;
+      //FIXME add clearing queue, children list and other removal
       promise = this.sendRequest(RequestTargetCommands.DESTROY);
     } else {
+      //FIXME Should be here something as rejection value?
       promise = Promise.reject();
     }
     return promise;
@@ -171,6 +196,7 @@ var RequestTargetInternals = (function() {
   RequestTargetInternals.prototype.sendRequest = _sendRequest;
   RequestTargetInternals.prototype._addToQueue = _addToQueue;
   RequestTargetInternals.prototype._applyRequest = _applyRequest;
+  RequestTargetInternals.prototype.registerChild = _registerChild;
   RequestTargetInternals.prototype.isActive = _isActive;
   RequestTargetInternals.prototype.canBeDestroyed = _canBeDestroyed;
   RequestTargetInternals.prototype.destroy = _destroy;

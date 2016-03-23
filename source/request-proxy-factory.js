@@ -1,5 +1,4 @@
 'use strict';
-//FIXME Add Proxy handler for deleteProperty to send destroy resource command instead of dummy
 var RequestProxyFactory = (function() {
 
   var FACTORY_FIELD = Symbol('request.proxy.factory::factory');
@@ -38,14 +37,20 @@ var RequestProxyFactory = (function() {
   }
 
   function Proxy_deleteProperty(wrapper, name) {
-    return false;
+    var result = false;
+    var target = wrapper.target;
+    if (ProxyCommands.fields.deleteProperty in target) {
+      target[ProxyCommands.fields.deleteProperty](name);
+      result = true;
+    }
+    return result;
   }
 
-  function Proxy_ownKeys(wrapper) {
+  function Proxy_ownKeys() {
     return Object.getOwnPropertyNames(EXCLUSIONS);
   }
 
-  function Proxy_enumerate(wrapper) {
+  function Proxy_enumerate() {
     return Object.getOwnPropertyNames(EXCLUSIONS);
   }
 

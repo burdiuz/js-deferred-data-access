@@ -4,7 +4,11 @@ describe('RequestHandlers', function() {
   function __createProxyCommandHandlers(data, sandbox) {
     data = data || {};
     sandbox = sandbox || sinon;
-    ProxyCommands.createDescriptors(sandbox.spy(), sandbox.spy(), sandbox.spy(), sandbox.spy(), data);
+    ProxyCommands.createDescriptors({
+      get: sandbox.spy(),
+      set: sandbox.spy(),
+      apply: sandbox.spy()
+    }, sandbox.spy(), data);
     return data;
   }
 

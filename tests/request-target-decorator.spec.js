@@ -1,10 +1,14 @@
 describe('RequestTargetDecorator', function() {
   var decorator, resource, factory, handlers;
+  var requestPromise;
 
   function __createSendCommandRequest() {
     var resource = {};
     resource[TARGET_INTERNALS] = {
-      sendRequest: sinon.spy()
+      sendRequest: sinon.spy(function() {
+        return requestPromise;
+      }),
+      registerChild: sinon.spy()
     };
 
     return resource;
@@ -51,8 +55,8 @@ describe('RequestTargetDecorator', function() {
     describe('When handlers changed', function() {
       beforeEach(function() {
         handlers.setHandlers({
-            updated: sinon.spy()
-          });
+          updated: sinon.spy()
+        });
 
         resource = __createSendCommandRequest();
         decorator.decorate(resource);
@@ -93,9 +97,7 @@ describe('RequestTargetDecorator', function() {
 
     describe('When request returns promise', function() {
       beforeEach(function() {
-        resource[TARGET_INTERNALS].sendRequest = sinon.spy(function() {
-          return Promise.resolve('all ok');
-        });
+        requestPromise = Promise.resolve('all ok');
         factory.create.reset();
         promise = resource.type('path', 'data');
       });
@@ -103,6 +105,10 @@ describe('RequestTargetDecorator', function() {
         promise.then(function() {
           done();
         });
+      });
+      it('should register child request object in parent', function() {
+        expect(resource[TARGET_INTERNALS].registerChild).to.be.calledTwice;
+        expect(resource[TARGET_INTERNALS].registerChild).to.be.calledWith(promise);
       });
 
       it('should create new request', function() {

@@ -197,7 +197,7 @@ var RequestHandlers = (function() {
 
   function RequestHandlers_areProxyHandlersAvailable(handlers, throwError) {
     var result = true;
-    var list = ProxyCommands.list;
+    var list = ProxyCommands.required;
     var length = list.length;
     for (var index = 0; index < length; index++) {
       var name = list[index];

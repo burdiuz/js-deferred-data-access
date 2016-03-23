@@ -10,21 +10,21 @@ var CommandDescriptor = (function() {
 
   /**
    * Immutable
-   * @param {String|Symbol} name
+   * @param {String|Object} type
    * @param {Function} handle
-   * @param {String|Object} [type]
-   * @param {Function} [isTemporary]
+   * @param {String|Symbol} [name=]
+   * @param {Function} [isTemporary=]
    * @constructor
    */
-  function CommandDescriptor(name, handle, type, isTemporary) {
+  function CommandDescriptor(type, handle, name, isTemporary) {
     /**
      * @type {String|Symbol}
      */
-    this.name = name;
+    this.name = name !== undefined ? name : type;
     /**
      * @type {String|Object}
      */
-    this.type = type !== undefined ? type : name;
+    this.type = type;
     /**
      * @type {Function}
      */
@@ -39,8 +39,16 @@ var CommandDescriptor = (function() {
 
   //---------------
 
-  function CommandDescriptor_create(name, handle, command, isTemporary) {
-    var descriptor = new CommandDescriptor(name, handle, command, isTemporary);
+  /**
+   *
+   * @param {string} command
+   * @param {Function} handle
+   * @param {string} [name=]
+   * @param {Function} [isTemporary=]
+   * @returns {CommandDescriptor}
+   */
+  function CommandDescriptor_create(command, handle, name, isTemporary) {
+    var descriptor = new CommandDescriptor(command, handle, name, isTemporary);
     // We can use Object.freeze(), it keeps class/constructor information
     return Object.freeze(descriptor);
   }
@@ -50,9 +58,9 @@ var CommandDescriptor = (function() {
   return CommandDescriptor;
 })();
 
-function descriptorGeneratorFactory(name, command) {
+function descriptorGeneratorFactory(command, name) {
   return function descriptorSetter(handle, isTemporary, target) {
-    var descriptor = CommandDescriptor.create(name, handle, command, isTemporary);
+    var descriptor = CommandDescriptor.create(command, handle, name, isTemporary);
     if (target instanceof Array) {
       target.push(descriptor);
     } else if (target) {
@@ -79,38 +87,62 @@ var ProxyCommands = (function() {
   var GET_FIELD = Symbol('proxy.commands::get');
   var SET_FIELD = Symbol('proxy.commands::set');
   var APPLY_FIELD = Symbol('proxy.commands::apply');
+  var DELETE_PROPERTY_FIELD = Symbol('proxy.commands::deleteProperty');
+
   var commands = {
     GET: 'get',
     SET: 'set',
-    APPLY: 'apply'
+    APPLY: 'apply',
+    DELETE_PROPERTY: 'deleteProperty'
   };
   commands.fields = Object.freeze({
     get: GET_FIELD,
     set: SET_FIELD,
-    apply: APPLY_FIELD
+    apply: APPLY_FIELD,
+    deleteProperty: DELETE_PROPERTY_FIELD
   });
 
   function get_list() {
+    return [commands.GET, commands.SET, commands.APPLY, commands.DELETE_PROPERTY];
+  }
+
+  function get_required() {
     return [commands.GET, commands.SET, commands.APPLY];
   }
 
-  function createDescriptors(getHandle, setHandle, applyHandle, isTemporary, target) {
+  function createDescriptors(handlers, isTemporary, target) {
+    var handler, name, field, descriptor;
+    var list = ProxyCommands.list;
+    var length = list.length;
     target = target || {};
-    commands.createGETDescriptor(getHandle, isTemporary, target);
-    commands.createSETDescriptor(setHandle, isTemporary, target);
-    commands.createAPPLYDescriptor(applyHandle, isTemporary, target);
+    for (var index = 0; index < length; index++) {
+      name = list[index];
+      handler = handlers[name];
+      field = ProxyCommands.fields[name];
+      if (handler instanceof Function) {
+        descriptor = CommandDescriptor.create(name, handler, field, isTemporary);
+        if (target instanceof Array) {
+          target.push(descriptor);
+        } else if (target) {
+          target[field] = descriptor;
+        }
+      }
+    }
     return target;
   }
 
   Object.defineProperties(commands, {
     list: {
       get: get_list
+    },
+    required: {
+      get: get_required
     }
   });
 
-  commands.createGETDescriptor = descriptorGeneratorFactory(commands.fields.get, commands.GET);
-  commands.createSETDescriptor = descriptorGeneratorFactory(commands.fields.set, commands.SET);
-  commands.createAPPLYDescriptor = descriptorGeneratorFactory(commands.fields.apply, commands.APPLY);
+  commands.createGETDescriptor = descriptorGeneratorFactory(commands.GET, commands.fields.get);
+  commands.createSETDescriptor = descriptorGeneratorFactory(commands.SET, commands.fields.set);
+  commands.createAPPLYDescriptor = descriptorGeneratorFactory(commands.APPLY, commands.fields.apply);
   commands.createDescriptors = createDescriptors;
   return Object.freeze(commands);
 })();

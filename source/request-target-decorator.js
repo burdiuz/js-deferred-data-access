@@ -13,7 +13,9 @@ var RequestTargetDecorator = (function() {
 
       function _commandHandler(command, value) {
         var promise = this[TARGET_INTERNALS].sendRequest(propertyName, commandType, command, value);
-        return _factory.create(promise || Promise.reject('Initial request failed and didn\'t result in promise.'));
+        var child = _factory.create(promise || Promise.reject('Initial request failed and didn\'t result in promise.'));
+        this[TARGET_INTERNALS].registerChild(child);
+        return child;
       }
 
       if (!_members.hasOwnProperty(propertyName)) {
@@ -24,7 +26,7 @@ var RequestTargetDecorator = (function() {
 
     function _decorate(request) {
       if (!_handlers.available) return;
-      /* FIXME revert change when ES6 willbe supported widely
+      /* FIXME revert change when ES6 will be supported widely
        for (var descriptor of _handlers) {
        request[descriptor.name] = _getMember(descriptor.name, descriptor.type);
        }
