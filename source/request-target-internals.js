@@ -52,26 +52,22 @@ var RequestTargetInternals = (function() {
     this.status = TargetStatus.RESOLVED;
     if (isResource(value)) {
       this.link = getResourceData(value);
-      //FIXME isTemporary should be called after(or before?) each child request response, the property might be obsolete
-      // not sure about this mechanism of marking targets temporary and then GC'ing them
-      this.temporary = this.requestHandlers.isTemporary(this.requestTarget);
+      //In theory, at time of these lines executing, "temporary" property should be already set via _commandHandler() set from RequestTargetDecorator
       if (this.temporary) {
         this.queue[this.queue.length - 1][1].promise.then(this.destroy.bind(this), this.destroy.bind(this));
       }
       //INFO Sending "this" as result of resolve() handler, causes infinite loop of this.then(), so I've used wrapper object
       value = {target: this};
+      this._sendQueue();
+    } else { // else { value must be passed as is }
+      this._rejectQueue('Target of the call is not a resource and call cannot be sent.');
     }
-    this._sendQueue();
     return value;
   }
 
   function _rejectHandler(value) {
     this.status = TargetStatus.REJECTED;
-    while (this.queue && this.queue.length) {
-      var request = this.queue.shift();
-      request[1].reject(new Error('Target of the call was rejected and call cannot be sent.'));
-    }
-    this.queue = null;
+    this._rejectQueue('Target of the call was rejected and call cannot be sent.');
     return value;
   }
 
@@ -83,6 +79,14 @@ var RequestTargetInternals = (function() {
       var deferred = request[2];
       pack.target = this.link.id;
       this._handleRequest(name, pack, deferred);
+    }
+    this.queue = null;
+  }
+
+  function _rejectQueue(message) {
+    while (this.queue && this.queue.length) {
+      var request = this.queue.shift();
+      request[1].reject(new Error(message || 'This request was rejected before sending.'));
     }
     this.queue = null;
   }
@@ -155,6 +159,7 @@ var RequestTargetInternals = (function() {
     var promise = null;
     if (this.canBeDestroyed()) {
       this.status = TargetStatus.DESTROYED;
+      this._rejectQueue('Target resource was destroyed before sending this call.');
       //FIXME add clearing queue, children list and other removal
       promise = this.sendRequest(RequestTargetCommands.DESTROY);
     } else {
@@ -193,6 +198,7 @@ var RequestTargetInternals = (function() {
   RequestTargetInternals.prototype._resolveHandler = _resolveHandler;
   RequestTargetInternals.prototype._rejectHandler = _rejectHandler;
   RequestTargetInternals.prototype._sendQueue = _sendQueue;
+  RequestTargetInternals.prototype._rejectQueue = _rejectQueue;
   RequestTargetInternals.prototype.sendRequest = _sendRequest;
   RequestTargetInternals.prototype._addToQueue = _addToQueue;
   RequestTargetInternals.prototype._applyRequest = _applyRequest;

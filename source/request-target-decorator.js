@@ -7,21 +7,39 @@ var RequestTargetDecorator = (function() {
    * @constructor
    */
   function RequestTargetDecorator(_factory, _handlers) {
-    var _members = {};
+    var _members = new Map();
 
-    function _getMember(propertyName, commandType) {
+    function _getMember(propertyName, commandType, isTemporary) {
 
       function _commandHandler(command, value) {
-        var promise = this[TARGET_INTERNALS].sendRequest(propertyName, commandType, command, value);
-        var child = _factory.create(promise || Promise.reject('Initial request failed and didn\'t result in promise.'));
-        this[TARGET_INTERNALS].registerChild(child);
-        return child;
+        var result;
+        var promise;
+        var error = false;
+        if (this[TARGET_INTERNALS]) {
+          promise = this[TARGET_INTERNALS].sendRequest(propertyName, commandType, command, value);
+          if (promise) {
+            promise.then(function() {
+              RequestTarget.setTemporary(result, Boolean(isTemporary(result, command, value)));
+            });
+          } else {
+            Promise.reject(new Error('Initial request failed and didn\'t result in promise.'));
+            error = true;
+          }
+        } else {
+          promise = Promise.reject(new Error('Target object is not a resource, so cannot be used for calls.'));
+          error = true;
+        }
+        result = _factory.create(promise);
+        if (!error) {
+          this[TARGET_INTERNALS].registerChild(result);
+        }
+        return result;
       }
 
-      if (!_members.hasOwnProperty(propertyName)) {
-        _members[propertyName] = _commandHandler;
+      if (!_members.has(propertyName)) {
+        _members.set(propertyName, _commandHandler);
       }
-      return _members[propertyName];
+      return _members.get(propertyName);
     }
 
     function _decorate(request) {
@@ -35,7 +53,7 @@ var RequestTargetDecorator = (function() {
       var result;
       while (!(result = iterator.next()).done) {
         var descriptor = result.value;
-        request[descriptor.name] = _getMember(descriptor.name, descriptor.type);
+        request[descriptor.name] = _getMember(descriptor.name, descriptor.type, descriptor.isTemporary);
       }
       return request;
     }

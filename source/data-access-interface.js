@@ -36,6 +36,7 @@ var DataAccessInterface = (function() {
       }
     });
 
+    //FIXME prevent changing handlers after interface started working, pass them into constructor?
     this.setHandlers = _handlers.setHandlers;
   }
 

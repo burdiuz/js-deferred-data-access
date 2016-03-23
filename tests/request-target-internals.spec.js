@@ -2,13 +2,32 @@
  * Created by Oleg Galaburda on 21.03.16.
  */
 describe.only('RequestTargetInternals', function() {
-  var deferred, target, requestTarget, handlers;
+  /**
+   * @type {{status:string, promise:Promise}}
+   */
+  var deferred;
+  /**
+   * @type {RequestTargetInternals}
+   */
+  var target;
+  /**
+   * @type {RequestTarget}
+   */
+  var requestTarget;
+  /**
+   * @type {RequestHandlers}
+   */
+  var handlers;
   var isTemporaryResult, handleResult, linkData;
+
   beforeEach(function() {
     requestTarget = {};
     handlers = {
-      handle: sinon.spy(function() {
-        return handleResult;
+      handle: sinon.spy(function(a, b, c, deferred) {
+        deferred.resolve(handleResult);
+      }),
+      hasHandler: sinon.spy(function() {
+        return true;
       }),
       isTemporary: sinon.spy(function() {
         return isTemporaryResult;
@@ -17,6 +36,7 @@ describe.only('RequestTargetInternals', function() {
     deferred = createDeferred();
     target = new RequestTargetInternals(requestTarget, deferred.promise, handlers);
   });
+
   describe('When created, pending', function() {
     it('should store construction arguments', function() {
       expect(target.requestTarget).to.be.equal(requestTarget);
@@ -32,13 +52,37 @@ describe.only('RequestTargetInternals', function() {
       expect(target.promise).to.be.an.instanceof(Promise);
       expect(target.promise).to.not.be.equal(deferred.promise);
     });
+
     describe('When making child request', function() { // add to queue
+      var result;
+
+      beforeEach(function() {
+        handleResult = 'hi :)';
+        result = target.sendRequest('command', 'do-something', 'with-this', 'thanks');
+      });
+
+      it('should have recorded request in queue', function(){
+        expect(target.queue).to.have.length(1);
+      });
+
+      it('should not send request immediately', function(){
+        expect(handlers.handle).to.not.be.called;
+      });
 
     });
-    describe('When subscribing to promise', function() { // add to queue
 
+    describe('When subscribing to promise', function() { // mark child promises created
+      beforeEach(function() {
+        target.then(function() {
+        });
+      });
+      it('should record that promise chain continues', function() {
+        expect(target.hadChildPromises).to.be.true;
+      });
     });
+
   });
+
   describe('When resolved', function() {
     beforeEach(function(done) {
       linkData = {

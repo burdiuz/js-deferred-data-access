@@ -1,6 +1,8 @@
 'use strict';
 var RequestTarget = (function() {
 
+  var PROMISE_FIELD = Symbol('request.target::promise');
+
   /**
    * The object that will be available on other side
    * @param _promise {Promise}
@@ -8,18 +10,27 @@ var RequestTarget = (function() {
    * @constructor
    */
   function RequestTarget(_promise, _requestHandlers) {
-
+    function promiseHandler(data) {
+      if (!isRequest(data)) {
+        this[PROMISE_FIELD] = _promise;
+        delete this[TARGET_INTERNALS];
+      }
+    }
+    _promise.then(promiseHandler, promiseHandler);
     Object.defineProperty(this, TARGET_INTERNALS, {
-      value: new RequestTargetInternals(this, _promise, _requestHandlers)
+      value: new RequestTargetInternals(this, _promise, _requestHandlers),
+      configurable: true
     });
   }
 
   function _then() {
-    this[TARGET_INTERNALS].then.apply(this[TARGET_INTERNALS], arguments);
+    var target = this[TARGET_INTERNALS] || this[PROMISE_FIELD];
+    target.then.apply(target, arguments);
   }
 
   function _catch() {
-    this[TARGET_INTERNALS].catch.apply(this[TARGET_INTERNALS], arguments);
+    var target = this[TARGET_INTERNALS] || this[PROMISE_FIELD];
+    target.catch.apply(target, arguments);
   }
 
   RequestTarget.prototype.then = _then;
@@ -48,7 +59,7 @@ var RequestTarget = (function() {
   }
 
   function RequestTarget_isTemporary(target) {
-    return Boolean(target && target[TARGET_INTERNALS] && target[TARGET_INTERNALS].temporary);
+    return target && target[TARGET_INTERNALS] && target[TARGET_INTERNALS].temporary;
   }
 
   function RequestTarget_setTemporary(target, value) {
