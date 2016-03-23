@@ -22,7 +22,7 @@ var RequestTargetDecorator = (function() {
               RequestTarget.setTemporary(result, Boolean(isTemporary(result, command, value)));
             });
           } else {
-            Promise.reject(new Error('Initial request failed and didn\'t result in promise.'));
+            promise = Promise.reject(new Error('Initial request failed and didn\'t result in promise.'));
             error = true;
           }
         } else {

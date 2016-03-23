@@ -1,7 +1,7 @@
 /**
  * Created by Oleg Galaburda on 21.03.16.
  */
-describe.only('RequestTargetInternals', function() {
+describe('RequestTargetInternals', function() {
   /**
    * @type {{status:string, promise:Promise}}
    */

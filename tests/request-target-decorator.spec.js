@@ -72,6 +72,7 @@ describe('RequestTargetDecorator', function() {
   describe('_commandHandler()', function() {
     var promise;
     beforeEach(function() {
+      requestPromise = null;
       decorator.decorate(resource);
       promise = resource.type('path', 'data');
     });
@@ -107,7 +108,7 @@ describe('RequestTargetDecorator', function() {
         });
       });
       it('should register child request object in parent', function() {
-        expect(resource[TARGET_INTERNALS].registerChild).to.be.calledTwice;
+        expect(resource[TARGET_INTERNALS].registerChild).to.be.calledOnce;
         expect(resource[TARGET_INTERNALS].registerChild).to.be.calledWith(promise);
       });
 
