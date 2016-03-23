@@ -18,7 +18,9 @@ var getId = (function() {
   };
 })();
 
-var createDeferred = (function() {
+
+
+var Deferred = (function() {
 
   /**
    * @constructor
@@ -56,15 +58,15 @@ var createDeferred = (function() {
   Deferred.prototype.resolve = _resolve;
   Deferred.prototype.reject = _reject;
 
-  /**
-   * @returns {Deferred}
-   */
-  function createDeferred() {
-    return new Deferred();
-  }
-
-  return createDeferred;
+  return Deferred;
 })();
+
+/**
+ * @returns {Deferred}
+ */
+function createDeferred() {
+  return new Deferred();
+}
 
 function areProxiesAvailable() {
   return typeof(Proxy) === 'function';

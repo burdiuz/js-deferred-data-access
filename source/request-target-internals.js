@@ -84,9 +84,11 @@ var RequestTargetInternals = (function() {
   }
 
   function _rejectQueue(message) {
+    var error = null;
     while (this.queue && this.queue.length) {
       var request = this.queue.shift();
-      request[1].reject(new Error(message || 'This request was rejected before sending.'));
+      error = error || new Error(message || 'This request was rejected before sending.');
+      request[1].reject(error);
     }
     this.queue = null;
   }
@@ -152,7 +154,7 @@ var RequestTargetInternals = (function() {
   }
 
   function _canBeDestroyed() {
-    return this.status === TargetStatus.RESOLVED && this.link.id;
+    return this.status === TargetStatus.RESOLVED || this.status === TargetStatus.REJECTED;
   }
 
   function _destroy() {
@@ -161,10 +163,13 @@ var RequestTargetInternals = (function() {
       this.status = TargetStatus.DESTROYED;
       this._rejectQueue('Target resource was destroyed before sending this call.');
       //FIXME add clearing queue, children list and other removal
-      promise = this.sendRequest(RequestTargetCommands.DESTROY);
+      if (this.status === TargetStatus.RESOLVED) {
+        promise = this.sendRequest(RequestTargetCommands.DESTROY);
+      }else{
+        promise = Promise.resolve();
+      }
     } else {
-      //FIXME Should be here something as rejection value?
-      promise = Promise.reject();
+      promise = Promise.reject(new Error('Invalid or already destroyed target.'));
     }
     return promise;
   }
@@ -202,6 +207,7 @@ var RequestTargetInternals = (function() {
   RequestTargetInternals.prototype.sendRequest = _sendRequest;
   RequestTargetInternals.prototype._addToQueue = _addToQueue;
   RequestTargetInternals.prototype._applyRequest = _applyRequest;
+  RequestTargetInternals.prototype._handleRequest = _handleRequest;
   RequestTargetInternals.prototype.registerChild = _registerChild;
   RequestTargetInternals.prototype.isActive = _isActive;
   RequestTargetInternals.prototype.canBeDestroyed = _canBeDestroyed;
