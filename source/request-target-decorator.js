@@ -18,8 +18,8 @@ var RequestTargetDecorator = (function() {
         if (this[TARGET_INTERNALS]) {
           promise = this[TARGET_INTERNALS].sendRequest(propertyName, commandType, command, value);
           if (promise) {
-            promise.then(function() {
-              RequestTarget.setTemporary(result, Boolean(isTemporary(result, command, value)));
+            promise.then(function(data) {
+              RequestTarget.setTemporary(result, Boolean(isTemporary(result, data, command, value)));
             });
           } else {
             promise = Promise.reject(new Error('Initial request failed and didn\'t result in promise.'));

@@ -18,10 +18,8 @@ var RequestTargetInternals = (function() {
     this.status = TargetStatus.PENDING;
     this.queue = [];
     this.children = [];
-    this.promise = _promise.then(
-      this._resolveHandler.bind(this),
-      this._rejectHandler.bind(this)
-    );
+    this._deferred = createDeferred();
+    this.promise = this._deferred.promise;
 
     Object.defineProperties(this, {
       poolId: {
@@ -34,6 +32,11 @@ var RequestTargetInternals = (function() {
         get: get_id
       }
     });
+
+    _promise.then(
+      _resolveHandler.bind(this),
+      _rejectHandler.bind(this)
+    );
   }
 
   function get_poolId() {
@@ -52,23 +55,26 @@ var RequestTargetInternals = (function() {
     this.status = TargetStatus.RESOLVED;
     if (isResource(value)) {
       this.link = getResourceData(value);
+      //INFO Sending "this" as result of resolve() handler, causes infinite loop of this.then(), so I've used wrapper object
+      //FIXME Check if Proxy wrapper will work with promise result, probably not
+      value = {target: this.requestTarget};
+      this._sendQueue();
       //In theory, at time of these lines executing, "temporary" property should be already set via _commandHandler() set from RequestTargetDecorator
       if (this.temporary) {
-        this.queue[this.queue.length - 1][1].promise.then(this.destroy.bind(this), this.destroy.bind(this));
+        this.destroy();
       }
-      //INFO Sending "this" as result of resolve() handler, causes infinite loop of this.then(), so I've used wrapper object
-      value = {target: this};
-      this._sendQueue();
     } else { // else { value must be passed as is }
       this._rejectQueue('Target of the call is not a resource and call cannot be sent.');
     }
-    return value;
+    this._deferred.resolve(value);
+    delete this._deferred;
   }
 
   function _rejectHandler(value) {
     this.status = TargetStatus.REJECTED;
     this._rejectQueue('Target of the call was rejected and call cannot be sent.');
-    return value;
+    this._deferred.reject(value);
+    delete this._deferred;
   }
 
   function _sendQueue() {
@@ -84,11 +90,13 @@ var RequestTargetInternals = (function() {
   }
 
   function _rejectQueue(message) {
-    var error = null;
+    var error = new Error(message || 'This request was rejected before sending.');
     while (this.queue && this.queue.length) {
+      /**
+       * @type {[string, {type:string, cmd:string, value:*, target:string}, Deferred]}
+       */
       var request = this.queue.shift();
-      error = error || new Error(message || 'This request was rejected before sending.');
-      request[1].reject(error);
+      request[2].reject(error);
     }
     this.queue = null;
   }
@@ -160,14 +168,13 @@ var RequestTargetInternals = (function() {
   function _destroy() {
     var promise = null;
     if (this.canBeDestroyed()) {
-      this.status = TargetStatus.DESTROYED;
-      this._rejectQueue('Target resource was destroyed before sending this call.');
-      //FIXME add clearing queue, children list and other removal
+      //INFO I should not clear children list, since they are pending and requests already sent.
       if (this.status === TargetStatus.RESOLVED) {
-        promise = this.sendRequest(RequestTargetCommands.DESTROY);
-      }else{
+        promise = this.sendRequest(RequestTargetCommands.DESTROY, RequestTargetCommands.DESTROY);
+      } else {
         promise = Promise.resolve();
       }
+      this.status = TargetStatus.DESTROYED;
     } else {
       promise = Promise.reject(new Error('Invalid or already destroyed target.'));
     }
@@ -200,8 +207,6 @@ var RequestTargetInternals = (function() {
     return data;
   }
 
-  RequestTargetInternals.prototype._resolveHandler = _resolveHandler;
-  RequestTargetInternals.prototype._rejectHandler = _rejectHandler;
   RequestTargetInternals.prototype._sendQueue = _sendQueue;
   RequestTargetInternals.prototype._rejectQueue = _rejectQueue;
   RequestTargetInternals.prototype.sendRequest = _sendRequest;

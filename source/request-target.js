@@ -10,17 +10,19 @@ var RequestTarget = (function() {
    * @constructor
    */
   function RequestTarget(_promise, _requestHandlers) {
-    function promiseHandler(data) {
-      if (!isRequest(data)) {
-        this[PROMISE_FIELD] = _promise;
-        delete this[TARGET_INTERNALS];
-      }
-    }
+    var promiseHandler = _promiseResolutionHandler.bind(this, _promise);
     _promise.then(promiseHandler, promiseHandler);
     Object.defineProperty(this, TARGET_INTERNALS, {
       value: new RequestTargetInternals(this, _promise, _requestHandlers),
       configurable: true
     });
+  }
+
+  function _promiseResolutionHandler(_promise, data) {
+    if (!isRequest(data)) {
+      this[PROMISE_FIELD] = _promise;
+      delete this[TARGET_INTERNALS];
+    }
   }
 
   function _then() {
