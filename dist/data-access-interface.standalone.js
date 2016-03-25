@@ -1247,23 +1247,23 @@
         return _descriptors[type] || null;
       }
   
-      function _handle(resource, name, pack, deferred) {
+      function _handle(parentRequest, name, pack, deferred, childRequest) {
         var list = _converter ? _converter.lookupForPending(pack.value) : null;
         if (list && list.length) {
           // FIXME Need to test on all platforms: In other browsers this might not work because may need list of Promise objects, not RequestTargets
           Promise.all(list).then(function() {
-            _handleImmediately(resource, name, pack, deferred);
+            _handleImmediately(parentRequest, name, pack, deferred, childRequest);
           });
         } else {
-          _handleImmediately(resource, name, pack, deferred);
+          _handleImmediately(parentRequest, name, pack, deferred, childRequest);
         }
       }
   
-      function _handleImmediately(resource, name, data, deferred) {
+      function _handleImmediately(parentRequest, name, data, deferred, childRequest) {
         var handler = _getHandler(name);
         if (handler instanceof CommandDescriptor) {
           //INFO result should be applied to deferred.resolve() or deferred.reject()
-          handler.handle(resource, data, deferred);
+          handler.handle(parentRequest, data, deferred, childRequest);
         } else {
           throw new Error('Command descriptor for "' + name + '" was not found.');
         }
@@ -1430,10 +1430,18 @@
           var promise;
           var error = false;
           if (this[TARGET_INTERNALS]) {
-            promise = this[TARGET_INTERNALS].sendRequest(propertyName, commandType, command, value);
+            var pack = RequestTargetInternals.createRequestPackage(type, cmd, value, this[TARGET_INTERNALS].id);
+            var deferred = createDeferred();
+            result = _factory.create(deferred.promise);
+            promise = this[TARGET_INTERNALS].sendRequest(
+              propertyName,
+              pack,
+              deferred,
+              result
+            );
             if (promise) {
               promise.then(function(data) {
-                RequestTarget.setTemporary(result, Boolean(isTemporary(result, data, command, value)));
+                RequestTarget.setTemporary(result, Boolean(isTemporary(result, pack, data)));
               });
             } else {
               promise = Promise.reject(new Error('Initial request failed and didn\'t result in promise.'));
@@ -1443,11 +1451,7 @@
             promise = Promise.reject(new Error('Target object is not a resource, so cannot be used for calls.'));
             error = true;
           }
-          result = _factory.create(promise);
-          if (!error) {
-            this[TARGET_INTERNALS].registerChild(result);
-          }
-          return result;
+          return result || _factory.create(promise);
         }
   
         if (!_members.has(propertyName)) {
@@ -1765,8 +1769,9 @@
         var name = request[0];
         var pack = request[1];
         var deferred = request[2];
+        var child = request[3];
         pack.target = this.link.id;
-        this._handleRequest(name, pack, deferred);
+        this._handleRequest(name, pack, deferred, child);
       }
       this.queue = null;
     }
@@ -1783,27 +1788,29 @@
       this.queue = null;
     }
   
-    function _sendRequest(name, type, cmd, value) {
+    function _sendRequest(name, pack, deferred, child) {
       var promise = null;
       if (this.requestHandlers.hasHandler(name)) {
-        var pack = RequestTargetInternals.createRequestPackage(type, cmd, value, this.id);
-        promise = this._applyRequest(name, pack, createDeferred());
+        promise = this._applyRequest(name, pack, deferred || createDeferred(), child);
       } else {
         throw new Error('Request handler of type "' + type + '" is not registered.');
+      }
+      if (child) {
+        this.registerChild(child);
       }
       return promise;
     }
   
-    function _addToQueue(name, pack, deferred) {
-      this.queue.push([name, pack, deferred]);
+    function _addToQueue(name, pack, deferred, child) {
+      this.queue.push([name, pack, deferred, child]);
     }
   
   
-    function _applyRequest(name, pack, deferred) {
+    function _applyRequest(name, pack, deferred, child) {
       var promise = deferred.promise;
       switch (this.status) {
         case TargetStatus.PENDING:
-          this._addToQueue(name, pack, deferred);
+          this._addToQueue(name, pack, deferred, child);
           break;
         case TargetStatus.REJECTED:
           promise = Promise.reject(new Error('Target object was rejected and cannot be used for calls.'));
@@ -1812,14 +1819,14 @@
           promise = Promise.reject(new Error('Target object was destroyed and cannot be used for calls.'));
           break;
         case TargetStatus.RESOLVED:
-          this._handleRequest(name, pack, deferred);
+          this._handleRequest(name, pack, deferred, child);
           break;
       }
       return promise;
     }
   
-    function _handleRequest(name, pack, deferred) {
-      this.requestHandlers.handle(this.requestTarget, name, pack, deferred);
+    function _handleRequest(name, pack, deferred, child) {
+      this.requestHandlers.handle(this.requestTarget, name, pack, deferred, child);
     }
   
     function _registerChild(childRequestTarget) {

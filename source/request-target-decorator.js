@@ -16,10 +16,18 @@ var RequestTargetDecorator = (function() {
         var promise;
         var error = false;
         if (this[TARGET_INTERNALS]) {
-          promise = this[TARGET_INTERNALS].sendRequest(propertyName, commandType, command, value);
+          var pack = RequestTargetInternals.createRequestPackage(type, cmd, value, this[TARGET_INTERNALS].id);
+          var deferred = createDeferred();
+          result = _factory.create(deferred.promise);
+          promise = this[TARGET_INTERNALS].sendRequest(
+            propertyName,
+            pack,
+            deferred,
+            result
+          );
           if (promise) {
             promise.then(function(data) {
-              RequestTarget.setTemporary(result, Boolean(isTemporary(result, data, command, value)));
+              RequestTarget.setTemporary(result, Boolean(isTemporary(result, pack, data)));
             });
           } else {
             promise = Promise.reject(new Error('Initial request failed and didn\'t result in promise.'));
@@ -29,11 +37,7 @@ var RequestTargetDecorator = (function() {
           promise = Promise.reject(new Error('Target object is not a resource, so cannot be used for calls.'));
           error = true;
         }
-        result = _factory.create(promise);
-        if (!error) {
-          this[TARGET_INTERNALS].registerChild(result);
-        }
-        return result;
+        return result || _factory.create(promise);
       }
 
       if (!_members.has(propertyName)) {

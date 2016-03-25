@@ -83,8 +83,9 @@ var RequestTargetInternals = (function() {
       var name = request[0];
       var pack = request[1];
       var deferred = request[2];
+      var child = request[3];
       pack.target = this.link.id;
-      this._handleRequest(name, pack, deferred);
+      this._handleRequest(name, pack, deferred, child);
     }
     this.queue = null;
   }
@@ -101,27 +102,29 @@ var RequestTargetInternals = (function() {
     this.queue = null;
   }
 
-  function _sendRequest(name, type, cmd, value) {
+  function _sendRequest(name, pack, deferred, child) {
     var promise = null;
     if (this.requestHandlers.hasHandler(name)) {
-      var pack = RequestTargetInternals.createRequestPackage(type, cmd, value, this.id);
-      promise = this._applyRequest(name, pack, createDeferred());
+      promise = this._applyRequest(name, pack, deferred || createDeferred(), child);
     } else {
       throw new Error('Request handler of type "' + type + '" is not registered.');
+    }
+    if (child) {
+      this.registerChild(child);
     }
     return promise;
   }
 
-  function _addToQueue(name, pack, deferred) {
-    this.queue.push([name, pack, deferred]);
+  function _addToQueue(name, pack, deferred, child) {
+    this.queue.push([name, pack, deferred, child]);
   }
 
 
-  function _applyRequest(name, pack, deferred) {
+  function _applyRequest(name, pack, deferred, child) {
     var promise = deferred.promise;
     switch (this.status) {
       case TargetStatus.PENDING:
-        this._addToQueue(name, pack, deferred);
+        this._addToQueue(name, pack, deferred, child);
         break;
       case TargetStatus.REJECTED:
         promise = Promise.reject(new Error('Target object was rejected and cannot be used for calls.'));
@@ -130,14 +133,14 @@ var RequestTargetInternals = (function() {
         promise = Promise.reject(new Error('Target object was destroyed and cannot be used for calls.'));
         break;
       case TargetStatus.RESOLVED:
-        this._handleRequest(name, pack, deferred);
+        this._handleRequest(name, pack, deferred, child);
         break;
     }
     return promise;
   }
 
-  function _handleRequest(name, pack, deferred) {
-    this.requestHandlers.handle(this.requestTarget, name, pack, deferred);
+  function _handleRequest(name, pack, deferred, child) {
+    this.requestHandlers.handle(this.requestTarget, name, pack, deferred, child);
   }
 
   function _registerChild(childRequestTarget) {
