@@ -42,7 +42,7 @@ var RequestTargetDecorator = (function() {
       return _members.get(propertyName);
     }
 
-    function _decorate(request) {
+    function _apply(request) {
       if (!_handlers.available) return;
       /* FIXME revert change when ES6 will be supported widely
        for (var descriptor of _handlers) {
@@ -58,7 +58,7 @@ var RequestTargetDecorator = (function() {
       return request;
     }
 
-    this.decorate = _decorate;
+    this.apply = _apply;
   }
 
   //------------------- static

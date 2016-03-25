@@ -6,7 +6,7 @@ describe('RequestFactory', function() {
     };
     sandbox = sinon.sandbox.create();
     decorator = {
-      decorate: sinon.spy()
+      apply: sinon.spy()
     };
     resource = {};
     sandbox.stub(RequestTarget, 'create').returns(resource);
@@ -35,8 +35,8 @@ describe('RequestFactory', function() {
     });
 
     it('should call decorator', function() {
-      expect(decorator.decorate).to.be.calledOnce;
-      expect(decorator.decorate.getCall(0).args[0]).to.be.equal(result);
+      expect(decorator.apply).to.be.calledOnce;
+      expect(decorator.apply.getCall(0).args[0]).to.be.equal(result);
     });
   });
 

@@ -122,6 +122,10 @@ describe('RequestHandlers', function() {
       var item = iterator.next();
       expect(item.done).to.be.true;
     });
+    it('should be iterator for itself', function() {
+      var iterator = handlers[Symbol.iterator]();
+      expect(iterator[Symbol.iterator]()).to.be.equal(iterator);
+    });
   });
 
   describe('When created with Proxies enabled', function() {

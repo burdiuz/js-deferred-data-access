@@ -17,7 +17,7 @@ var RequestFactory = (function() {
   function _create(promise) {
     var request = RequestTarget.create(promise, this[FACTORY_HANDLERS_FIELD]);
     if (this[FACTORY_HANDLERS_FIELD].available) {
-      this[FACTORY_DECORATOR_FIELD].decorate(request);
+      this[FACTORY_DECORATOR_FIELD].apply(request);
     }
     return request;
   }
