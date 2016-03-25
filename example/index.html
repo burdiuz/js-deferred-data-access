@@ -20,7 +20,7 @@
   <script type="text/javascript" src="../source/data-access-interface.js"></script>
   <script type="text/javascript">
     // Create interface
-    var api = new DataAccessInterface(true);
+    var api;
     var ProxyCommands = DataAccessInterface.ProxyCommands;
     var CommandDescriptor = DataAccessInterface.CommandDescriptor;
     var proxyCommands = ProxyCommands.createDescriptors(function(res, cmd, def) {
@@ -46,7 +46,7 @@
     });
 
     // Setup commands that can be applied to request targets
-    api.setHandlers(proxyCommands);
+    api = new DataAccessInterface(proxyCommands, true);
     // create a request target
     var request = api.factory.create(Promise.resolve({id: '11111', poolId: '222222', type: 'object'}));
     // make a request

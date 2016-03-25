@@ -155,8 +155,8 @@ describe('RequestTargetDecorator', function() {
         return isTemporaryResult;
       });
       isTemporaryResult = true;
-      handlers.setHandlers([new CommandDescriptor('call', function() {
-      }, 'call', isTemporary)]);
+      handlers.setHandlers({call: new CommandDescriptor('call', function() {
+      }, 'call', isTemporary)});
       decorator.apply(resource);
       child = resource.call('command', 'value');
     });

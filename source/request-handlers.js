@@ -137,6 +137,7 @@ var RequestHandlers = (function() {
      * @returns {void}
      */
     function filterHash(handlers, descriptors) {
+      if(!handlers) return;
       var keys = Object.getOwnPropertyNames(handlers).concat(Object.getOwnPropertySymbols(handlers));
       var length = keys.length;
       for (var index = 0; index < length; index++) {

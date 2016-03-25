@@ -1,7 +1,15 @@
 'use strict';
 var DataAccessInterface = (function() {
 
-  function DataAccessInterface(proxyEnabled, _poolRegistry, _pool) {
+  /**
+   *
+   * @param handlers
+   * @param {} proxyEnabled
+   * @param {ResourcePoolRegistry} [_poolRegistry]
+   * @param {ResourcePool} [_pool]
+   * @constructor
+   */
+  function DataAccessInterface(handlers, proxyEnabled, _poolRegistry, _pool) {
     if (proxyEnabled && !areProxiesAvailable()) {
       throw new Error('Proxies are not available in this environment');
     }
@@ -9,7 +17,6 @@ var DataAccessInterface = (function() {
     var _factory = (proxyEnabled ? RequestProxyFactory : RequestFactory).create(_handlers);
     _poolRegistry = _poolRegistry || ResourcePoolRegistry.create();
     if (_pool) {
-      //FIXME it should listen for removed/destroyed event and create replacement pool automatically
       _poolRegistry.register(_pool);
     } else if (_pool !== undefined) {
       _pool = _poolRegistry.createPool();
@@ -21,7 +28,9 @@ var DataAccessInterface = (function() {
         value: _poolRegistry
       },
       pool: {
-        value: _pool
+        get: function() {
+          return _pool;
+        }
       },
       resourceConverter: {
         value: ResourceConverter.create(_factory, _poolRegistry, _pool, _handlers)
@@ -36,8 +45,14 @@ var DataAccessInterface = (function() {
       }
     });
 
-    //FIXME prevent changing handlers after interface started working, pass them into constructor?
-    this.setHandlers = _handlers.setHandlers;
+    function poolDestroyedHandler(event) {
+      _pool.removeEventListener(ResourcePool.Events.POOL_DESTROYED, poolDestroyedHandler);
+      _pool = _poolRegistry.createPool();
+      _pool.addEventListener(ResourcePool.Events.POOL_DESTROYED, poolDestroyedHandler);
+    }
+
+    handlers.setHandlers(handlers);
+    _pool.addEventListener(ResourcePool.Events.POOL_DESTROYED, poolDestroyedHandler);
   }
 
   function _parse(data) {
@@ -53,13 +68,16 @@ var DataAccessInterface = (function() {
 
   //------------------ static
 
-  function DataAccessInterface_create(proxyEnabled) {
-    return new DataAccessInterface(proxyEnabled);
+  function DataAccessInterface_create(handlers, proxyEnabled, poolRegistry, pool) {
+    return new DataAccessInterface(handlers, proxyEnabled, poolRegistry, pool);
   }
 
   DataAccessInterface.create = DataAccessInterface_create;
+  DataAccessInterface.createDeferred = createDeferred;
+
   DataAccessInterface.IConvertible = IConvertible;
   DataAccessInterface.RequestTarget = RequestTarget;
+  DataAccessInterface.Deferred = Deferred;
   DataAccessInterface.Reserved = Reserved;
   DataAccessInterface.RequestTargetCommands = RequestTargetCommands;
   DataAccessInterface.CommandDescriptor = CommandDescriptor;

@@ -247,6 +247,105 @@ describe('RequestHandlers', function() {
 
   });
 
+  describe('filterHandlers()', function() {
+    var result;
+    beforeEach(function() {
+      result = {};
+    });
+    it('should handle empty values', function() {
+      expect(function() {
+        RequestHandlers.filterHandlers(null, result);
+        RequestHandlers.filterHandlers([], result);
+        RequestHandlers.filterHandlers({some: 'thing'}, result);
+      }).to.not.throw(Error);
+    });
+    describe('When object passed', function() {
+      var source;
+      beforeEach(function() {
+        source = {
+          one: 'one',
+          two: function() {
+          },
+          tree: 3
+        };
+
+        RequestHandlers.filterHandlers(source, result);
+      });
+      it('should find all functions', function() {
+        expect(Object.getOwnPropertyNames(result)).to.have.length(1);
+        expect(result.two).to.be.an.instanceof(CommandDescriptor);
+        expect(result.two.name).to.be.equal('two');
+        expect(result.two.type).to.be.equal('two');
+      });
+    });
+    describe('When object contains CommandDescriptor', function() {
+      var source;
+      beforeEach(function() {
+        source = {
+          one: 'one',
+          two: new CommandDescriptor('command', function() {
+          }, 'name'),
+          tree: 3
+        };
+
+        RequestHandlers.filterHandlers(source, result);
+      });
+      it('should keep it unchanged', function() {
+        expect(result.two).to.not.be.ok;
+        expect(result.name.name).to.be.equal('name');
+        expect(result.name.type).to.be.equal('command');
+      });
+    });
+    describe('When array passed', function() {
+      var source;
+      beforeEach(function() {
+        source = ['one', new CommandDescriptor('command', function() {
+        }, 'name'), function() {
+        }, 3];
+        RequestHandlers.filterHandlers(source, result);
+      });
+      it('should store CommandDescriptor\'s in result', function() {
+        expect(Object.getOwnPropertyNames(result)).to.have.length(1);
+        expect(result.name.name).to.be.equal('name');
+        expect(result.name.type).to.be.equal('command');
+      });
+    });
+    describe('When using reserved words', function() {
+      it('should throw error when reserved word used for property name', function() {
+        expect(function() {
+          RequestHandlers.filterHandlers([
+            'one',
+            new CommandDescriptor('command1', function() {
+            }, 'then')
+          ], result);
+        }).to.throw(Error);
+      });
+      it('should throw error when reserved word used for command', function() {
+        expect(function() {
+          RequestHandlers.filterHandlers([
+            'one',
+            new CommandDescriptor(RequestTargetCommands.DESTROY, function() {
+            }, 'name1')
+          ], result);
+        }).to.throw(Error);
+      });
+    });
+    describe('When using dupes', function() {
+      it('should throw error when duplicated property name is found', function() {
+        expect(function() {
+          RequestHandlers.filterHandlers([
+            'one',
+            new CommandDescriptor('command1', function() {
+            }, 'name'),
+            new CommandDescriptor('command2', function() {
+            }, 'name'),
+            3
+          ], result);
+        }).to.throw(Error);
+      });
+    });
+  });
+
   describe('create()', function() {
     it('should create new instance of RequestHandlers', function() {
       var result = RequestHandlers.create();

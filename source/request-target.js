@@ -10,16 +10,17 @@ var RequestTarget = (function() {
    * @constructor
    */
   function RequestTarget(_promise, _requestHandlers) {
-    var promiseHandler = _promiseResolutionHandler.bind(this, _promise);
-    _promise.then(promiseHandler, promiseHandler);
+    var promiseHandler;
     Object.defineProperty(this, TARGET_INTERNALS, {
       value: new RequestTargetInternals(this, _promise, _requestHandlers),
       configurable: true
     });
+    promiseHandler = _promiseResolutionHandler.bind(this, _promise);
+    _promise.then(promiseHandler, promiseHandler);
   }
 
   function _promiseResolutionHandler(_promise, data) {
-    if (!isRequest(data)) {
+    if (!isResource(data)) {
       this[PROMISE_FIELD] = _promise;
       delete this[TARGET_INTERNALS];
     }
@@ -48,7 +49,6 @@ var RequestTarget = (function() {
   }
 
   function RequestTarget_destroy(target) {
-    //FIXME might be better to return rejected promise
     return target && target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].destroy() : null;
   }
 
