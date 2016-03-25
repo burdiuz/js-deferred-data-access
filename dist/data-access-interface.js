@@ -549,7 +549,7 @@
     //------------ static
   
     function ResourcePool_isValidTarget(target) {
-      return !isResource(target) && Boolean(target && validTargets[typeof(target)]);
+      return !isResource(target) && Boolean(validTargets[typeof(target)]);
     }
   
     /**
@@ -582,6 +582,7 @@
       return new ResourcePool();
     }
   
+    //FIXME make these to be instance modifiers, not global or both
     ResourcePool.isValidTarget = ResourcePool_isValidTarget;
     ResourcePool.setValidTargets = ResourcePool_setValidTargets;
     ResourcePool.getDefaultValidTargets = ResourcePool_getDefaultValidTargets;

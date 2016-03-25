@@ -266,6 +266,9 @@ describe('ResourcePool', function() {
       expect(ResourcePool.isValidTarget(function() {
       })).to.be.false;
     });
+    it('should say valid even if its value falsy', function() {
+      expect(ResourcePool.isValidTarget(null)).to.be.true;
+    });
   });
 
   describe('setValidTargets()', function() {
