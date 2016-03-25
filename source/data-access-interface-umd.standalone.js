@@ -21,8 +21,8 @@
   //=include core.js
   //=include command-descriptor.js
   //=include target-resource.js
-  //=include target-pool.js
-  //=include target-pool-registry.js
+  //=include resource-pool.js
+  //=include resource-pool-registry.js
   //=include resource-converter.js
   //=include request-handlers.js
   //=include request-target-decorator.js

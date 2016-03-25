@@ -708,8 +708,302 @@
     return TargetResource;
   })();
   
-  //=include target-pool.js
-  //=include target-pool-registry.js
+  'use strict';
+  /**
+   * @constructor
+   * @extends EventDispatcher
+   */
+  var ResourcePool = (function() {
+  
+    var ResourcePoolEvents = Object.freeze({
+      RESOURCE_ADDED: 'resourceAdded',
+      RESOURCE_REMOVED: 'resourceRemoved',
+      POOL_CLEAR: 'poolClear',
+      POOL_CLEARED: 'poolCleared',
+      POOL_DESTROYED: 'poolDestroyed'
+    });
+  
+    /**
+     * Map private field symbol
+     */
+    var MAP_FIELD = Symbol('ResourcePool::map');
+    var validTargets = {};
+  
+    /**
+     * @ignore
+     */
+    function ResourcePool() {
+      this[MAP_FIELD] = new Map();
+  
+      Object.defineProperties(this, {
+        id: {
+          value: getId()
+        }
+      });
+  
+      EventDispatcher.apply(this);
+    }
+  
+    //------------ instance
+  
+    function _set(target, type) {
+      var link = null;
+      if (ResourcePool.isValidTarget(target)) {
+        if (this[MAP_FIELD].has(target)) {
+          link = this[MAP_FIELD].get(target);
+        } else {
+          link = TargetResource.create(this, target, type || typeof(target));
+          this[MAP_FIELD].set(link.id, link);
+          this[MAP_FIELD].set(target, link);
+          if (this.hasEventListener(ResourcePoolEvents.RESOURCE_ADDED)) {
+            this.dispatchEvent(ResourcePoolEvents.RESOURCE_ADDED, link);
+          }
+        }
+      }
+      return link;
+    }
+  
+    function _has(target) {
+      return this[MAP_FIELD].has(target);
+    }
+  
+    function _get(target) {
+      return this[MAP_FIELD].get(target);
+    }
+  
+    function _remove(target) {
+      var link = this[MAP_FIELD].get(target);
+      if (link) {
+        this[MAP_FIELD].delete(link.id);
+        this[MAP_FIELD].delete(link.resource);
+        if (this.hasEventListener(ResourcePoolEvents.RESOURCE_REMOVED)) {
+          this.dispatchEvent(ResourcePoolEvents.RESOURCE_REMOVED, link);
+        }
+        link.destroy();
+      }
+    }
+  
+    function _clear() {
+      if (this.hasEventListener(ResourcePoolEvents.POOL_CLEAR)) {
+        this.dispatchEvent(ResourcePoolEvents.POOL_CLEAR, this);
+      }
+      var key;
+      var keys = this[MAP_FIELD].keys();
+      //FIXME update to for...of loop when it comes to browsers
+      while (!(key = keys.next()).done) {
+        if (typeof(key.value) === 'string') {
+          var link = this[MAP_FIELD].get(key.value);
+          link.destroy();
+        }
+      }
+      this[MAP_FIELD].clear();
+      if (this.hasEventListener(ResourcePoolEvents.POOL_CLEARED)) {
+        this.dispatchEvent(ResourcePoolEvents.POOL_CLEARED, this);
+      }
+    }
+  
+    function _isActive() {
+      return Boolean(this[MAP_FIELD]);
+    }
+  
+    function _destroy() {
+      this.clear();
+      // intentionally make it not usable after its destroyed
+      delete this[MAP_FIELD];
+      if (this.hasEventListener(ResourcePoolEvents.POOL_DESTROYED)) {
+        this.dispatchEvent(ResourcePoolEvents.POOL_DESTROYED, this);
+      }
+    }
+  
+    ResourcePool.prototype = EventDispatcher.createNoInitPrototype();
+    ResourcePool.prototype.constructor = ResourcePool;
+  
+    ResourcePool.prototype.set = _set;
+    ResourcePool.prototype.has = _has;
+    ResourcePool.prototype.get = _get;
+    ResourcePool.prototype.remove = _remove;
+    ResourcePool.prototype.clear = _clear;
+    ResourcePool.prototype.isActive = _isActive;
+    ResourcePool.prototype.destroy = _destroy;
+  
+    //------------ static
+  
+    function ResourcePool_isValidTarget(target) {
+      return !isResource(target) && Boolean(target && validTargets[typeof(target)]);
+    }
+  
+    /**
+     *
+     * @param list {string[]} Types acceptable as resource targets to be stored in ResourcePool
+     * @returns void
+     */
+    function ResourcePool_setValidTargets(list) {
+      validTargets = {};
+      var length = list.length;
+      for (var index = 0; index < length; index++) {
+        validTargets[list[index]] = true;
+      }
+    }
+  
+    /**
+     *
+     * @returns {string[]} Default types acceptable by ResourcePool
+     * @returns Array
+     */
+    function ResourcePool_getDefaultValidTargets() {
+      return ['object', 'function'];
+    }
+  
+    /**
+     *
+     * @returns {ResourcePool}
+     */
+    function ResourcePool_create() {
+      return new ResourcePool();
+    }
+  
+    ResourcePool.isValidTarget = ResourcePool_isValidTarget;
+    ResourcePool.setValidTargets = ResourcePool_setValidTargets;
+    ResourcePool.getDefaultValidTargets = ResourcePool_getDefaultValidTargets;
+    ResourcePool.create = ResourcePool_create;
+    ResourcePool.Events = ResourcePoolEvents;
+  
+    // setting default valid targets
+    ResourcePool.setValidTargets(ResourcePool.getDefaultValidTargets());
+  
+    return ResourcePool;
+  })();
+  
+  'use strict';
+  /**
+   * Global registry per environment
+   */
+  var ResourcePoolRegistry = (function() {
+  
+    var ResourcePoolRegistryEvents = Object.freeze({
+      RESOURCE_POOL_CREATED: 'resourcePoolCreated',
+      RESOURCE_POOL_REGISTERED: 'resourcePoolRegistered',
+      RESOURCE_POOL_REMOVED: 'resourcePoolRemoved'
+    });
+  
+    var POOLS_FIELD = Symbol('resource.pool.registry::pools');
+  
+    function _poolDestroyedListener(event) {
+      this.remove(event.data);
+    }
+  
+    /**
+     * @constructor
+     * @extends {ResourcePool}
+     * @private
+     */
+    function _DefaultResourcePool() {
+      ResourcePool.apply(this);
+      //INFO default ResourcePool should not be destroyable;
+      this.destroy = function() {
+        throw new Error('Default ResourcePool cannot be destroyed.');
+      };
+    }
+  
+    _DefaultResourcePool.prototype = ResourcePool.prototype;
+  
+    /**
+     * @constructor
+     */
+    function ResourcePoolRegistry() {
+      Object.defineProperty(this, POOLS_FIELD, {
+        value: {}
+      });
+      EventDispatcher.apply(this);
+      this._poolDestroyedListener = _poolDestroyedListener.bind(this);
+      // every registry should keep default pool, so you can access from anywhere
+      this.register(ResourcePoolRegistry.defaultResourcePool);
+    }
+  
+    /**
+     *
+     * @returns {ResourcePool}
+     */
+    function _createPool() {
+      var pool = ResourcePool.create();
+      if (this.hasEventListener(ResourcePoolRegistryEvents.RESOURCE_POOL_CREATED)) {
+        this.dispatchEvent(ResourcePoolRegistryEvents.RESOURCE_POOL_CREATED, pool);
+      }
+      this.register(pool);
+      return pool;
+    }
+  
+    /**
+     *
+     * @param pool {ResourcePool}
+     */
+    function _register(pool) {
+      if (this[POOLS_FIELD].hasOwnProperty(pool.id)) return;
+      this[POOLS_FIELD][pool.id] = pool;
+      pool.addEventListener(ResourcePool.Events.POOL_DESTROYED, this._poolDestroyedListener);
+      if (this.hasEventListener(ResourcePoolRegistryEvents.RESOURCE_POOL_REGISTERED)) {
+        this.dispatchEvent(ResourcePoolRegistryEvents.RESOURCE_POOL_REGISTERED, pool);
+      }
+    }
+  
+    /**
+     *
+     * @param poolId {String}
+     * @returns {ResourcePool|null}
+     */
+    function _get(poolId) {
+      return this[POOLS_FIELD][poolId] || null;
+    }
+  
+    /**
+     *
+     * @param pool {ResourcePool|String}
+     * @returns {Boolean}
+     */
+    function _isRegistered(pool) {
+      return this[POOLS_FIELD].hasOwnProperty(pool instanceof ResourcePool ? pool.id : String(pool));
+    }
+  
+    /**
+     *
+     * @param pool {ResourcePool|String}
+     * @returns {Boolean}
+     */
+    function _remove(pool) {
+      var result = false;
+      pool = pool instanceof ResourcePool ? pool : this.get(pool);
+      if (pool) {
+        pool.removeEventListener(ResourcePool.Events.POOL_DESTROYED, this._poolDestroyedListener);
+        result = delete this[POOLS_FIELD][pool.id];
+      }
+      if (this.hasEventListener(ResourcePoolRegistryEvents.RESOURCE_POOL_REMOVED)) {
+        this.dispatchEvent(ResourcePoolRegistryEvents.RESOURCE_POOL_REMOVED, pool);
+      }
+      return result;
+    }
+  
+    ResourcePoolRegistry.prototype = EventDispatcher.createNoInitPrototype();
+    ResourcePoolRegistry.prototype.constructor = ResourcePoolRegistry;
+    ResourcePoolRegistry.prototype.createPool = _createPool;
+    ResourcePoolRegistry.prototype.register = _register;
+    ResourcePoolRegistry.prototype.get = _get;
+    ResourcePoolRegistry.prototype.isRegistered = _isRegistered;
+    ResourcePoolRegistry.prototype.remove = _remove;
+  
+    //--------------- static
+  
+  
+    function ResourcePoolRegistry_create() {
+      return new ResourcePoolRegistry();
+    }
+  
+    ResourcePoolRegistry.create = ResourcePoolRegistry_create;
+    ResourcePoolRegistry.Events = ResourcePoolRegistryEvents;
+    ResourcePoolRegistry.defaultResourcePool = new _DefaultResourcePool();
+  
+    return ResourcePoolRegistry;
+  })();
+  
   'use strict';
   var ResourceConverter = (function() {
   
