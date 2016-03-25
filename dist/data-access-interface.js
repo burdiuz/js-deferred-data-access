@@ -14,6 +14,7 @@
   }
 }(this, function(EventDispatcher) {
   // here should be injected deferred-data-access.js content
+  'use strict';
   var TargetStatus = Object.freeze({
     PENDING: 'pending',
     RESOLVED: 'resolved',
@@ -33,7 +34,9 @@
     };
   })();
   
-  var createDeferred = (function() {
+  
+  
+  var Deferred = (function() {
   
     /**
      * @constructor
@@ -71,15 +74,15 @@
     Deferred.prototype.resolve = _resolve;
     Deferred.prototype.reject = _reject;
   
-    /**
-     * @returns {Deferred}
-     */
-    function createDeferred() {
-      return new Deferred();
-    }
-  
-    return createDeferred;
+    return Deferred;
   })();
+  
+  /**
+   * @returns {Deferred}
+   */
+  function createDeferred() {
+    return new Deferred();
+  }
   
   function areProxiesAvailable() {
     return typeof(Proxy) === 'function';
@@ -161,9 +164,7 @@
     return isResource(data) || typeof(data) === 'function' || data instanceof IConvertible;
   }
   
-  /**
-   * Created by Oleg Galaburda on 07.03.16.
-   */
+  'use strict';
   var TargetResource = (function() {
     /**
      * The object that can be used to send Target to other side
@@ -267,30 +268,44 @@
   
   //=include target-pool.js
   //=include target-pool-registry.js
-  /**
-   * Created by Oleg Galaburda on 07.03.16.
-   */
-  /**
-   */
+  'use strict';
   var ResourceConverter = (function() {
   
+    /**
+     * @private
+     */
     var FACTORY_FIELD = Symbol('resource.converter::factory');
   
+    /**
+     * @private
+     */
+    var REGISTRY_FIELD = Symbol('resource.converter::resourcePoolRegistry');
+  
+    /**
+     * @private
+     */
     var POOL_FIELD = Symbol('resource.converter::resourcePool');
   
+    /**
+     * @private
+     */
     var ResourceConverterEvents = Object.freeze({
       RESOURCE_CREATED: 'resourceCreated',
       RESOURCE_CONVERTED: 'resourceConverted'
     });
   
     /**
-     * @param factory {RequestFactory}
-     * @constructor
+     * @param {RequestFactory} factory
+     * @param {ResourcePoolRegistry} registry
+     * @param {ResourcePool} pool
+     * @param {RequestHandlers} handlers
      * @extends EventDispatcher
+     * @constructor
      */
-    function ResourceConverter(factory, pool, handlers) {
+    function ResourceConverter(factory, registry, pool, handlers) {
       this[FACTORY_FIELD] = factory;
       this[POOL_FIELD] = pool;
+      this[REGISTRY_FIELD] = registry;
       EventDispatcher.apply(this);
       if (handlers) {
         handlers.setConverter(this);
@@ -299,30 +314,38 @@
   
     function _resourceToObject(data) {
       var result;
+  
       if (isResourceConvertible(data)) {
         result = getRAWResource(data, this[POOL_FIELD]);
       } else if (typeof(data.toJSON) === 'function') {
         result = data.toJSON();
+      } else {
+        result = data;
       }
+  
       if (result !== data && this.hasEventListener(ResourceConverterEvents.RESOURCE_CONVERTED)) {
         this.dispatchEvent(ResourceConverterEvents.RESOURCE_CONVERTED, {
           data: data,
           result: result
         });
       }
+  
       return result;
     }
   
     function _objectToResource(data) {
-      var result;
-      var poolId = getResourcePoolId(data);
-      if (ResourcePoolRegistry.isRegistered(poolId)) { // target object is stored in current pool
-        data = ResourcePoolRegistry.get(poolId).get(getResourceId(data));
-        if (data) {
-          result = data.resource;
+      var result = data;
+      var poolId;
+      if (isResource(data)) {
+        poolId = getResourcePoolId(data);
+        if (this[REGISTRY_FIELD].isRegistered(poolId)) { // target object is stored in current pool
+          var target = this[REGISTRY_FIELD].get(poolId).get(getResourceId(data));
+          if (target) {
+            result = target.resource;
+          }
+        } else { // target object has another origin, should be wrapped
+          result = this[FACTORY_FIELD].create(Promise.resolve(data));
         }
-      } else { // target object has another origin, should be wrapped
-        result = this[FACTORY_FIELD].create(Promise.resolve(data));
       }
       if (result !== data && this.hasEventListener(ResourceConverterEvents.RESOURCE_CREATED)) {
         this.dispatchEvent(ResourceConverterEvents.RESOURCE_CREATED, {
@@ -354,7 +377,7 @@
     function _toJSON(data) {
       var result = data;
       if (data !== undefined && data !== null) {
-        if (isResourceConvertible(data)) { // if data is link
+        if (isResourceConvertible(data)) { // if data is RequestTarget, TargetResource, IConvertible, Function or RAW resource data
           result = this.resourceToObject(data);
         } else if (data instanceof Array) { // if data is Array of values, check its
           result = this.lookupArray(data, this.resourceToObject);
@@ -368,7 +391,7 @@
     function _parse(data) {
       var result = data;
       if (data !== undefined && data !== null) {
-        if (isResource(data)) { // if data is link
+        if (isResource(data)) { // if data is RAW resource data
           result = this.objectToResource(data);
         } else if (data instanceof Array) { // if data is Array of values, check its
           result = this.lookupArray(data, this.objectToResource);
@@ -381,14 +404,15 @@
   
     function _lookupForPending(data) {
       var result = [];
-      if (typeof(data) === 'object' && data !== null) {
-        function add(value) {
-          if (RequestTarget.isPending(value)) {
-            result.push(value);
-          }
-          return value;
-        }
   
+      function add(value) {
+        if (RequestTarget.isPending(value)) {
+          result.push(value);
+        }
+        return value;
+      }
+  
+      if (typeof(data) === 'object' && data !== null) {
         if (RequestTarget.isPending(data)) {
           result.push(data);
         } else if (data instanceof Array) {
@@ -413,12 +437,14 @@
     //------------------------ static
   
     /**
-     * @param factory {RequestFactory}
-     * @param handlers {RequestHandlers}
+     * @param {RequestFactory} factory
+     * @param {ResourcePoolRegistry} registry
+     * @param {ResourcePool} pool
+     * @param {RequestHandlers} handlers
      * @returns {ResourceConverter}
      */
-    function ResourceConverter_create(factory, pool, handlers) {
-      return new ResourceConverter(factory, pool, handlers);
+    function ResourceConverter_create(factory, registry, pool, handlers) {
+      return new ResourceConverter(factory, registry, pool, handlers);
     }
   
     ResourceConverter.create = ResourceConverter_create;
@@ -427,6 +453,7 @@
     return ResourceConverter;
   })();
   
+  'use strict';
   var RequestHandlers = (function() {
   
     var RequestHandlersEvents = Object.freeze({
@@ -449,7 +476,7 @@
         },
         available: {
           get: function() {
-            return _keys.length;
+            return Boolean(_keys.length);
           }
         }
       });
@@ -500,6 +527,8 @@
         if (handler instanceof CommandDescriptor) {
           //INFO result should be applied to deferred.resolve() or deferred.reject()
           handler.handle(resource, data, deferred);
+        } else {
+          throw new Error('Command descriptor for "' + name + '" was not found.');
         }
   
       }
@@ -563,6 +592,7 @@
        * @returns {void}
        */
       function filterHash(handlers, descriptors) {
+        if(!handlers) return;
         var keys = Object.getOwnPropertyNames(handlers).concat(Object.getOwnPropertySymbols(handlers));
         var length = keys.length;
         for (var index = 0; index < length; index++) {
@@ -623,7 +653,7 @@
   
     function RequestHandlers_areProxyHandlersAvailable(handlers, throwError) {
       var result = true;
-      var list = ProxyCommands.list;
+      var list = ProxyCommands.required;
       var length = list.length;
       for (var index = 0; index < length; index++) {
         var name = list[index];
@@ -645,6 +675,7 @@
   })
   ();
   
+  'use strict';
   var RequestTargetDecorator = (function() {
   
     /**
@@ -653,23 +684,44 @@
      * @constructor
      */
     function RequestTargetDecorator(_factory, _handlers) {
-      var _members = {};
+      var _members = new Map();
   
-      function _getMember(propertyName, commandType) {
-        if (!_members.hasOwnProperty(propertyName)) {
-          function _commandHandler(command, value) {
-            var promise = this[TARGET_INTERNALS].sendRequest(propertyName, commandType, command, value);
-            return _factory.create(promise || Promise.reject('Initial request failed and didn\'t result in promise.'));
+      function _getMember(propertyName, commandType, isTemporary) {
+  
+        function _commandHandler(command, value) {
+          var result;
+          var promise;
+          var error = false;
+          if (this[TARGET_INTERNALS]) {
+            promise = this[TARGET_INTERNALS].sendRequest(propertyName, commandType, command, value);
+            if (promise) {
+              promise.then(function(data) {
+                RequestTarget.setTemporary(result, Boolean(isTemporary(result, data, command, value)));
+              });
+            } else {
+              promise = Promise.reject(new Error('Initial request failed and didn\'t result in promise.'));
+              error = true;
+            }
+          } else {
+            promise = Promise.reject(new Error('Target object is not a resource, so cannot be used for calls.'));
+            error = true;
           }
-  
-          _members[propertyName] = _commandHandler;
+          result = _factory.create(promise);
+          if (!error) {
+            this[TARGET_INTERNALS].registerChild(result);
+          }
+          return result;
         }
-        return _members[propertyName];
+  
+        if (!_members.has(propertyName)) {
+          _members.set(propertyName, _commandHandler);
+        }
+        return _members.get(propertyName);
       }
   
-      function _decorate(request) {
+      function _apply(request) {
         if (!_handlers.available) return;
-        /* FIXME revert change when ES6 willbe supported widely
+        /* FIXME revert change when ES6 will be supported widely
          for (var descriptor of _handlers) {
          request[descriptor.name] = _getMember(descriptor.name, descriptor.type);
          }
@@ -678,12 +730,12 @@
         var result;
         while (!(result = iterator.next()).done) {
           var descriptor = result.value;
-          request[descriptor.name] = _getMember(descriptor.name, descriptor.type);
+          request[descriptor.name] = _getMember(descriptor.name, descriptor.type, descriptor.isTemporary);
         }
         return request;
       }
   
-      this.decorate = _decorate;
+      this.apply = _apply;
     }
   
     //------------------- static
@@ -703,10 +755,7 @@
   })();
   
   
-  /**
-   * Created by Oleg Galaburda on 13.03.16.
-   */
-  
+  'use strict';
   var FACTORY_DECORATOR_FIELD = Symbol('request.factory::decorator');
   
   var FACTORY_HANDLERS_FIELD = Symbol('request.factory::handlers');
@@ -725,7 +774,7 @@
     function _create(promise) {
       var request = RequestTarget.create(promise, this[FACTORY_HANDLERS_FIELD]);
       if (this[FACTORY_HANDLERS_FIELD].available) {
-        this[FACTORY_DECORATOR_FIELD].decorate(request);
+        this[FACTORY_DECORATOR_FIELD].apply(request);
       }
       return request;
     }
@@ -749,6 +798,7 @@
     return RequestFactory;
   })();
   
+  'use strict';
   var RequestTargetInternals = (function() {
   
     /**
@@ -759,18 +809,17 @@
      * @constructor
      */
     function RequestTargetInternals(_requestTarget, _promise, _requestHandlers) {
-      this._requestHandlers = _requestHandlers;
-      this._requestTarget = _requestTarget;
+      this.requestHandlers = _requestHandlers;
+      this.requestTarget = _requestTarget;
       this.link = {};
       //INFO this should be not initialized i.e. keep it undefined, this will be checked later
       this.temporary;
       this.hadChildPromises = false;
       this.status = TargetStatus.PENDING;
       this.queue = [];
-      this.promise = _promise.then(
-        this._resolveHandler.bind(this),
-        this._rejectHandler.bind(this)
-      );
+      this.children = [];
+      this._deferred = createDeferred();
+      this.promise = this._deferred.promise;
   
       Object.defineProperties(this, {
         poolId: {
@@ -783,6 +832,11 @@
           get: get_id
         }
       });
+  
+      _promise.then(
+        _resolveHandler.bind(this),
+        _rejectHandler.bind(this)
+      );
     }
   
     function get_poolId() {
@@ -801,25 +855,26 @@
       this.status = TargetStatus.RESOLVED;
       if (isResource(value)) {
         this.link = getResourceData(value);
-        this.temporary = this._requestHandlers.isTemporary(this._requestTarget);
-        if (this.temporary) {
-          this.queue[this.queue.length - 1][1].promise.then(this.destroy.bind(this), this.destroy.bind(this));
-        }
         //INFO Sending "this" as result of resolve() handler, causes infinite loop of this.then(), so I've used wrapper object
-        value = {target: this};
+        //FIXME Check if Proxy wrapper will work with promise result, probably not
+        value = {target: this.requestTarget};
+        this._sendQueue();
+        //In theory, at time of these lines executing, "temporary" property should be already set via _commandHandler() set from RequestTargetDecorator
+        if (this.temporary) {
+          this.destroy();
+        }
+      } else { // else { value must be passed as is }
+        this._rejectQueue('Target of the call is not a resource and call cannot be sent.');
       }
-      this._sendQueue();
-      return value;
+      this._deferred.resolve(value);
+      delete this._deferred;
     }
   
     function _rejectHandler(value) {
       this.status = TargetStatus.REJECTED;
-      while (this.queue && this.queue.length) {
-        var request = this.queue.shift();
-        request[1].reject(new Error('Target of the call was rejected and call cannot be sent.'));
-      }
-      this.queue = null;
-      return value;
+      this._rejectQueue('Target of the call was rejected and call cannot be sent.');
+      this._deferred.reject(value);
+      delete this._deferred;
     }
   
     function _sendQueue() {
@@ -829,14 +884,26 @@
         var pack = request[1];
         var deferred = request[2];
         pack.target = this.link.id;
-        this._requestHandlers.handle(this._requestTarget, name, pack, deferred);
+        this._handleRequest(name, pack, deferred);
+      }
+      this.queue = null;
+    }
+  
+    function _rejectQueue(message) {
+      var error = new Error(message || 'This request was rejected before sending.');
+      while (this.queue && this.queue.length) {
+        /**
+         * @type {[string, {type:string, cmd:string, value:*, target:string}, Deferred]}
+         */
+        var request = this.queue.shift();
+        request[2].reject(error);
       }
       this.queue = null;
     }
   
     function _sendRequest(name, type, cmd, value) {
       var promise = null;
-      if (this._requestHandlers.hasHandler(name)) {
+      if (this.requestHandlers.hasHandler(name)) {
         var pack = RequestTargetInternals.createRequestPackage(type, cmd, value, this.id);
         promise = this._applyRequest(name, pack, createDeferred());
       } else {
@@ -863,10 +930,30 @@
           promise = Promise.reject(new Error('Target object was destroyed and cannot be used for calls.'));
           break;
         case TargetStatus.RESOLVED:
-          this._requestHandlers.handle(this._requestTarget, name, pack, deferred);
+          this._handleRequest(name, pack, deferred);
           break;
       }
       return promise;
+    }
+  
+    function _handleRequest(name, pack, deferred) {
+      this.requestHandlers.handle(this.requestTarget, name, pack, deferred);
+    }
+  
+    function _registerChild(childRequestTarget) {
+      var handler = _onChildHandled.bind(this, childRequestTarget);
+      var promise = RequestTarget.getRawPromise(childRequestTarget);
+      this.children.push(childRequestTarget);
+      promise.then(handler, handler);
+    }
+  
+    function _onChildHandled(childRequestTarget) {
+      if (this.children) {
+        var index = this.children.indexOf(childRequestTarget);
+        if (index >= 0) {
+          this.children.splice(index, 1);
+        }
+      }
     }
   
   
@@ -875,16 +962,21 @@
     }
   
     function _canBeDestroyed() {
-      return this.status === TargetStatus.RESOLVED && this.link.id;
+      return this.status === TargetStatus.RESOLVED || this.status === TargetStatus.REJECTED;
     }
   
     function _destroy() {
       var promise = null;
       if (this.canBeDestroyed()) {
+        //INFO I should not clear children list, since they are pending and requests already sent.
+        if (this.status === TargetStatus.RESOLVED) {
+          promise = this.sendRequest(RequestTargetCommands.DESTROY, RequestTargetCommands.DESTROY);
+        } else {
+          promise = Promise.resolve();
+        }
         this.status = TargetStatus.DESTROYED;
-        promise = this.sendRequest(RequestTargetCommands.DESTROY);
       } else {
-        promise = Promise.reject();
+        promise = Promise.reject(new Error('Invalid or already destroyed target.'));
       }
       return promise;
     }
@@ -915,12 +1007,13 @@
       return data;
     }
   
-    RequestTargetInternals.prototype._resolveHandler = _resolveHandler;
-    RequestTargetInternals.prototype._rejectHandler = _rejectHandler;
     RequestTargetInternals.prototype._sendQueue = _sendQueue;
+    RequestTargetInternals.prototype._rejectQueue = _rejectQueue;
     RequestTargetInternals.prototype.sendRequest = _sendRequest;
     RequestTargetInternals.prototype._addToQueue = _addToQueue;
     RequestTargetInternals.prototype._applyRequest = _applyRequest;
+    RequestTargetInternals.prototype._handleRequest = _handleRequest;
+    RequestTargetInternals.prototype.registerChild = _registerChild;
     RequestTargetInternals.prototype.isActive = _isActive;
     RequestTargetInternals.prototype.canBeDestroyed = _canBeDestroyed;
     RequestTargetInternals.prototype.destroy = _destroy;
@@ -944,11 +1037,10 @@
     return RequestTargetInternals;
   })();
   
-  /**
-   * Created by Oleg Galaburda on 07.03.16.
-   */
-  
+  'use strict';
   var RequestTarget = (function() {
+  
+    var PROMISE_FIELD = Symbol('request.target::promise');
   
     /**
      * The object that will be available on other side
@@ -957,18 +1049,30 @@
      * @constructor
      */
     function RequestTarget(_promise, _requestHandlers) {
-  
+      var promiseHandler;
       Object.defineProperty(this, TARGET_INTERNALS, {
-        value: new RequestTargetInternals(this, _promise, _requestHandlers)
+        value: new RequestTargetInternals(this, _promise, _requestHandlers),
+        configurable: true
       });
+      promiseHandler = _promiseResolutionHandler.bind(this, _promise);
+      _promise.then(promiseHandler, promiseHandler);
+    }
+  
+    function _promiseResolutionHandler(_promise, data) {
+      if (!isResource(data)) {
+        this[PROMISE_FIELD] = _promise;
+        delete this[TARGET_INTERNALS];
+      }
     }
   
     function _then() {
-      this[TARGET_INTERNALS].then.apply(this[TARGET_INTERNALS], arguments);
+      var target = this[TARGET_INTERNALS] || this[PROMISE_FIELD];
+      target.then.apply(target, arguments);
     }
   
     function _catch() {
-      this[TARGET_INTERNALS].catch.apply(this[TARGET_INTERNALS], arguments);
+      var target = this[TARGET_INTERNALS] || this[PROMISE_FIELD];
+      target.catch.apply(target, arguments);
     }
   
     RequestTarget.prototype.then = _then;
@@ -976,46 +1080,47 @@
   
     //------------- static
     function RequestTarget_isActive(target) {
-      return target[TARGET_INTERNALS].isActive();
+      return target && target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].isActive() : false;
     }
   
     function RequestTarget_canBeDestroyed(target) {
-      return target[TARGET_INTERNALS].canBeDestroyed();
+      return target && target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].canBeDestroyed() : false;
     }
   
     function RequestTarget_destroy(target) {
-      return target[TARGET_INTERNALS].destroy();
+      return target && target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].destroy() : null;
     }
   
     function RequestTarget_toJSON(target) {
-      return target[TARGET_INTERNALS].toJSON();
+      return target && target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].toJSON() : null;
     }
   
     function RequestTarget_isPending(value) {
-      return value instanceof RequestTarget && RequestTarget_getStatus(value) == TargetStatus.PENDING;
+      return RequestTarget_getStatus(value) == TargetStatus.PENDING;
     }
   
     function RequestTarget_isTemporary(target) {
-      return Boolean(target[TARGET_INTERNALS].temporary);
+      return target && target[TARGET_INTERNALS] && target[TARGET_INTERNALS].temporary;
     }
   
     function RequestTarget_setTemporary(target, value) {
-      target[TARGET_INTERNALS].temporary = Boolean(value);
+      if (target && target[TARGET_INTERNALS]) {
+        target[TARGET_INTERNALS].temporary = Boolean(value);
+      }
     }
   
     function RequestTarget_getStatus(target) {
-      return target[TARGET_INTERNALS].status;
+      return target && target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].status : null;
     }
   
     function RequestTarget_getQueueLength(target) {
-      var queue = target[TARGET_INTERNALS].queue;
-      return queue ? queue.length : 0;
+      return target && target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].queue.length : 0;
     }
   
     function RequestTarget_getQueueCommands(target) {
       var length;
       var result = [];
-      var queue = target[TARGET_INTERNALS].queue;
+      var queue = target && target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].queue : null;
       if (queue) {
         length = queue.length;
         for (var index = 0; index < length; index++) {
@@ -1026,7 +1131,21 @@
     }
   
     function RequestTarget_hadChildPromises(target) {
-      return target[TARGET_INTERNALS].hadChildPromises;
+      return Boolean(target && target[TARGET_INTERNALS] && target[TARGET_INTERNALS].hadChildPromises);
+    }
+  
+    function RequestTarget_getRawPromise(target) {
+      return target && target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].promise : null;
+    }
+  
+    function RequestTarget_getChildren(target) {
+      var list = target && target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].children : null;
+      return list ? list.slice() : [];
+    }
+  
+    function RequestTarget_getChildrenCount(target) {
+      var list = target && target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].children : null;
+      return list ? list.length : 0;
     }
   
     /**
@@ -1051,14 +1170,26 @@
     RequestTarget.getQueueLength = RequestTarget_getQueueLength;
     RequestTarget.getQueueCommands = RequestTarget_getQueueCommands;
     RequestTarget.hadChildPromises = RequestTarget_hadChildPromises;
+    RequestTarget.getRawPromise = RequestTarget_getRawPromise;
+    RequestTarget.getChildren = RequestTarget_getChildren;
+    RequestTarget.getChildrenCount = RequestTarget_getChildrenCount;
     RequestTarget.create = RequestTarget_create;
   
     return RequestTarget;
   })();
   
+  'use strict';
   var DataAccessInterface = (function() {
   
-    function DataAccessInterface(proxyEnabled, _poolRegistry, _pool) {
+    /**
+     *
+     * @param handlers
+     * @param {} proxyEnabled
+     * @param {ResourcePoolRegistry} [_poolRegistry]
+     * @param {ResourcePool} [_pool]
+     * @constructor
+     */
+    function DataAccessInterface(handlers, proxyEnabled, _poolRegistry, _pool) {
       if (proxyEnabled && !areProxiesAvailable()) {
         throw new Error('Proxies are not available in this environment');
       }
@@ -1066,7 +1197,6 @@
       var _factory = (proxyEnabled ? RequestProxyFactory : RequestFactory).create(_handlers);
       _poolRegistry = _poolRegistry || ResourcePoolRegistry.create();
       if (_pool) {
-        //FIXME it should listen for removed/destroyed event and create replacement pool automatically
         _poolRegistry.register(_pool);
       } else if (_pool !== undefined) {
         _pool = _poolRegistry.createPool();
@@ -1078,10 +1208,12 @@
           value: _poolRegistry
         },
         pool: {
-          value: _pool
+          get: function() {
+            return _pool;
+          }
         },
         resourceConverter: {
-          value: ResourceConverter.create(_factory, _pool, _handlers)
+          value: ResourceConverter.create(_factory, _poolRegistry, _pool, _handlers)
         },
         factory: {
           value: _factory
@@ -1093,7 +1225,14 @@
         }
       });
   
-      this.setHandlers = _handlers.setHandlers;
+      function poolDestroyedHandler(event) {
+        _pool.removeEventListener(ResourcePool.Events.POOL_DESTROYED, poolDestroyedHandler);
+        _pool = _poolRegistry.createPool();
+        _pool.addEventListener(ResourcePool.Events.POOL_DESTROYED, poolDestroyedHandler);
+      }
+  
+      handlers.setHandlers(handlers);
+      _pool.addEventListener(ResourcePool.Events.POOL_DESTROYED, poolDestroyedHandler);
     }
   
     function _parse(data) {
@@ -1109,13 +1248,16 @@
   
     //------------------ static
   
-    function DataAccessInterface_create(proxyEnabled) {
-      return new DataAccessInterface(proxyEnabled);
+    function DataAccessInterface_create(handlers, proxyEnabled, poolRegistry, pool) {
+      return new DataAccessInterface(handlers, proxyEnabled, poolRegistry, pool);
     }
   
     DataAccessInterface.create = DataAccessInterface_create;
+    DataAccessInterface.createDeferred = createDeferred;
+  
     DataAccessInterface.IConvertible = IConvertible;
     DataAccessInterface.RequestTarget = RequestTarget;
+    DataAccessInterface.Deferred = Deferred;
     DataAccessInterface.Reserved = Reserved;
     DataAccessInterface.RequestTargetCommands = RequestTargetCommands;
     DataAccessInterface.CommandDescriptor = CommandDescriptor;
