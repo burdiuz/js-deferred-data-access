@@ -23,16 +23,17 @@
     var api;
     var ProxyCommands = DataAccessInterface.ProxyCommands;
     var CommandDescriptor = DataAccessInterface.CommandDescriptor;
-    var proxyCommands = ProxyCommands.createDescriptors(function(res, cmd, def) {
-          console.log('GET', res, cmd, def);
-        },
-        function(res, cmd, def) {
-          console.log('SET', res, cmd, def);
-        },
-        function(res, cmd, def) {
-          console.log('APPLY', res, cmd, def);
-        }
-    );
+    var proxyCommands = ProxyCommands.createDescriptors({
+      get: function(res, cmd, def) {
+        console.log('GET', res, cmd, def);
+      },
+      set: function(res, cmd, def) {
+        console.log('SET', res, cmd, def);
+      },
+      apply: function(res, cmd, def) {
+        console.log('APPLY', res, cmd, def);
+      }
+    });
 
     // duplicate commands for legacy access
     proxyCommands.get = CommandDescriptor.create('get', function(res, cmd, def) {
@@ -40,15 +41,19 @@
     });
     proxyCommands.set = CommandDescriptor.create('set', function(res, cmd, def) {
       console.log('Legacy SET', res, cmd, def);
-    });;
+    });
+    ;
     proxyCommands.apply = CommandDescriptor.create('apply', function(res, cmd, def) {
       console.log('Legacy APPLY', res, cmd, def);
     });
 
     // Setup commands that can be applied to request targets
     api = new DataAccessInterface(proxyCommands, true);
+    // emulate remote object
+    var pool = DataAccessInterface.ResourcePool.create();
+    var resource = pool.set({id: '11111', poolId: '222222', type: 'object'});
     // create a request target
-    var request = api.factory.create(Promise.resolve({id: '11111', poolId: '222222', type: 'object'}));
+    var request = api.factory.create(Promise.resolve(resource.toJSON()));
     // make a request
     request.get('My Command', 'any-value-here');
     // make Proxy'ed request
