@@ -45,13 +45,13 @@ var DataAccessInterface = (function() {
       }
     });
 
-    function poolDestroyedHandler(event) {
+    function poolDestroyedHandler() {
       _pool.removeEventListener(ResourcePool.Events.POOL_DESTROYED, poolDestroyedHandler);
       _pool = _poolRegistry.createPool();
       _pool.addEventListener(ResourcePool.Events.POOL_DESTROYED, poolDestroyedHandler);
     }
 
-    handlers.setHandlers(handlers);
+    _handlers.setHandlers(handlers);
     _pool.addEventListener(ResourcePool.Events.POOL_DESTROYED, poolDestroyedHandler);
   }
 
