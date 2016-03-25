@@ -1867,6 +1867,13 @@
     DataAccessInterface.ResourcePool = ResourcePool;
     DataAccessInterface.ResourcePoolRegistry = ResourcePoolRegistry;
     DataAccessInterface.ResourceConverter = ResourceConverter;
+    DataAccessInterface.getRAWResource = getRAWResource;
+    DataAccessInterface.getResourceData = getResourceData;
+    DataAccessInterface.getResourceId = getResourceId;
+    DataAccessInterface.getResourcePoolId = getResourcePoolId;
+    DataAccessInterface.getResourceType = getResourceType;
+    DataAccessInterface.isResource = isResource;
+    DataAccessInterface.isResourceConvertible = isResourceConvertible;
   
     return DataAccessInterface;
   })();
