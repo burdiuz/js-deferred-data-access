@@ -1150,7 +1150,7 @@
           var promise;
           var error = false;
           if (this[TARGET_INTERNALS]) {
-            var pack = RequestTargetInternals.createRequestPackage(type, cmd, value, this[TARGET_INTERNALS].id);
+            var pack = RequestTargetInternals.createRequestPackage(commandType, command, value, this[TARGET_INTERNALS].id);
             var deferred = createDeferred();
             result = _factory.create(deferred.promise);
             promise = this[TARGET_INTERNALS].sendRequest(
