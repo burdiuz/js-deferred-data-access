@@ -75,7 +75,8 @@ var RequestTarget = (function() {
   }
 
   function RequestTarget_getQueueLength(target) {
-    return target && target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].queue.length : 0;
+    var list = target && target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].queue : null;
+    return list ? list.length : 0;
   }
 
   function RequestTarget_getQueueCommands(target) {
