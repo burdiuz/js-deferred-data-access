@@ -113,6 +113,7 @@ var RequestProxyFactory = (function() {
   function RequestProxyFactory(handlers) {
     this[FACTORY_HANDLERS_FIELD] = handlers;
     this[FACTORY_FIELD] = RequestFactory.create(handlers);
+    this[FACTORY_FIELD][FACTORY_DECORATOR_FIELD].setFactory(this);
   }
 
   function _create(promise) {

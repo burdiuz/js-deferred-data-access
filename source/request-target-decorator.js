@@ -62,7 +62,14 @@ var RequestTargetDecorator = (function() {
       return request;
     }
 
+    function _setFactory(factory) {
+      if(factory){
+        _factory = factory;
+      }
+    }
+
     this.apply = _apply;
+    this.setFactory = _setFactory;
   }
 
   //------------------- static
