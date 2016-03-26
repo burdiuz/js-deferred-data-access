@@ -1196,7 +1196,14 @@
         return request;
       }
   
+      function _setFactory(factory) {
+        if(factory){
+          _factory = factory;
+        }
+      }
+  
       this.apply = _apply;
+      this.setFactory = _setFactory;
     }
   
     //------------------- static
@@ -1374,6 +1381,7 @@
     function RequestProxyFactory(handlers) {
       this[FACTORY_HANDLERS_FIELD] = handlers;
       this[FACTORY_FIELD] = RequestFactory.create(handlers);
+      this[FACTORY_FIELD][FACTORY_DECORATOR_FIELD].setFactory(this);
     }
   
     function _create(promise) {
