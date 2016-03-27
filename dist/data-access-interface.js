@@ -1345,21 +1345,27 @@
         if (name in target || name in EXCLUSIONS || typeof(name) === 'symbol') {
           value = target[name];
         } else {
+          value = target[ProxyCommands.fields.get](name);
+          /* this makes double proxying, since its create()d with proxy already
           value = applyProxy(
             target[ProxyCommands.fields.get](name),
             handlers
           );
+          */
         }
         return value;
       }
   
       function Proxy_apply(wrapper, thisValue, args) {
+        return wrapper.target[ProxyCommands.fields.apply](null, args);
+        /* this makes double proxying, since its create()d with proxy already
         return applyProxy(
           //INFO type is null because target is function we are calling now,
           // thisValue is being ignored for now
           wrapper.target[ProxyCommands.fields.apply](null, args),
           handlers
         );
+        */
       }
   
       handlers = {
