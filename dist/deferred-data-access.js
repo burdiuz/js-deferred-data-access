@@ -1274,8 +1274,8 @@
   
     //------------------- static
   
-    function RequestFactory_create(handlers) {
-      return new RequestFactory(handlers);
+    function RequestFactory_create(handlers, cacheImpl) {
+      return new RequestFactory(handlers, cacheImpl);
     }
   
     function RequestFactory_createNoInitPrototype() {
@@ -1407,9 +1407,9 @@
   
     var PROXY_HANDLERS = createHandlers();
   
-    function RequestProxyFactory(handlers) {
+    function RequestProxyFactory(handlers, cacheImpl) {
       this[FACTORY_HANDLERS_FIELD] = handlers;
-      this[FACTORY_FIELD] = RequestFactory.create(handlers);
+      this[FACTORY_FIELD] = RequestFactory.create(handlers, cacheImpl);
       this[FACTORY_FIELD][FACTORY_DECORATOR_FIELD].setFactory(this);
     }
   
@@ -1445,8 +1445,8 @@
       return applyProxy(target, PROXY_HANDLERS);
     }
   
-    function RequestProxyFactory_create(useProxies, handlers) {
-      return new RequestProxyFactory(useProxies, handlers);
+    function RequestProxyFactory_create(handlers, cacheImpl) {
+      return new RequestProxyFactory(handlers, cacheImpl);
     }
   
     RequestProxyFactory.create = RequestProxyFactory_create;
@@ -1920,8 +1920,8 @@
   
     //------------------ static
   
-    function DataAccessInterface_create(handlers, proxyEnabled, poolRegistry, pool) {
-      return new DataAccessInterface(handlers, proxyEnabled, poolRegistry, pool);
+    function DataAccessInterface_create(handlers, proxyEnabled, poolRegistry, pool, cacheImpl) {
+      return new DataAccessInterface(handlers, proxyEnabled, poolRegistry, pool, cacheImpl);
     }
   
     DataAccessInterface.create = DataAccessInterface_create;

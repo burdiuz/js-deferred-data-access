@@ -53,8 +53,8 @@ var RequestFactory = (function() {
 
   //------------------- static
 
-  function RequestFactory_create(handlers) {
-    return new RequestFactory(handlers);
+  function RequestFactory_create(handlers, cacheImpl) {
+    return new RequestFactory(handlers, cacheImpl);
   }
 
   function RequestFactory_createNoInitPrototype() {

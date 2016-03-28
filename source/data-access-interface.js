@@ -68,8 +68,8 @@ var DataAccessInterface = (function() {
 
   //------------------ static
 
-  function DataAccessInterface_create(handlers, proxyEnabled, poolRegistry, pool) {
-    return new DataAccessInterface(handlers, proxyEnabled, poolRegistry, pool);
+  function DataAccessInterface_create(handlers, proxyEnabled, poolRegistry, pool, cacheImpl) {
+    return new DataAccessInterface(handlers, proxyEnabled, poolRegistry, pool, cacheImpl);
   }
 
   DataAccessInterface.create = DataAccessInterface_create;

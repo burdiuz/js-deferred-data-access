@@ -116,9 +116,9 @@ var RequestProxyFactory = (function() {
 
   var PROXY_HANDLERS = createHandlers();
 
-  function RequestProxyFactory(handlers) {
+  function RequestProxyFactory(handlers, cacheImpl) {
     this[FACTORY_HANDLERS_FIELD] = handlers;
-    this[FACTORY_FIELD] = RequestFactory.create(handlers);
+    this[FACTORY_FIELD] = RequestFactory.create(handlers, cacheImpl);
     this[FACTORY_FIELD][FACTORY_DECORATOR_FIELD].setFactory(this);
   }
 
@@ -154,8 +154,8 @@ var RequestProxyFactory = (function() {
     return applyProxy(target, PROXY_HANDLERS);
   }
 
-  function RequestProxyFactory_create(useProxies, handlers) {
-    return new RequestProxyFactory(useProxies, handlers);
+  function RequestProxyFactory_create(handlers, cacheImpl) {
+    return new RequestProxyFactory(handlers, cacheImpl);
   }
 
   RequestProxyFactory.create = RequestProxyFactory_create;
