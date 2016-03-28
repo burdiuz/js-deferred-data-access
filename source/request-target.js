@@ -105,6 +105,11 @@ var RequestTarget = (function() {
     return list ? list.slice() : [];
   }
 
+  function RequestTarget_getLastChild(target) {
+    var list = target && target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].children : null;
+    return list && list.length ? list[list.length-1] : null;
+  }
+
   function RequestTarget_getChildrenCount(target) {
     var list = target && target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].children : null;
     return list ? list.length : 0;
@@ -134,6 +139,7 @@ var RequestTarget = (function() {
   RequestTarget.hadChildPromises = RequestTarget_hadChildPromises;
   RequestTarget.getRawPromise = RequestTarget_getRawPromise;
   RequestTarget.getChildren = RequestTarget_getChildren;
+  RequestTarget.getLastChild = RequestTarget_getLastChild;
   RequestTarget.getChildrenCount = RequestTarget_getChildrenCount;
   RequestTarget.create = RequestTarget_create;
 

@@ -55,23 +55,23 @@ var RequestHandlers = (function() {
       return _descriptors[type] || null;
     }
 
-    function _handle(parentRequest, name, pack, deferred, childRequest) {
+    function _handle(parentRequest, name, pack, deferred, resultRequest) {
       var list = _converter ? _converter.lookupForPending(pack.value) : null;
       if (list && list.length) {
         // FIXME Need to test on all platforms: In other browsers this might not work because may need list of Promise objects, not RequestTargets
         Promise.all(list).then(function() {
-          _handleImmediately(parentRequest, name, pack, deferred, childRequest);
+          _handleImmediately(parentRequest, name, pack, deferred, resultRequest);
         });
       } else {
-        _handleImmediately(parentRequest, name, pack, deferred, childRequest);
+        _handleImmediately(parentRequest, name, pack, deferred, resultRequest);
       }
     }
 
-    function _handleImmediately(parentRequest, name, data, deferred, childRequest) {
+    function _handleImmediately(parentRequest, name, data, deferred, resultRequest) {
       var handler = _getHandler(name);
       if (handler instanceof CommandDescriptor) {
         //INFO result should be applied to deferred.resolve() or deferred.reject()
-        handler.handle(parentRequest, data, deferred, childRequest);
+        handler.handle(parentRequest, data, deferred, resultRequest);
       } else {
         throw new Error('Command descriptor for "' + name + '" was not found.');
       }

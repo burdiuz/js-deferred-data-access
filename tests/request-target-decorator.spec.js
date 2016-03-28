@@ -1,14 +1,16 @@
 describe('RequestTargetDecorator', function() {
   var decorator, resource, factory, handlers;
-  var requestPromise;
+  var requestData, resolveRequest;
 
   function __createSendCommandRequest() {
     var resource = {};
     resource[TARGET_INTERNALS] = {
-      sendRequest: sinon.spy(function() {
-        return requestPromise;
+      sendRequest: sinon.spy(function(propertyName, pack, deferred) {
+        deferred[resolveRequest ? 'resolve' : 'reject'](requestData);
+        return deferred.promise;
       }),
-      registerChild: sinon.spy()
+      registerChild: sinon.spy(),
+      id: '1111'
     };
 
     return resource;
@@ -25,6 +27,8 @@ describe('RequestTargetDecorator', function() {
       action: sinon.spy(),
       type: sinon.spy()
     });
+
+    resolveRequest = true;
 
     resource = __createSendCommandRequest();
     decorator = RequestTargetDecorator.create(factory, handlers);
@@ -83,7 +87,8 @@ describe('RequestTargetDecorator', function() {
   describe('_commandHandler()', function() {
     var promise;
     beforeEach(function() {
-      requestPromise = null;
+      requestData = null;
+      resolveRequest = false;
       decorator.apply(resource);
       promise = resource.type('path', 'data');
     });
@@ -92,9 +97,10 @@ describe('RequestTargetDecorator', function() {
       var call;
       expect(resource[TARGET_INTERNALS].sendRequest).to.be.calledOnce;
       call = resource[TARGET_INTERNALS].sendRequest.getCall(0);
-      expect(call.args).to.be.eql([
-        'type', 'type', 'path', 'data'
-      ]);
+      expect(call.args[0]).to.be.equal('type');
+      expect(call.args[1]).to.be.eql({type: 'type', cmd: 'path', value: 'data', target: '1111'});
+      expect(call.args[2]).to.be.an.instanceof(Deferred);
+      expect(call.args[3]).to.be.an.instanceof(Promise); // mocked RequestTarget
     });
 
     it('should create new request', function() {
@@ -120,43 +126,22 @@ describe('RequestTargetDecorator', function() {
       });
     });
 
-    describe('When request returns promise', function() {
-      beforeEach(function() {
-        requestPromise = Promise.resolve('all ok');
-        factory.create.reset();
-        promise = resource.type('path', 'data');
-      });
-      it('should return promise from request', function(done) {
-        promise.then(function() {
-          done();
-        });
-      });
-      it('should register child request object in parent', function() {
-        expect(resource[TARGET_INTERNALS].registerChild).to.be.calledOnce;
-        expect(resource[TARGET_INTERNALS].registerChild).to.be.calledWith(promise);
-      });
-
-      it('should create new request', function() {
-        expect(factory.create).to.be.calledOnce;
-      });
-    });
-
   });
 
   describe('When isTemporary defined', function() {
     var isTemporary, isTemporaryResult;
-    var child, childData;
+    var child;
     beforeEach(function() {
       sinon.spy(RequestTarget, 'setTemporary');
-      childData = __createRequestTargetData();
-      requestPromise = Promise.resolve(childData);
+      requestData = __createRequestTargetData();
       isTemporary = sinon.spy(function() {
-        console.log();
         return isTemporaryResult;
       });
       isTemporaryResult = true;
-      handlers.setHandlers({call: new CommandDescriptor('call', function() {
-      }, 'call', isTemporary)});
+      handlers.setHandlers({
+        call: new CommandDescriptor('call', function() {
+        }, 'call', isTemporary)
+      });
       decorator.apply(resource);
       child = resource.call('command', 'value');
     });
@@ -179,7 +164,12 @@ describe('RequestTargetDecorator', function() {
 
       it('should change temporarity for child', function() {
         expect(isTemporary).to.be.calledOnce;
-        expect(isTemporary).to.be.calledWith(child, childData, 'command', 'value');
+        expect(isTemporary).to.be.calledWith(resource, child, {
+          type: 'call',
+          cmd: 'command',
+          value: 'value',
+          target: '1111'
+        }, requestData);
       });
     });
 

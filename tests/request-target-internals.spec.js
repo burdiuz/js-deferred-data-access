@@ -52,7 +52,7 @@ describe('RequestTargetInternals', function() {
       expect(target.link).to.be.an('object');
     });
 
-    it('should have NULL data', function(){
+    it('should have NULL data', function() {
       expect(target.id).to.be.null;
       expect(target.type).to.be.null;
       expect(target.poolId).to.be.null;
@@ -83,7 +83,7 @@ describe('RequestTargetInternals', function() {
 
       beforeEach(function() {
         handleResult = 'hi :)';
-        result = target.sendRequest('command', 'do-something', 'with-this', 'thanks');
+        result = target.sendRequest('command', {type: 'do-something', cmd: 'with-this', value: 'thanks'});
       });
 
       it('should have recorded request in queue', function() {
@@ -136,7 +136,7 @@ describe('RequestTargetInternals', function() {
 
     });
 
-    it('should have proper data', function(){
+    it('should have proper data', function() {
       expect(target.id).to.be.equal(linkData[TARGET_DATA].id);
       expect(target.type).to.be.equal(linkData[TARGET_DATA].type);
       expect(target.poolId).to.be.equal(linkData[TARGET_DATA].poolId);
@@ -194,7 +194,7 @@ describe('RequestTargetInternals', function() {
       var result;
       beforeEach(function() {
         handleResult = 'nope';
-        result = target.sendRequest('name', 'type', 'command', 'way-lue');
+        result = target.sendRequest('name', {type: 'type', cmd: 'command', value: 'way-lue', target: target.id});
       });
 
       it('should not use queue', function() {
@@ -224,7 +224,8 @@ describe('RequestTargetInternals', function() {
 
       it('should send "destroy" request', function() {
         expect(target.sendRequest).to.be.calledOnce;
-        expect(target.sendRequest).to.be.calledWith(RequestTargetCommands.DESTROY, RequestTargetCommands.DESTROY);
+        expect(target.sendRequest.getCall(0).args[0]).to.be.equal(RequestTargetCommands.DESTROY);
+        expect(target.sendRequest.getCall(0).args[1].type).to.be.equal(RequestTargetCommands.DESTROY);
       });
     });
 
@@ -247,14 +248,15 @@ describe('RequestTargetInternals', function() {
 
     it('should send "destroy" request', function() {
       expect(target.sendRequest).to.be.calledOnce;
-      expect(target.sendRequest).to.be.calledWith(RequestTargetCommands.DESTROY, RequestTargetCommands.DESTROY);
+      expect(target.sendRequest.getCall(0).args[0]).to.be.equal(RequestTargetCommands.DESTROY);
+      expect(target.sendRequest.getCall(0).args[1].type).to.be.equal(RequestTargetCommands.DESTROY);
     });
   });
 
   describe('When fulfilled with pending queue', function() {
     beforeEach(function(done) {
-      target.sendRequest('name', 'type', 'command', 'way-lue');
-      target.sendRequest('no-name', 'no-type', 'no-command', 'no-way-lue');
+      target.sendRequest('name', {type: 'type', cmd: 'command', value: 'way-lue'});
+      target.sendRequest('no-name', {type: 'no-type', cmd: 'no-command', value: 'no-way-lue'});
       linkData = __createRequestTargetData();
       deferred.resolve(linkData);
       deferred.promise.then(function() {
@@ -280,7 +282,7 @@ describe('RequestTargetInternals', function() {
   describe('When fulfilled with not-a-Resource value', function() {
     var promise;
     beforeEach(function() {
-      promise = target.sendRequest('1', 'one');
+      promise = target.sendRequest('1', {type:'one'});
       deferred.resolve(1983);
       deferred.promise.then(function() {
         done();
@@ -333,7 +335,7 @@ describe('RequestTargetInternals', function() {
     describe('When making child request', function() { // reject immediately
       var result;
       beforeEach(function() {
-        result = target.sendRequest('any-name', 'any-type', 'any-command', 'any-way-lue');
+        result = target.sendRequest('any-name', {type:'any-type', cmd:'any-command', value:'any-way-lue'});
       });
 
       it('promise should be rejected', function(done) {
@@ -404,7 +406,7 @@ describe('RequestTargetInternals', function() {
       var result;
       beforeEach(function() {
         handlers.handle.reset();
-        result = target.sendRequest('any-name', 'any-type', 'any-command', 'any-way-lue');
+        result = target.sendRequest('any-name', {type:'any-type', cmd:'any-command', value:'any-way-lue'});
       });
 
       it('promise should be rejected', function(done) {
@@ -485,8 +487,21 @@ describe('RequestTargetInternals', function() {
 
       it('should immediately throw error on not existent handler', function() {
         expect(function() {
-          target.sendRequest('any', 'thing');
+          target.sendRequest('any', {type:'thing'});
         }).to.throw(Error);
+      });
+
+      describe('When passing child request', function() {
+        beforeEach(function() {
+          child = __createRequestTarget();
+          hasHandler = true;
+          sinon.spy(target, 'registerChild');
+          target.sendRequest('any', {}, null, child);
+        });
+        it('should register child', function() {
+          expect(target.registerChild).to.be.calledOnce;
+          expect(target.registerChild).to.be.calledWith(child);
+        });
       });
 
     });

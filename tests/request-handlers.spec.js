@@ -176,7 +176,7 @@ describe('RequestHandlers', function() {
 
     describe('When called', function() {
       beforeEach(function() {
-        handlers.handle(resource, 'type', pack, deferred);
+        handlers.handle(resource, 'type', pack, deferred, null);
       });
 
       it('should call type handler', function() {
@@ -185,7 +185,7 @@ describe('RequestHandlers', function() {
 
       it('should pass type parameters into handler', function() {
         var args = commandHandler.getCall(0).args;
-        expect(args).to.be.eql([resource, pack, deferred]);
+        expect(args).to.be.eql([resource, pack, deferred, null]);
       });
     });
 

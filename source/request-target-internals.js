@@ -107,7 +107,7 @@ var RequestTargetInternals = (function() {
     if (this.requestHandlers.hasHandler(name)) {
       promise = this._applyRequest(name, pack, deferred || createDeferred(), child);
     } else {
-      throw new Error('Request handler of type "' + type + '" is not registered.');
+      throw new Error('Request handler for "' + name + '" is not registered.');
     }
     if (child) {
       this.registerChild(child);
@@ -173,7 +173,12 @@ var RequestTargetInternals = (function() {
     if (this.canBeDestroyed()) {
       //INFO I should not clear children list, since they are pending and requests already sent.
       if (this.status === TargetStatus.RESOLVED) {
-        promise = this.sendRequest(RequestTargetCommands.DESTROY, RequestTargetCommands.DESTROY);
+        promise = this.sendRequest(RequestTargetCommands.DESTROY, RequestTargetInternals.createRequestPackage(
+          RequestTargetCommands.DESTROY,
+          null,
+          null,
+          this.id
+        ));
       } else {
         promise = Promise.resolve();
       }

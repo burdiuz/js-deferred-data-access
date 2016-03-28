@@ -12,30 +12,23 @@ var RequestTargetDecorator = (function() {
     function _getMember(propertyName, commandType, isTemporary) {
 
       function _commandHandler(command, value) {
+        var self = this;
         var result;
         var promise;
-        var error = false;
         if (this[TARGET_INTERNALS]) {
           var pack = RequestTargetInternals.createRequestPackage(commandType, command, value, this[TARGET_INTERNALS].id);
           var deferred = createDeferred();
           result = _factory.create(deferred.promise);
-          promise = this[TARGET_INTERNALS].sendRequest(
-            propertyName,
-            pack,
-            deferred,
-            result
-          );
+          promise = this[TARGET_INTERNALS].sendRequest(propertyName, pack, deferred, result);
           if (promise) {
             promise.then(function(data) {
-              RequestTarget.setTemporary(result, Boolean(isTemporary(result, pack, data)));
+              RequestTarget.setTemporary(result, Boolean(isTemporary(self, result, pack, data)));
             });
           } else {
             promise = Promise.reject(new Error('Initial request failed and didn\'t result in promise.'));
-            error = true;
           }
         } else {
           promise = Promise.reject(new Error('Target object is not a resource, so cannot be used for calls.'));
-          error = true;
         }
         return result || _factory.create(promise);
       }
