@@ -7,9 +7,20 @@ var rename = require('gulp-rename');
 var include = require('gulp-include');
 
 gulp.task('build', function() {
-  gulp.src('source/data-access-interface-umd.js')
+  gulp.src('source/deferred-data-access-umd.js')
     .pipe(include())
-    .pipe(rename('data-access-interface.js'))
+    .pipe(rename('deferred-data-access.js'))
+    .pipe(gulp.dest('dist'))
+    .pipe(uglify())
+    .pipe(rename({suffix: '.min'}))
+    .pipe(gulp.dest('dist'));
+
+});
+
+gulp.task('build-nowrap', function() {
+  gulp.src('source/deferred-data-access-nowrap.js')
+    .pipe(include())
+    .pipe(rename('deferred-data-access.nowrap.js'))
     .pipe(gulp.dest('dist'))
     .pipe(uglify())
     .pipe(rename({suffix: '.min'}))
@@ -18,9 +29,9 @@ gulp.task('build', function() {
 });
 
 gulp.task('build-standalone', function() {
-  gulp.src('source/data-access-interface-umd.standalone.js')
+  gulp.src('source/deferred-data-access-umd.standalone.js')
     .pipe(include())
-    .pipe(rename('data-access-interface.standalone.js'))
+    .pipe(rename('deferred-data-access.standalone.js'))
     .pipe(gulp.dest('dist'))
     .pipe(uglify())
     .pipe(rename({suffix: '.min'}))
@@ -28,4 +39,4 @@ gulp.task('build-standalone', function() {
 
 });
 
-gulp.task('default', ['build', 'build-standalone']);
+gulp.task('default', ['build-nowrap', 'build', 'build-standalone']);

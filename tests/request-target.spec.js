@@ -315,6 +315,19 @@ describe('RequestTarget', function() {
       expect(RequestTarget.getChildren({})).to.be.empty;
     });
   });
+  describe('getLastChild()', function() {
+    var target, result;
+    beforeEach(function() {
+      target = {};
+      target[TARGET_INTERNALS] = {
+        children: [{}, {}, {}]
+      };
+      result = RequestTarget.getLastChild(target);
+    });
+    it('should result with last item from children', function() {
+      expect(result).to.be.equal(target[TARGET_INTERNALS].children.pop());
+    });
+  });
   describe('getChildrenCount()', function() {
     var target, result;
     beforeEach(function() {

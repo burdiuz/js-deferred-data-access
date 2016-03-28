@@ -18,6 +18,12 @@ describe('RequestTargetDecorator', function() {
 
   beforeEach(function() {
     factory = {
+      getCached: sinon.spy(function(name, pack) {
+        return null;
+      }),
+      createCached: sinon.spy(function(promise, name, pack) {
+        return promise;
+      }),
       create: sinon.spy(function(promise) {
         return promise;
       })
@@ -104,7 +110,7 @@ describe('RequestTargetDecorator', function() {
     });
 
     it('should create new request', function() {
-      expect(factory.create).to.be.calledOnce;
+      expect(factory.createCached).to.be.calledOnce;
     });
 
     it('should return rejected promise', function(done) {

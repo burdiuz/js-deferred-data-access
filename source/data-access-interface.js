@@ -9,12 +9,12 @@ var DataAccessInterface = (function() {
    * @param {ResourcePool} [_pool]
    * @constructor
    */
-  function DataAccessInterface(handlers, proxyEnabled, _poolRegistry, _pool) {
+  function DataAccessInterface(handlers, proxyEnabled, _poolRegistry, _pool, _cacheImpl) {
     if (proxyEnabled && !areProxiesAvailable()) {
       throw new Error('Proxies are not available in this environment');
     }
     var _handlers = RequestHandlers.create(proxyEnabled);
-    var _factory = (proxyEnabled ? RequestProxyFactory : RequestFactory).create(_handlers);
+    var _factory = (proxyEnabled ? RequestProxyFactory : RequestFactory).create(_handlers, _cacheImpl);
     _poolRegistry = _poolRegistry || ResourcePoolRegistry.create();
     if (_pool) {
       _poolRegistry.register(_pool);

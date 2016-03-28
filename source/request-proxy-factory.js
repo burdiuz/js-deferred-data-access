@@ -130,9 +130,23 @@ var RequestProxyFactory = (function() {
     return instance;
   }
 
+  function _getCached(name, pack) {
+    return this[FACTORY_FIELD].getCached(name, pack);
+  }
+
+  function _createCached(promise, name, pack) {
+    var instance = this[FACTORY_FIELD].createCached(promise, name, pack);
+    if (this[FACTORY_HANDLERS_FIELD].available) {
+      instance = applyProxy(instance, PROXY_HANDLERS);
+    }
+    return instance;
+  }
+
   RequestProxyFactory.prototype = RequestFactory.createNoInitProtoype();
   RequestProxyFactory.prototype.constructor = RequestProxyFactory;
   RequestProxyFactory.prototype.create = _create;
+  RequestProxyFactory.prototype.getCached = _getCached;
+  RequestProxyFactory.prototype.createCached = _createCached;
 
   //------------------- static
 

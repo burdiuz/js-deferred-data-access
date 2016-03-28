@@ -2,12 +2,12 @@
 (function(root, factory) {
   if (typeof define === 'function' && define.amd) {
     // AMD. Register as an anonymous module.
-    define(['EventDispatcher'], factory);
+    define(['event-dispatcher'], factory);
   } else if (typeof module === 'object' && module.exports) {
     // Node. Does not work with strict CommonJS, but
     // only CommonJS-like environments that support module.exports,
     // like Node.
-    module.exports = factory(require('EventDispatcher'));
+    module.exports = factory(require('event-dispatcher'));
   } else {
     // Browser globals (root is window)
     root.DataAccessInterface = factory(root.EventDispatcher);
@@ -967,23 +967,23 @@
         return _descriptors[type] || null;
       }
   
-      function _handle(parentRequest, name, pack, deferred, childRequest) {
+      function _handle(parentRequest, name, pack, deferred, resultRequest) {
         var list = _converter ? _converter.lookupForPending(pack.value) : null;
         if (list && list.length) {
           // FIXME Need to test on all platforms: In other browsers this might not work because may need list of Promise objects, not RequestTargets
           Promise.all(list).then(function() {
-            _handleImmediately(parentRequest, name, pack, deferred, childRequest);
+            _handleImmediately(parentRequest, name, pack, deferred, resultRequest);
           });
         } else {
-          _handleImmediately(parentRequest, name, pack, deferred, childRequest);
+          _handleImmediately(parentRequest, name, pack, deferred, resultRequest);
         }
       }
   
-      function _handleImmediately(parentRequest, name, data, deferred, childRequest) {
+      function _handleImmediately(parentRequest, name, data, deferred, resultRequest) {
         var handler = _getHandler(name);
         if (handler instanceof CommandDescriptor) {
           //INFO result should be applied to deferred.resolve() or deferred.reject()
-          handler.handle(parentRequest, data, deferred, childRequest);
+          handler.handle(parentRequest, data, deferred, resultRequest);
         } else {
           throw new Error('Command descriptor for "' + name + '" was not found.');
         }
@@ -1146,30 +1146,26 @@
       function _getMember(propertyName, commandType, isTemporary) {
   
         function _commandHandler(command, value) {
+          var self = this;
           var result;
           var promise;
-          var error = false;
           if (this[TARGET_INTERNALS]) {
             var pack = RequestTargetInternals.createRequestPackage(commandType, command, value, this[TARGET_INTERNALS].id);
-            var deferred = createDeferred();
-            result = _factory.create(deferred.promise);
-            promise = this[TARGET_INTERNALS].sendRequest(
-              propertyName,
-              pack,
-              deferred,
-              result
-            );
-            if (promise) {
-              promise.then(function(data) {
-                RequestTarget.setTemporary(result, Boolean(isTemporary(result, pack, data)));
-              });
-            } else {
-              promise = Promise.reject(new Error('Initial request failed and didn\'t result in promise.'));
-              error = true;
+            result = _factory.getCached(propertyName, pack);
+            if (!result) {
+              var deferred = createDeferred();
+              result = _factory.createCached(deferred.promise, propertyName, pack);
+              promise = this[TARGET_INTERNALS].sendRequest(propertyName, pack, deferred, result);
+              if (promise) {
+                promise.then(function(data) {
+                  RequestTarget.setTemporary(result, Boolean(isTemporary(self, result, pack, data)));
+                });
+              } else {
+                promise = Promise.reject(new Error('Initial request failed and didn\'t result in promise.'));
+              }
             }
           } else {
             promise = Promise.reject(new Error('Target object is not a resource, so cannot be used for calls.'));
-            error = true;
           }
           return result || _factory.create(promise);
         }
@@ -1197,7 +1193,7 @@
       }
   
       function _setFactory(factory) {
-        if(factory){
+        if (factory) {
           _factory = factory;
         }
       }
@@ -1230,13 +1226,28 @@
   
   var RequestFactory = (function() {
     var NOINIT = {};
+    /*
+     function DummyCacheImpl() {
+     this.get = function(name, pack) {
   
-    function RequestFactory(handlers) {
+     };
+     this.set = function(name, pack, request) {
+  
+     };
+     }
+     */
+    function RequestFactory(handlers, _cacheImpl) {
       if (handlers === NOINIT) {
         return;
       }
       this[FACTORY_HANDLERS_FIELD] = handlers;
       this[FACTORY_DECORATOR_FIELD] = RequestTargetDecorator.create(this, handlers);
+  
+      Object.defineProperties(this, {
+        cache: {
+          value: _cacheImpl
+        }
+      });
     }
   
     function _create(promise) {
@@ -1247,7 +1258,19 @@
       return request;
     }
   
+    function _getCached(name, pack) {
+      return this.cache && this.cache.get(name, pack);
+    }
+  
+    function _createCached(promise, name, pack) {
+      var request = this.create(promise);
+      this.cache && this.cache.set(name, pack, request);
+      return request;
+    }
+  
     RequestFactory.prototype.create = _create;
+    RequestFactory.prototype.getCached = _getCached;
+    RequestFactory.prototype.createCached = _createCached;
   
     //------------------- static
   
@@ -1398,9 +1421,23 @@
       return instance;
     }
   
+    function _getCached(name, pack) {
+      return this[FACTORY_FIELD].getCached(name, pack);
+    }
+  
+    function _createCached(promise, name, pack) {
+      var instance = this[FACTORY_FIELD].createCached(promise, name, pack);
+      if (this[FACTORY_HANDLERS_FIELD].available) {
+        instance = applyProxy(instance, PROXY_HANDLERS);
+      }
+      return instance;
+    }
+  
     RequestProxyFactory.prototype = RequestFactory.createNoInitProtoype();
     RequestProxyFactory.prototype.constructor = RequestProxyFactory;
     RequestProxyFactory.prototype.create = _create;
+    RequestProxyFactory.prototype.getCached = _getCached;
+    RequestProxyFactory.prototype.createCached = _createCached;
   
     //------------------- static
   
@@ -1527,7 +1564,7 @@
       if (this.requestHandlers.hasHandler(name)) {
         promise = this._applyRequest(name, pack, deferred || createDeferred(), child);
       } else {
-        throw new Error('Request handler of type "' + type + '" is not registered.');
+        throw new Error('Request handler for "' + name + '" is not registered.');
       }
       if (child) {
         this.registerChild(child);
@@ -1593,7 +1630,12 @@
       if (this.canBeDestroyed()) {
         //INFO I should not clear children list, since they are pending and requests already sent.
         if (this.status === TargetStatus.RESOLVED) {
-          promise = this.sendRequest(RequestTargetCommands.DESTROY, RequestTargetCommands.DESTROY);
+          promise = this.sendRequest(RequestTargetCommands.DESTROY, RequestTargetInternals.createRequestPackage(
+            RequestTargetCommands.DESTROY,
+            null,
+            null,
+            this.id
+          ));
         } else {
           promise = Promise.resolve();
         }
@@ -1767,6 +1809,11 @@
       return list ? list.slice() : [];
     }
   
+    function RequestTarget_getLastChild(target) {
+      var list = target && target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].children : null;
+      return list && list.length ? list[list.length-1] : null;
+    }
+  
     function RequestTarget_getChildrenCount(target) {
       var list = target && target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].children : null;
       return list ? list.length : 0;
@@ -1796,6 +1843,7 @@
     RequestTarget.hadChildPromises = RequestTarget_hadChildPromises;
     RequestTarget.getRawPromise = RequestTarget_getRawPromise;
     RequestTarget.getChildren = RequestTarget_getChildren;
+    RequestTarget.getLastChild = RequestTarget_getLastChild;
     RequestTarget.getChildrenCount = RequestTarget_getChildrenCount;
     RequestTarget.create = RequestTarget_create;
   
@@ -1813,12 +1861,12 @@
      * @param {ResourcePool} [_pool]
      * @constructor
      */
-    function DataAccessInterface(handlers, proxyEnabled, _poolRegistry, _pool) {
+    function DataAccessInterface(handlers, proxyEnabled, _poolRegistry, _pool, _cacheImpl) {
       if (proxyEnabled && !areProxiesAvailable()) {
         throw new Error('Proxies are not available in this environment');
       }
       var _handlers = RequestHandlers.create(proxyEnabled);
-      var _factory = (proxyEnabled ? RequestProxyFactory : RequestFactory).create(_handlers);
+      var _factory = (proxyEnabled ? RequestProxyFactory : RequestFactory).create(_handlers, _cacheImpl);
       _poolRegistry = _poolRegistry || ResourcePoolRegistry.create();
       if (_pool) {
         _poolRegistry.register(_pool);
