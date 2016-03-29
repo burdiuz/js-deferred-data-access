@@ -16,7 +16,7 @@ var CommandDescriptor = (function() {
    * @param {Function} [isTemporary=]
    * @constructor
    */
-  function CommandDescriptor(type, handle, name, isTemporary) {
+  function CommandDescriptor(type, handle, name, isTemporary, cacheable) {
     /**
      * @type {String|Symbol}
      */
@@ -33,6 +33,8 @@ var CommandDescriptor = (function() {
      * @type {Function}
      */
     this.isTemporary = isTemporary || Default_isTemporary;
+
+    this.cacheable = Boolean(cacheable);
   }
 
   // Since its VO it should not contain any methods that may change its internal state
@@ -45,10 +47,11 @@ var CommandDescriptor = (function() {
    * @param {Function} handle
    * @param {string} [name=]
    * @param {Function} [isTemporary=]
+   * @param {Boolean} [cacheable=false]
    * @returns {CommandDescriptor}
    */
-  function CommandDescriptor_create(command, handle, name, isTemporary) {
-    var descriptor = new CommandDescriptor(command, handle, name, isTemporary);
+  function CommandDescriptor_create(command, handle, name, isTemporary, cacheable) {
+    var descriptor = new CommandDescriptor(command, handle, name, isTemporary, cacheable);
     // We can use Object.freeze(), it keeps class/constructor information
     return Object.freeze(descriptor);
   }

@@ -170,7 +170,7 @@ var DataAccessInterface = (function() {
      * @param {Function} [isTemporary=]
      * @constructor
      */
-    function CommandDescriptor(type, handle, name, isTemporary) {
+    function CommandDescriptor(type, handle, name, isTemporary, cacheable) {
       /**
        * @type {String|Symbol}
        */
@@ -187,6 +187,8 @@ var DataAccessInterface = (function() {
        * @type {Function}
        */
       this.isTemporary = isTemporary || Default_isTemporary;
+  
+      this.cacheable = Boolean(cacheable);
     }
   
     // Since its VO it should not contain any methods that may change its internal state
@@ -199,10 +201,11 @@ var DataAccessInterface = (function() {
      * @param {Function} handle
      * @param {string} [name=]
      * @param {Function} [isTemporary=]
+     * @param {Boolean} [cacheable=false]
      * @returns {CommandDescriptor}
      */
-    function CommandDescriptor_create(command, handle, name, isTemporary) {
-      var descriptor = new CommandDescriptor(command, handle, name, isTemporary);
+    function CommandDescriptor_create(command, handle, name, isTemporary, cacheable) {
+      var descriptor = new CommandDescriptor(command, handle, name, isTemporary, cacheable);
       // We can use Object.freeze(), it keeps class/constructor information
       return Object.freeze(descriptor);
     }
@@ -1120,37 +1123,40 @@ var DataAccessInterface = (function() {
   })
   ();
   
+  /**
+   * Created by Oleg Galaburda on 29.03.16.
+   */
   'use strict';
-  var RequestTargetDecorator = (function() {
   
-    /**
-     *
-     * @param handlers {RequestHandlers}
-     * @constructor
-     */
-    function RequestTargetDecorator(_factory, _handlers) {
+  var CommandHandlerFactory = (function() {
+    function CommandHandlerFactory() {
       var _members = new Map();
   
-      function _getMember(propertyName, commandType, isTemporary) {
+      /**
+       * @param {CommandDescriptor} descriptor
+       * @returns {Function}
+       * @private
+       */
+      function _get(descriptor) {
+        var propertyName = descriptor.name;
+        if (!_members.has(propertyName)) {
+          _members.set(propertyName, _create(descriptor.name, descriptor.type, descriptor.isTemporary, descriptor.cacheable));
+        }
+        return _members.get(propertyName);
+      }
+  
+      function _create(propertyName, commandType, isTemporary, cacheable) {
   
         function _commandHandler(command, value) {
-          var self = this;
           var result;
           var promise;
           if (this[TARGET_INTERNALS]) {
             var pack = RequestTargetInternals.createRequestPackage(commandType, command, value, this[TARGET_INTERNALS].id);
-            result = _factory.getCached(propertyName, pack);
-            if (!result) {
-              var deferred = createDeferred();
-              result = _factory.createCached(deferred.promise, propertyName, pack);
-              promise = this[TARGET_INTERNALS].sendRequest(propertyName, pack, deferred, result);
-              if (promise) {
-                promise.then(function(data) {
-                  RequestTarget.setTemporary(result, Boolean(isTemporary(self, result, pack, data)));
-                });
-              } else {
-                promise = Promise.reject(new Error('Initial request failed and didn\'t result in promise.'));
-              }
+            var request = getChildRequest(propertyName, pack, cacheable);
+            result = request.child;
+            if (request.deferred) {
+              promise = this[TARGET_INTERNALS].sendRequest(propertyName, pack, request.deferred, result);
+              promise = checkState(promise, isTemporary, this, result, pack);
             }
           } else {
             promise = Promise.reject(new Error('Target object is not a resource, so cannot be used for calls.'));
@@ -1158,11 +1164,55 @@ var DataAccessInterface = (function() {
           return result || _factory.create(promise);
         }
   
-        if (!_members.has(propertyName)) {
-          _members.set(propertyName, _commandHandler);
-        }
-        return _members.get(propertyName);
+        return _commandHandler;
       }
+  
+      function getChildRequest(propertyName, pack, cacheable) {
+        var child, deferred;
+        if (cacheable) {
+          child = _factory.getCached(propertyName, pack);
+        }
+        if (!child) {
+          deferred = createDeferred();
+          if (cacheable) {
+            child = _factory.createCached(deferred.promise, propertyName, pack);
+          } else {
+            child = _factory.create(deferred.promise, propertyName, pack);
+          }
+        }
+        return {child: child, deferred: deferred};
+      }
+  
+      function checkState(promise, isTemporary, parentRequest, childRequest, pack) {
+        if (promise) {
+          promise.then(function(data) {
+            RequestTarget.setTemporary(childRequest, Boolean(isTemporary(parentRequest, childRequest, pack, data)));
+          });
+        } else {
+          promise = Promise.reject(new Error('Initial request failed and didn\'t result in promise.'));
+        }
+        return promise;
+      }
+  
+      this.get = _get;
+    }
+  
+    return CommandHandlerFactory;
+  })();
+  
+  'use strict';
+  
+  var RequestTargetDecorator = (function() {
+  
+    /**
+     *
+     * @param {RequestFactory} _factory
+     * @param {RequestHandlers} _handlers
+     * @constructor
+     */
+    function RequestTargetDecorator(_factory, _handlers) {
+  
+      var _members = new CommandHandlerFactory();
   
       function _apply(request) {
         if (!_handlers.available) return;
@@ -1175,7 +1225,7 @@ var DataAccessInterface = (function() {
         var result;
         while (!(result = iterator.next()).done) {
           var descriptor = result.value;
-          request[descriptor.name] = _getMember(descriptor.name, descriptor.type, descriptor.isTemporary);
+          request[descriptor.name] = _members.get(descriptor);
         }
         return request;
       }

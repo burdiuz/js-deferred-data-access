@@ -9,6 +9,7 @@ var DataAccessInterface = (function() {
   //=include resource-pool-registry.js
   //=include resource-converter.js
   //=include request-handlers.js
+  //=include command-handler-factory.js
   //=include request-target-decorator.js
   //=include request-factory.js
   //=include request-proxy-factory.js

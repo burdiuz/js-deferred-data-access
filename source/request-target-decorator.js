@@ -1,46 +1,16 @@
 'use strict';
+
 var RequestTargetDecorator = (function() {
 
   /**
    *
-   * @param handlers {RequestHandlers}
+   * @param {RequestFactory} _factory
+   * @param {RequestHandlers} _handlers
    * @constructor
    */
   function RequestTargetDecorator(_factory, _handlers) {
-    var _members = new Map();
 
-    function _getMember(propertyName, commandType, isTemporary) {
-
-      function _commandHandler(command, value) {
-        var self = this;
-        var result;
-        var promise;
-        if (this[TARGET_INTERNALS]) {
-          var pack = RequestTargetInternals.createRequestPackage(commandType, command, value, this[TARGET_INTERNALS].id);
-          result = _factory.getCached(propertyName, pack);
-          if (!result) {
-            var deferred = createDeferred();
-            result = _factory.createCached(deferred.promise, propertyName, pack);
-            promise = this[TARGET_INTERNALS].sendRequest(propertyName, pack, deferred, result);
-            if (promise) {
-              promise.then(function(data) {
-                RequestTarget.setTemporary(result, Boolean(isTemporary(self, result, pack, data)));
-              });
-            } else {
-              promise = Promise.reject(new Error('Initial request failed and didn\'t result in promise.'));
-            }
-          }
-        } else {
-          promise = Promise.reject(new Error('Target object is not a resource, so cannot be used for calls.'));
-        }
-        return result || _factory.create(promise);
-      }
-
-      if (!_members.has(propertyName)) {
-        _members.set(propertyName, _commandHandler);
-      }
-      return _members.get(propertyName);
-    }
+    var _members = new CommandHandlerFactory();
 
     function _apply(request) {
       if (!_handlers.available) return;
@@ -53,7 +23,7 @@ var RequestTargetDecorator = (function() {
       var result;
       while (!(result = iterator.next()).done) {
         var descriptor = result.value;
-        request[descriptor.name] = _getMember(descriptor.name, descriptor.type, descriptor.isTemporary);
+        request[descriptor.name] = _members.get(descriptor);
       }
       return request;
     }
