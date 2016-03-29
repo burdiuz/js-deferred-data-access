@@ -318,8 +318,6 @@
       };
     })();
     
-    
-    
     var Deferred = (function() {
     
       /**
@@ -439,7 +437,7 @@
           // We check for their types above but in cases when Proxies are enabled their type will be Function
           // and verification will come to this case
           typeof(object[TARGET_INTERNALS]) === 'object' ||
-            // this case for RAW resources passed via JSON conversion, look like {'resource::data': {id: '1111', poolId: '22222'}}
+          // this case for RAW resources passed via JSON conversion, look like {'resource::data': {id: '1111', poolId: '22222'}}
           typeof(object[TARGET_DATA]) === 'object'
         ));
     }
@@ -1600,7 +1598,7 @@
     
         Object.defineProperties(this, {
           cache: {
-            value: _cacheImpl
+            value: _cacheImpl || null
           }
         });
       }
@@ -1618,8 +1616,11 @@
       }
     
       function _createCached(promise, name, pack) {
-        var request = this.create(promise);
-        this.cache && this.cache.set(name, pack, request);
+        var request = null;
+        if(this.cache){
+          request = this.create(promise);
+          this.cache.set(name, pack, request);
+        }
         return request;
       }
     
@@ -1697,7 +1698,7 @@
       }
     
       function Proxy_enumerate() {
-        return Object.getOwnPropertyNames(EXCLUSIONS);
+        return Object.getOwnPropertyNames(EXCLUSIONS)[Symbol.iterator]();
       }
     
       function Proxy_getOwnPropertyDescriptor(wrapper, name) {
@@ -2217,6 +2218,7 @@
        * @constructor
        */
       function DataAccessInterface(handlers, proxyEnabled, _poolRegistry, _pool, _cacheImpl) {
+        proxyEnabled = Boolean(proxyEnabled);
         if (proxyEnabled && !areProxiesAvailable()) {
           throw new Error('Proxies are not available in this environment');
         }
