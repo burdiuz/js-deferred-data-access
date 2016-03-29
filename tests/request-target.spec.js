@@ -4,8 +4,8 @@ describe('RequestTarget', function() {
     _RequestTargetInternals = RequestTargetInternals;
     sandbox = sinon.sandbox.create();
     RequestTargetInternals = sandbox.spy(function() {
-      this.then = sinon.spy();
-      this.catch = sinon.spy();
+      this.then = sandbox.spy();
+      this.catch = sandbox.spy();
     });
   });
   after(function() {
@@ -62,7 +62,7 @@ describe('RequestTarget', function() {
       it('should delete internals', function() {
         expect(request[TARGET_INTERNALS]).to.not.be.ok;
       });
-     it('calling then() should subscribe to original promise', function(done) {
+      it('calling then() should subscribe to original promise', function(done) {
         request.then(function(data) {
           expect(data).to.be.equal('-data3');
           done();

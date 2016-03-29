@@ -4,7 +4,7 @@
 'use strict';
 
 var CommandHandlerFactory = (function() {
-  function CommandHandlerFactory() {
+  function CommandHandlerFactory(_factory) {
     var _members = new Map();
 
     /**

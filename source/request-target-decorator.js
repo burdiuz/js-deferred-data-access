@@ -10,7 +10,7 @@ var RequestTargetDecorator = (function() {
    */
   function RequestTargetDecorator(_factory, _handlers) {
 
-    var _members = new CommandHandlerFactory();
+    var _members = new CommandHandlerFactory(_factory);
 
     function _apply(request) {
       if (!_handlers.available) return;

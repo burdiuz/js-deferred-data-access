@@ -1145,7 +1145,7 @@
     'use strict';
     
     var CommandHandlerFactory = (function() {
-      function CommandHandlerFactory() {
+      function CommandHandlerFactory(_factory) {
         var _members = new Map();
     
         /**
@@ -1228,7 +1228,7 @@
        */
       function RequestTargetDecorator(_factory, _handlers) {
     
-        var _members = new CommandHandlerFactory();
+        var _members = new CommandHandlerFactory(_factory);
     
         function _apply(request) {
           if (!_handlers.available) return;
