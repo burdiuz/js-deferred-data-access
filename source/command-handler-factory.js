@@ -4,8 +4,9 @@
 'use strict';
 
 var CommandHandlerFactory = (function() {
-  function CommandHandlerFactory(_factory) {
+  function CommandHandlerFactory() {
     var _members = new Map();
+    var _factory;
 
     /**
      * @param {CommandDescriptor} descriptor
@@ -31,6 +32,9 @@ var CommandHandlerFactory = (function() {
           result = request.child;
           if (request.deferred) {
             promise = this[TARGET_INTERNALS].sendRequest(propertyName, pack, request.deferred, result);
+            if (!promise) {
+              result = null;
+            }
             promise = checkState(promise, isTemporary, this, result, pack);
           }
         } else {
@@ -69,7 +73,18 @@ var CommandHandlerFactory = (function() {
       return promise;
     }
 
+    function _setFactory(factory) {
+      _factory = factory;
+    }
+
+    function _getFactory() {
+      return _factory;
+    }
+
     this.get = _get;
+
+    this.setFactory = _setFactory;
+    this.getFactory = _getFactory;
   }
 
   return CommandHandlerFactory;

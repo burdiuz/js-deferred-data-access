@@ -1425,8 +1425,9 @@
     'use strict';
     
     var CommandHandlerFactory = (function() {
-      function CommandHandlerFactory(_factory) {
+      function CommandHandlerFactory() {
         var _members = new Map();
+        var _factory;
     
         /**
          * @param {CommandDescriptor} descriptor
@@ -1452,6 +1453,9 @@
               result = request.child;
               if (request.deferred) {
                 promise = this[TARGET_INTERNALS].sendRequest(propertyName, pack, request.deferred, result);
+                if (!promise) {
+                  result = null;
+                }
                 promise = checkState(promise, isTemporary, this, result, pack);
               }
             } else {
@@ -1490,7 +1494,18 @@
           return promise;
         }
     
+        function _setFactory(factory) {
+          _factory = factory;
+        }
+    
+        function _getFactory() {
+          return _factory;
+        }
+    
         this.get = _get;
+    
+        this.setFactory = _setFactory;
+        this.getFactory = _getFactory;
       }
     
       return CommandHandlerFactory;
@@ -1508,7 +1523,8 @@
        */
       function RequestTargetDecorator(_factory, _handlers) {
     
-        var _members = new CommandHandlerFactory(_factory);
+        var _members = new CommandHandlerFactory();
+        _members.setFactory(_factory);
     
         function _apply(request) {
           if (!_handlers.available) return;
@@ -1528,12 +1544,17 @@
     
         function _setFactory(factory) {
           if (factory) {
-            _factory = factory;
+            _members.setFactory(factory);
           }
+        }
+    
+        function _getFactory() {
+          return _members.getFactory();
         }
     
         this.apply = _apply;
         this.setFactory = _setFactory;
+        this.getFactory = _getFactory;
       }
     
       //------------------- static

@@ -10,7 +10,8 @@ var RequestTargetDecorator = (function() {
    */
   function RequestTargetDecorator(_factory, _handlers) {
 
-    var _members = new CommandHandlerFactory(_factory);
+    var _members = new CommandHandlerFactory();
+    _members.setFactory(_factory);
 
     function _apply(request) {
       if (!_handlers.available) return;
@@ -30,12 +31,17 @@ var RequestTargetDecorator = (function() {
 
     function _setFactory(factory) {
       if (factory) {
-        _factory = factory;
+        _members.setFactory(factory);
       }
+    }
+
+    function _getFactory() {
+      return _members.getFactory();
     }
 
     this.apply = _apply;
     this.setFactory = _setFactory;
+    this.getFactory = _getFactory;
   }
 
   //------------------- static

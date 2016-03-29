@@ -13,6 +13,8 @@ describe('RequestTargetDecorator', function() {
       this.get = sandbox.spy(function() {
         return commandHandlerResult;
       });
+      this.setFactory = sandbox.spy();
+      this.getFactory = sandbox.spy();
     });
   });
 
@@ -41,7 +43,32 @@ describe('RequestTargetDecorator', function() {
       assert(CommandHandlerFactory.calledWithNew(), 'create factory');
     });
     it('should pass factory to CommandHandlerFactory', function() {
-      expect(CommandHandlerFactory).to.be.calledWith(factory);
+      expect(commandHFInstance.setFactory).to.be.calledOnce;
+      expect(commandHFInstance.setFactory).to.be.calledWith(factory);
+    });
+  });
+  describe('When factory changed', function() {
+    var newFactory;
+    beforeEach(function() {
+      newFactory = {};
+      commandHFInstance.setFactory.reset();
+      decorator.setFactory(newFactory);
+    });
+    it('should update factory for command handlers', function() {
+      expect(commandHFInstance.setFactory).to.be.calledOnce;
+      expect(commandHFInstance.setFactory).to.be.calledWith(newFactory);
+    });
+    it('should not pass NULL factory', function() {
+      decorator.setFactory(null);
+      expect(commandHFInstance.setFactory).to.be.calledOnce;
+    });
+  });
+  describe('When requesting resource factory', function() {
+    beforeEach(function(){
+      decorator.getFactory();
+    });
+    it('should return stored factory', function() {
+      expect(commandHFInstance.getFactory).to.be.calledOnce;
     });
   });
 

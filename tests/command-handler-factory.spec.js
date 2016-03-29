@@ -2,14 +2,18 @@
  * Created by Oleg Galaburda on 29.03.16.
  */
 describe('CommandHandlerFactory', function() {
-  var sandbox, factory, getResult, createResult;
+  var sandbox, resourceFactory, descriptor, getResult, createResult, isTemporaryResult;
   var factory, resource, resolveRequest, requestData;
 
   function __createSendCommandRequest() {
     var resource = {};
     resource[TARGET_INTERNALS] = {
       sendRequest: sandbox.spy(function(propertyName, pack, deferred) {
-        deferred[resolveRequest ? 'resolve' : 'reject'](requestData);
+        if (resolveRequest) {
+          deferred.resolve(requestData);
+        } else {
+          deferred.reject(requestData);
+        }
         return deferred.promise;
       }),
       id: '1111'
@@ -27,7 +31,7 @@ describe('CommandHandlerFactory', function() {
   });
 
   beforeEach(function() {
-    factory = {
+    resourceFactory = {
       getCached: sandbox.spy(function() {
         return getResult;
       }),
@@ -38,8 +42,25 @@ describe('CommandHandlerFactory', function() {
         return createResult;
       })
     };
+    descriptor = {
+      name: 'property',
+      type: 'commandType',
+      handle: sandbox.spy(),
+      isTemporary: sandbox.spy(function() {
+        return isTemporaryResult;
+      }),
+      cacheable: false
+    };
+    requestData = {};
+    isTemporaryResult = true;
+    resolveRequest = true;
     resource = __createSendCommandRequest();
-    factory = new CommandHandlerFactory(factory);
+    factory = new CommandHandlerFactory();
+    factory.setFactory(resourceFactory);
+  });
+
+  it('should store factory value', function() {
+    expect(factory.getFactory()).to.be.equal(resourceFactory);
   });
 
   describe('When requested new member', function() {
@@ -70,98 +91,170 @@ describe('CommandHandlerFactory', function() {
     });
   });
 
-  /*FIXME these tests are outdated and must be reworked
+  describe('When using generated method', function() {
+    var child;
+    describe('When target is not a resource', function() {
+      var child;
+      beforeEach(function() {
+        resource = {};
+        resourceFactory.create = sandbox.spy(function(promise) {
+          return promise;
+        });
+        getResult = __createSendCommandRequest();
+        resource.method = factory.get(descriptor);
+        child = resource.method('command', 'value');
+      });
 
-   describe('_commandHandler()', function() {
-   var promise;
-   beforeEach(function() {
-   requestData = null;
-   resolveRequest = false;
-   decorator.apply(resource);
-   promise = resource.type('path', 'data');
-   });
+      it('should result in rejected promise', function(done) {
+        child.catch(function(data) {
+          expect(data).to.be.an.instanceof(Error);
+          done();
+        });
+      });
 
-   it('should send request', function() {
-   var call;
-   expect(resource[TARGET_INTERNALS].sendRequest).to.be.calledOnce;
-   call = resource[TARGET_INTERNALS].sendRequest.getCall(0);
-   expect(call.args[0]).to.be.equal('type');
-   expect(call.args[1]).to.be.eql({type: 'type', cmd: 'path', value: 'data', target: '1111'});
-   expect(call.args[2]).to.be.an.instanceof(Deferred);
-   expect(call.args[3]).to.be.an.instanceof(Promise); // mocked RequestTarget
-   });
+      it('should create new resource for promise', function() {
+        expect(resourceFactory.create).to.be.calledOnce;
+      });
 
-   it('should create new request', function() {
-   expect(factory.createCached).to.be.calledOnce;
-   });
+      it('should pass promise into resource factory.create', function() {
+        expect(resourceFactory.create.getCall(0).args[0]).to.be.an.instanceof(Promise);
+      });
+    });
 
-   it('should return rejected promise', function(done) {
-   promise.catch(function() {
-   done();
-   });
-   });
+    describe('When cacheable child is cached', function() {
+      beforeEach(function() {
+        descriptor.cacheable = true;
+        getResult = __createSendCommandRequest();
+        resource.method = factory.get(descriptor);
+        child = resource.method('command', 'value');
+      });
+      it('should request cached resource', function() {
+        expect(resourceFactory.getCached).to.be.calledOnce;
+        expect(resourceFactory.getCached).to.be.calledWith('property', sinon.match({
+          type: 'commandType',
+          cmd: 'command',
+          value: 'value',
+          target: resource[TARGET_INTERNALS].id
+        }));
+      });
+      it('should result in cached resource', function() {
+        expect(child).to.be.equal(getResult);
+      });
+      it('should not send request', function() {
+        expect(resource[TARGET_INTERNALS].sendRequest).to.not.be.called;
+      });
+    });
 
-   describe('When target is not a resource', function() {
-   beforeEach(function() {
-   delete resource[TARGET_INTERNALS];
-   promise = resource.type('path', 'data');
-   });
-   it('should result in rejected promise', function(done) {
-   promise.catch(function(data) {
-   expect(data).to.be.an.instanceof(Error);
-   done();
-   });
-   });
-   });
+    function sharedTestCases() {
+      it('should send request', function() {
+        expect(resource[TARGET_INTERNALS].sendRequest).to.be.calledOnce;
+        expect(resource[TARGET_INTERNALS].sendRequest).to.be.calledWith(
+          'property',
+          sinon.match({
+            type: 'commandType',
+            cmd: 'command',
+            value: 'value',
+            target: resource[TARGET_INTERNALS].id
+          }),
+          sinon.match.instanceOf(Deferred),
+          createResult
+        );
+      });
+      it('should return created child resource', function() {
+        expect(child).to.be.equal(createResult);
+      });
+      it('should call isTemporary when fulfilled', function(done) {
+        resource[TARGET_INTERNALS].sendRequest.getCall(0).returnValue.then(function() {
+          expect(descriptor.isTemporary).to.be.calledOnce;
+          expect(descriptor.isTemporary).to.be.calledWith(
+            resource,
+            child,
+            sinon.match({
+              type: 'commandType',
+              cmd: 'command',
+              value: 'value',
+              target: resource[TARGET_INTERNALS].id
+            }),
+            requestData
+          );
+          done();
+        });
+      });
+      it('should subscribe to request resolution', function(done) {
+        resource[TARGET_INTERNALS].sendRequest.getCall(0).returnValue.then(function() {
+          expect(child[TARGET_INTERNALS].temporary).to.be.equal(isTemporaryResult);
+          done();
+        });
+      });
+    }
 
-   });
+    describe('When cacheable child is null', function() {
+      beforeEach(function() {
+        descriptor.cacheable = true;
+        getResult = null;
+        createResult = __createSendCommandRequest();
+        resource.method = factory.get(descriptor);
+        child = resource.method('command', 'value');
+      });
+      it('should request cached resource', function() {
+        expect(resourceFactory.getCached).to.be.calledOnce;
+      });
+      it('should create new cached resource', function() {
+        expect(resourceFactory.createCached).to.be.calledOnce;
+        expect(resourceFactory.createCached).to.be.calledWith(
+          sinon.match.instanceOf(Promise),
+          'property',
+          sinon.match({
+            type: 'commandType',
+            cmd: 'command',
+            value: 'value',
+            target: resource[TARGET_INTERNALS].id
+          })
+        );
+      });
+      sharedTestCases();
+    });
 
-   describe('When isTemporary defined', function() {
-   var isTemporary, isTemporaryResult;
-   var child;
-   beforeEach(function() {
-   sinon.spy(RequestTarget, 'setTemporary');
-   requestData = __createRequestTargetData();
-   isTemporary = sinon.spy(function() {
-   return isTemporaryResult;
-   });
-   isTemporaryResult = true;
-   handlers.setHandlers({
-   call: new CommandDescriptor('call', function() {
-   }, 'call', isTemporary)
-   });
-   decorator.apply(resource);
-   child = resource.call('command', 'value');
-   });
+    describe('When descriptor is not cacheable', function() {
+      beforeEach(function() {
+        createResult = __createSendCommandRequest();
+        resource.method = factory.get(descriptor);
+        child = resource.method('command', 'value');
+      });
+      it('should request not cached resource', function() {
+        expect(resourceFactory.getCached).to.not.be.called;
+        expect(resourceFactory.createCached).to.not.be.called;
+      });
+      it('should create not cached resource', function() {
+        expect(resourceFactory.create).to.be.calledOnce;
+        expect(resourceFactory.create).to.be.calledWith(sinon.match.instanceOf(Promise));
+      });
+      sharedTestCases();
+    })
 
-   afterEach(function() {
-   // since its static function I should care about removing spy from a method
-   RequestTarget.setTemporary.restore();
-   });
+    describe('When sending request fails', function() {
+      beforeEach(function() {
+        createResult = __createSendCommandRequest();
+        resource.method = factory.get(descriptor);
+        resource[TARGET_INTERNALS].sendRequest = sinon.spy(function() {
+          return null;
+        });
+        resourceFactory.create = sandbox.spy(function(promise) {
+          return promise;
+        });
+        child = resource.method('command', 'value');
+      });
+      it('should regenerate child resource', function() {
+        expect(resourceFactory.create).to.be.calledTwice;
+        expect(resourceFactory.create.getCall(1).args[0]).to.be.an.instanceof(Promise);
+      });
+      it('should result into rejected promise', function(done) {
+        child.catch(function(data) {
+          expect(data).to.be.an.instanceof(Error);
+          done();
+        });
+      });
+    });
+  });
 
-   it('should not change temporarity to child until resolved', function() {
-   expect(isTemporary).to.not.be.called;
-   });
-
-   describe('When child resolved', function() {
-   beforeEach(function(done) {
-   child.then(function() {
-   done();
-   });
-   });
-
-   it('should change temporarity for child', function() {
-   expect(isTemporary).to.be.calledOnce;
-   expect(isTemporary).to.be.calledWith(resource, child, {
-   type: 'call',
-   cmd: 'command',
-   value: 'value',
-   target: '1111'
-   }, requestData);
-   });
-   });
-
-   });
-
-   */
 });
