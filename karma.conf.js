@@ -26,6 +26,7 @@ module.exports = function(config) {
       'source/resource-converter.js',
       'source/command-descriptor.js',
       'source/request-handlers.js',
+      'source/command-handler-factory.js',
       'source/request-target-decorator.js',
       'source/request-factory.js',
       'source/request-proxy-factory.js',
