@@ -230,4 +230,82 @@ describe('DataAccessInterface', function() {
       expect(RequestProxyFactory.create).to.be.calledWith(handlers, cache);
     });
   });
+
+  describe('When proxies are enabled but not available', function() {
+    var _Proxy;
+    beforeEach(function() {
+      _Proxy = Proxy;
+      Proxy = null;
+    });
+    afterEach(function() {
+      Proxy = _Proxy;
+    });
+    it('should throw error', function() {
+      expect(function() {
+        new DataAccessInterface(customHandlers, true);
+      }).to.throw(Error);
+    });
+  });
+  describe('create()', function() {
+    var cache;
+    var myPool;
+    var registry;
+    beforeEach(function() {
+      registry = {
+        register: sandbox.spy(),
+        createPool: sandbox.spy(function() {
+          return pool;
+        })
+      };
+      myPool = {
+        removeEventListener: sandbox.spy(),
+        addEventListener: sandbox.spy()
+      };
+      cache = {};
+      instance = DataAccessInterface.create(customHandlers, true, registry, myPool, cache);
+    });
+    it('should have members exposed to public', function() {
+      expect(instance.poolRegistry).to.be.equal(registry);
+      expect(instance.pool).to.be.equal(myPool);
+      expect(RequestProxyFactory.create).to.be.calledWith(handlers, cache);
+    });
+    it('should apply custom handlers', function() {
+      expect(handlers.setHandlers).to.be.calledOnce;
+      expect(handlers.setHandlers).to.be.calledWith(customHandlers);
+    });
+  });
+  describe('parse()', function() {
+    var target, result, value;
+    beforeEach(function() {
+      target = {};
+      value = {};
+      converter.parse = sandbox.spy(function() {
+        return value;
+      });
+      instance = new DataAccessInterface(customHandlers);
+      result = instance.parse(target);
+    });
+    it('should call converter', function(){
+      expect(converter.parse).to.be.calledOnce;
+      expect(converter.parse).to.be.calledWith(target);
+      expect(value).to.be.equal(result);
+    });
+  });
+  describe('toJSON()', function() {
+    var target, result, value;
+    beforeEach(function() {
+      target = {};
+      value = {};
+      converter.toJSON = sandbox.spy(function() {
+        return value;
+      });
+      instance = new DataAccessInterface(customHandlers);
+      result = instance.toJSON(target);
+    });
+    it('should call converter', function(){
+      expect(converter.toJSON).to.be.calledOnce;
+      expect(converter.toJSON).to.be.calledWith(target);
+      expect(value).to.be.equal(result);
+    });
+  });
 });

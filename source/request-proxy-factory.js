@@ -51,7 +51,7 @@ var RequestProxyFactory = (function() {
   }
 
   function Proxy_enumerate() {
-    return Object.getOwnPropertyNames(EXCLUSIONS);
+    return Object.getOwnPropertyNames(EXCLUSIONS)[Symbol.iterator]();
   }
 
   function Proxy_getOwnPropertyDescriptor(wrapper, name) {

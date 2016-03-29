@@ -139,7 +139,7 @@ describe('getRAWResource()', function() {
     expect(getRAWResource(data)).to.be.equal(data);
   });
 
-  it('should return null if data is not a resource', function(){
+  it('should return null if data is not a resource', function() {
     expect(getRAWResource({})).to.be.null;
   });
 
@@ -257,7 +257,7 @@ describe('getResourceData()', function() {
     var resource = __createRequestTargetData();
     expect(getResourceData(resource)).to.be.eql(resource[TARGET_DATA]);
   });
-  it('should return null if data is not a resource', function(){
+  it('should return null if data is not a resource', function() {
     expect(getResourceData({})).to.be.null;
   });
 });
@@ -287,7 +287,7 @@ describe('getResourceId()', function() {
     var resource = __createRequestTargetData();
     expect(getResourceId(resource)).to.be.equal(resource[TARGET_DATA].id);
   });
-  it('should return null if data is not a resource', function(){
+  it('should return null if data is not a resource', function() {
     expect(getResourceId({})).to.be.null;
   });
 });
@@ -317,7 +317,7 @@ describe('getResourcePoolId()', function() {
     var resource = __createRequestTargetData();
     expect(getResourcePoolId(resource)).to.be.equal(resource[TARGET_DATA].poolId);
   });
-  it('should return null if data is not a resource', function(){
+  it('should return null if data is not a resource', function() {
     expect(getResourcePoolId({})).to.be.null;
   });
 });
@@ -347,7 +347,7 @@ describe('getResourceType()', function() {
     var resource = __createRequestTargetData();
     expect(getResourceType(resource)).to.be.equal(resource[TARGET_DATA].type);
   });
-  it('should return null if data is not a resource', function(){
+  it('should return null if data is not a resource', function() {
     expect(getResourceType({})).to.be.null;
   });
 });

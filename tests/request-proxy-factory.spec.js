@@ -49,8 +49,10 @@ describe('RequestProxyFactory', function() {
     expect(decorator.setFactory).to.be.calledOnce;
     expect(decorator.setFactory).to.be.calledWith(factory);
   });
+
   describe('create()', function() {
     var result;
+
     describe('When handlers are available', function() {
       beforeEach(function() {
         handlers.available = true;
@@ -60,6 +62,7 @@ describe('RequestProxyFactory', function() {
         expect(result).to.be.a('function');
       });
     });
+
     describe('When handlers are not available', function() {
       beforeEach(function() {
         handlers.available = false;
@@ -69,7 +72,9 @@ describe('RequestProxyFactory', function() {
         expect(result).to.be.equal(resource);
       });
     });
+
   });
+
   describe('getCached()', function() {
     var result, pack;
     beforeEach(function() {
@@ -86,6 +91,7 @@ describe('RequestProxyFactory', function() {
       expect(baseFactory.getCached).to.be.calledWith('property', pack);
     });
   });
+
   describe('createCached()', function() {
     var result, pack;
     beforeEach(function() {
@@ -96,6 +102,7 @@ describe('RequestProxyFactory', function() {
         target: '1111'
       };
     });
+
     describe('When handlers are available', function() {
       beforeEach(function() {
         handlers.available = true;
@@ -109,6 +116,7 @@ describe('RequestProxyFactory', function() {
         expect(baseFactory.createCached).to.be.calledWith(sinon.match.instanceOf(Promise), 'property', pack);
       });
     });
+
     describe('When handlers are not available', function() {
       beforeEach(function() {
         handlers.available = false;
@@ -123,12 +131,14 @@ describe('RequestProxyFactory', function() {
       });
     });
   });
+
   describe('Proxy wrapper', function() {
     var result;
     beforeEach(function() {
       handlers.available = true;
       result = factory.create(Promise.reject());
     });
+
     describe('get', function() {
       var value;
       beforeEach(function() {
@@ -138,6 +148,7 @@ describe('RequestProxyFactory', function() {
         expect(resource[ProxyCommands.fields.get]).to.be.calledOnce;
         expect(resource[ProxyCommands.fields.get]).to.be.calledWith('property');
       });
+
       describe('When Symbol used', function() {
         var name, value;
         beforeEach(function() {
@@ -152,6 +163,7 @@ describe('RequestProxyFactory', function() {
           expect(value).to.be.undefined;
         });
       });
+
       describe('When existent property used', function() {
         var value;
         beforeEach(function() {
@@ -166,6 +178,7 @@ describe('RequestProxyFactory', function() {
         });
       });
     });
+
     describe('set', function() {
       beforeEach(function() {
         result.property = 'value';
@@ -174,6 +187,7 @@ describe('RequestProxyFactory', function() {
         expect(resource[ProxyCommands.fields.set]).to.be.calledOnce;
         expect(resource[ProxyCommands.fields.set]).to.be.calledWith('property', 'value');
       });
+
       describe('When Symbol used', function() {
         var name;
         beforeEach(function() {
@@ -188,6 +202,7 @@ describe('RequestProxyFactory', function() {
           expect(resource[name]).to.be.equal('VALUE');
         });
       });
+
       describe('When existent property used', function() {
         beforeEach(function() {
           resource[ProxyCommands.fields.set].reset();
@@ -201,6 +216,7 @@ describe('RequestProxyFactory', function() {
         });
       });
     });
+
     describe('apply', function() {
       var value;
       beforeEach(function() {
@@ -211,12 +227,14 @@ describe('RequestProxyFactory', function() {
         expect(resource[ProxyCommands.fields.apply]).to.be.calledWith(null, ['command', 'value']);
       });
     });
+
     describe('has', function() {
       it('should check field availability on target', function() {
         expect('item' in result).to.be.false;
         expect('then' in result).to.be.true;
       });
     });
+
     describe('deleteProperty', function() {
       var value;
       beforeEach(function() {
@@ -229,6 +247,7 @@ describe('RequestProxyFactory', function() {
       it('should result with true', function() {
         expect(value).to.be.true;
       });
+
       describe('When handler is null', function() {
         var value;
         beforeEach(function() {
@@ -239,6 +258,68 @@ describe('RequestProxyFactory', function() {
           expect(value).to.be.false;
         });
       });
+
+    });
+
+    describe('getOwnPropertyDescriptor()', function() {
+      var funcDescr, resDescr;
+      beforeEach(function() {
+        funcDescr = Object.getOwnPropertyDescriptor(result, 'prototype');
+        resDescr = Object.getOwnPropertyDescriptor(result, 'then');
+      });
+      it('should return descriptor for wrapper function', function() {
+        expect(funcDescr).to.be.eql(Object.getOwnPropertyDescriptor(function() {
+        }, 'prototype'));
+      });
+      it('should return descriptor for wrapper function', function() {
+        expect(resDescr).to.be.eql(Object.getOwnPropertyDescriptor(resource, 'then'));
+      });
+    });
+
+    describe('enumerate', function() {
+      var list;
+      beforeEach(function() {
+        list = [];
+        for (var name in result) {
+          list.push(name);
+        }
+      });
+      it('should enumerate only wrapper function properties', function() {
+        expect(list).to.contain('arguments');
+        expect(list).to.contain('caller');
+        expect(list).to.contain('prototype');
+      });
+    });
+
+    describe('ownKeys', function() {
+      var list;
+      beforeEach(function() {
+        list = Object.getOwnPropertyNames(result);
+      });
+      it('should list only wrapper function properties', function() {
+        expect(list).to.contain('arguments');
+        expect(list).to.contain('caller');
+        expect(list).to.contain('prototype');
+      });
+    });
+
+  });
+
+  describe('RequestProxyFactory.create()', function() {
+    var factory;
+    beforeEach(function() {
+      RequestFactory.create.reset();
+      decorator.setFactory.reset();
+      factory = RequestProxyFactory.create(handlers, cache);
+    });
+    it('should create factory', function() {
+      expect(RequestFactory.create).to.be.calledOnce;
+      expect(RequestFactory.create).to.be.calledWith(handlers, cache);
+    });
+    it('should reset decorator factory link', function() {
+      expect(decorator.setFactory).to.be.calledOnce;
+      expect(decorator.setFactory).to.be.calledWith(factory);
     });
   });
+
 });
