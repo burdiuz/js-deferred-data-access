@@ -24,7 +24,7 @@ var RequestFactory = (function() {
 
     Object.defineProperties(this, {
       cache: {
-        value: _cacheImpl
+        value: _cacheImpl || null
       }
     });
   }
@@ -42,8 +42,11 @@ var RequestFactory = (function() {
   }
 
   function _createCached(promise, name, pack) {
-    var request = this.create(promise);
-    this.cache && this.cache.set(name, pack, request);
+    var request = null;
+    if(this.cache){
+      request = this.create(promise);
+      this.cache.set(name, pack, request);
+    }
     return request;
   }
 
