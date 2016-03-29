@@ -13,8 +13,8 @@ describe('RequestProxyFactory', function() {
   });
   beforeEach(function() {
     resource = {
-      then:sinon.spy(),
-      catch:sinon.spy()
+      then: sandbox.spy(),
+      catch: sandbox.spy()
     };
     resource[ProxyCommands.fields.get] = sandbox.spy();
     resource[ProxyCommands.fields.set] = sandbox.spy();

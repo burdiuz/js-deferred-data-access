@@ -10,6 +10,7 @@ var DataAccessInterface = (function() {
    * @constructor
    */
   function DataAccessInterface(handlers, proxyEnabled, _poolRegistry, _pool, _cacheImpl) {
+    proxyEnabled = Boolean(proxyEnabled);
     if (proxyEnabled && !areProxiesAvailable()) {
       throw new Error('Proxies are not available in this environment');
     }
