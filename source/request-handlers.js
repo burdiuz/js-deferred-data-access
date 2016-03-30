@@ -10,6 +10,7 @@ var RequestHandlers = (function() {
    */
   function RequestHandlers(proxyEnabled) {
     var _keys = [];
+    var _propertyKeys = [];
     var _descriptors = {};
     var _converter;
 
@@ -34,13 +35,14 @@ var RequestHandlers = (function() {
       _descriptors = {};
       RequestHandlers.filterHandlers(handlers, _descriptors);
       _keys = Object.getOwnPropertyNames(_descriptors).concat(Object.getOwnPropertySymbols(_descriptors));
+      _propertyKeys = getNonVirtualNames(_descriptors, _keys);
       if (proxyEnabled) {
         RequestHandlers.areProxyHandlersAvailable(_descriptors, true);
       }
     }
 
-    function _hasHandler(type) {
-      return _descriptors.hasOwnProperty(type);
+    function _hasHandler(name) {
+      return _descriptors.hasOwnProperty(name);
     }
 
     function _getHandlers() {
@@ -51,8 +53,12 @@ var RequestHandlers = (function() {
       return _keys.slice();
     }
 
-    function _getHandler(type) {
-      return _descriptors[type] || null;
+    function _getPropertyNames() {
+      return _propertyKeys.slice();
+    }
+
+    function _getHandler(name) {
+      return _descriptors[name] || null;
     }
 
     function _handle(parentRequest, name, pack, deferred, resultRequest) {
@@ -86,10 +92,11 @@ var RequestHandlers = (function() {
     this.hasHandler = _hasHandler;
     this.getHandlers = _getHandlers;
     this.getHandlerNames = _getHandlerNames;
+    this.getPropertyNames = _getPropertyNames;
     this.getHandler = _getHandler;
     this.handle = _handle;
     this[Symbol.iterator] = function() {
-      return new RequestHandlersIterator(this.getHandlers(), this.getHandlerNames());
+      return new RequestHandlersIterator(this.getHandlers(), this.getPropertyNames());
     };
   }
 
@@ -115,6 +122,18 @@ var RequestHandlers = (function() {
 
   //------------------- static
 
+  function getNonVirtualNames(descriptors, list) {
+    var props = [];
+    var length = list.length;
+    for (var index = 0; index < length; index++) {
+      var name = list[index];
+      if (!descriptors[name].virtual) {
+        props.push(name);
+      }
+    }
+    return props;
+  }
+
   var RequestHandlers_filterHandlers = (function() {
     /**
      * @param {Array} handlers
@@ -137,7 +156,7 @@ var RequestHandlers = (function() {
      * @returns {void}
      */
     function filterHash(handlers, descriptors) {
-      if(!handlers) return;
+      if (!handlers) return;
       var keys = Object.getOwnPropertyNames(handlers).concat(Object.getOwnPropertySymbols(handlers));
       var length = keys.length;
       for (var index = 0; index < length; index++) {
@@ -159,10 +178,6 @@ var RequestHandlers = (function() {
      */
     function applyDescriptor(descriptor, descriptors) {
       var name = descriptor.name;
-      var type = descriptor.type;
-      if (type in Reserved.commands) {
-        throw new Error('Command "' + type + '" is reserved and cannot be used in descriptor.');
-      }
       if (name in Reserved.names) {
         throw new Error('Name "' + name + '" is reserved and cannot be used in descriptor.');
       }

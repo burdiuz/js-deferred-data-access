@@ -103,7 +103,9 @@ describe('RequestHandlers', function() {
         hndl1: function() {
         },
         hndl2: function() {
-        }
+        },
+        // adding virtual descriptor should not change iterator sequesnce, since it ignores virtual
+        virtualProperty: CommandDescriptor.create('command', function(){}, 'property', null, false, true)
       });
     });
     it('should be able to generate Iterators', function() {
@@ -149,6 +151,35 @@ describe('RequestHandlers', function() {
         }).to.not.throw(Error);
       });
 
+    });
+  });
+
+  describe('When list of descriptors used', function() {
+    var list;
+    beforeEach(function() {
+      list = [
+        CommandDescriptor.create('command1', function() {
+        }, 'property1', null, false, false),
+        CommandDescriptor.create('command2', function() {
+        }, 'property2', null, false, true)
+      ];
+      handlers.setHandlers(list);
+    });
+    it('should add both descriptors', function() {
+      expect(handlers.hasHandler('property1')).to.be.true;
+      expect(handlers.hasHandler('property2')).to.be.true;
+    });
+    it('getHandlerNames() should return all descriptors', function() {
+      expect(handlers.getHandlerNames()).to.contain('property1');
+      expect(handlers.getHandlerNames()).to.contain('property2');
+    });
+    it('getHandlers() should contain all descriptors', function() {
+      expect(handlers.getHandlers().property1).to.be.an.instanceof(CommandDescriptor);
+      expect(handlers.getHandlers().property2).to.be.an.instanceof(CommandDescriptor);
+    });
+    it('getPropertyNames() should return non-virtual descriptors', function() {
+      expect(handlers.getPropertyNames()).to.contain('property1');
+      expect(handlers.getPropertyNames()).to.not.contain('property2');
     });
   });
 
@@ -317,15 +348,6 @@ describe('RequestHandlers', function() {
             'one',
             new CommandDescriptor('command1', function() {
             }, 'then')
-          ], result);
-        }).to.throw(Error);
-      });
-      it('should throw error when reserved word used for command', function() {
-        expect(function() {
-          RequestHandlers.filterHandlers([
-            'one',
-            new CommandDescriptor(RequestTargetCommands.DESTROY, function() {
-            }, 'name1')
           ], result);
         }).to.throw(Error);
       });

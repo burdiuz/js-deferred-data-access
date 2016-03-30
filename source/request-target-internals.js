@@ -173,7 +173,7 @@ var RequestTargetInternals = (function() {
     if (this.canBeDestroyed()) {
       //INFO I should not clear children list, since they are pending and requests already sent.
       if (this.status === TargetStatus.RESOLVED) {
-        promise = this.sendRequest(RequestTargetCommands.DESTROY, RequestTargetInternals.createRequestPackage(
+        promise = this.sendRequest(RequestTargetCommands.fields.DESTROY, RequestTargetInternals.createRequestPackage(
           RequestTargetCommands.DESTROY,
           null,
           null,

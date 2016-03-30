@@ -464,7 +464,7 @@
        * @param {Function} [isTemporary=]
        * @constructor
        */
-      function CommandDescriptor(type, handle, name, isTemporary, cacheable) {
+      function CommandDescriptor(type, handle, name, isTemporary, cacheable, virtual) {
         /**
          * @type {String|Symbol}
          */
@@ -481,8 +481,14 @@
          * @type {Function}
          */
         this.isTemporary = isTemporary || Default_isTemporary;
-    
+        /**
+         * @type {boolean}
+         */
         this.cacheable = Boolean(cacheable);
+        /**
+         * @type {boolean}
+         */
+        this.virtual = Boolean(virtual);
       }
     
       // Since its VO it should not contain any methods that may change its internal state
@@ -498,8 +504,8 @@
        * @param {Boolean} [cacheable=false]
        * @returns {CommandDescriptor}
        */
-      function CommandDescriptor_create(command, handle, name, isTemporary, cacheable) {
-        var descriptor = new CommandDescriptor(command, handle, name, isTemporary, cacheable);
+      function CommandDescriptor_create(command, handle, name, isTemporary, cacheable, virtual) {
+        var descriptor = new CommandDescriptor(command, handle, name, isTemporary, cacheable, virtual);
         // We can use Object.freeze(), it keeps class/constructor information
         return Object.freeze(descriptor);
       }
@@ -509,14 +515,18 @@
       return CommandDescriptor;
     })();
     
+    function addDescriptorTo(descriptor, target) {
+      if (target instanceof Array) {
+        target.push(descriptor);
+      } else if (target) {
+        target[descriptor.name] = descriptor;
+      }
+    }
+    
     function descriptorGeneratorFactory(command, name) {
       return function descriptorSetter(handle, isTemporary, target) {
         var descriptor = CommandDescriptor.create(command, handle, name, isTemporary);
-        if (target instanceof Array) {
-          target.push(descriptor);
-        } else if (target) {
-          target[name] = descriptor;
-        }
+        addDescriptorTo(descriptor, target);
         return descriptor;
       }
     }
@@ -526,9 +536,21 @@
      * This type will be send each time RequestTarget.destroy() is applied to RequestTarget in stance.
      * @type {Object}
      */
-    var RequestTargetCommands = Object.freeze({
-      DESTROY: '::destroy.resource'
-    });
+    var RequestTargetCommands = (function() {
+      var DESTROY_FIELD = Symbol('::destroy.resource');
+      var commands = {
+        DESTROY: '::destroy.resource',
+        fields: Object.freeze({
+          DESTROY: DESTROY_FIELD
+        })
+      };
+      commands.createDESTROYDescriptor = function(handle, target) {
+        var descriptor = CommandDescriptor.create(commands.DESTROY, handle, commands.fields.DESTROY, null, false, true);
+        addDescriptorTo(descriptor, target);
+        return descriptor;
+      };
+      return Object.freeze(commands);
+    })();
     
     /**
      * Commands used by Proxy wrapper to get/set properties and call functions/methods.
@@ -605,9 +627,6 @@
         then: true,
         //INFO Exposed Promise method, cannot be overwritten by type
         catch: true
-      }),
-      commands: Object.freeze({
-        '::destroy.resource': true
       })
     });
     
@@ -1207,6 +1226,7 @@
        */
       function RequestHandlers(proxyEnabled) {
         var _keys = [];
+        var _propertyKeys = [];
         var _descriptors = {};
         var _converter;
     
@@ -1231,6 +1251,7 @@
           _descriptors = {};
           RequestHandlers.filterHandlers(handlers, _descriptors);
           _keys = Object.getOwnPropertyNames(_descriptors).concat(Object.getOwnPropertySymbols(_descriptors));
+          _propertyKeys = getNonVirtualNames(_descriptors, _keys);
           if (proxyEnabled) {
             RequestHandlers.areProxyHandlersAvailable(_descriptors, true);
           }
@@ -1246,6 +1267,10 @@
     
         function _getHandlerNames() {
           return _keys.slice();
+        }
+    
+        function _getPropertyNames() {
+          return _propertyKeys.slice();
         }
     
         function _getHandler(type) {
@@ -1283,10 +1308,11 @@
         this.hasHandler = _hasHandler;
         this.getHandlers = _getHandlers;
         this.getHandlerNames = _getHandlerNames;
+        this.getPropertyNames = _getPropertyNames;
         this.getHandler = _getHandler;
         this.handle = _handle;
         this[Symbol.iterator] = function() {
-          return new RequestHandlersIterator(this.getHandlers(), this.getHandlerNames());
+          return new RequestHandlersIterator(this.getHandlers(), this.getPropertyNames());
         };
       }
     
@@ -1312,6 +1338,18 @@
     
       //------------------- static
     
+      function getNonVirtualNames(descriptors, list) {
+        var props = [];
+        var length = list.length;
+        for (var index = 0; index < length; index++) {
+          var name = list[index];
+          if (!descriptors[name].virtual) {
+            props.push(name);
+          }
+        }
+        return props;
+      }
+    
       var RequestHandlers_filterHandlers = (function() {
         /**
          * @param {Array} handlers
@@ -1334,7 +1372,7 @@
          * @returns {void}
          */
         function filterHash(handlers, descriptors) {
-          if(!handlers) return;
+          if (!handlers) return;
           var keys = Object.getOwnPropertyNames(handlers).concat(Object.getOwnPropertySymbols(handlers));
           var length = keys.length;
           for (var index = 0; index < length; index++) {
@@ -1356,10 +1394,6 @@
          */
         function applyDescriptor(descriptor, descriptors) {
           var name = descriptor.name;
-          var type = descriptor.type;
-          if (type in Reserved.commands) {
-            throw new Error('Command "' + type + '" is reserved and cannot be used in descriptor.');
-          }
           if (name in Reserved.names) {
             throw new Error('Name "' + name + '" is reserved and cannot be used in descriptor.');
           }
@@ -1986,7 +2020,7 @@
         if (this.canBeDestroyed()) {
           //INFO I should not clear children list, since they are pending and requests already sent.
           if (this.status === TargetStatus.RESOLVED) {
-            promise = this.sendRequest(RequestTargetCommands.DESTROY, RequestTargetInternals.createRequestPackage(
+            promise = this.sendRequest(RequestTargetCommands.fields.DESTROY, RequestTargetInternals.createRequestPackage(
               RequestTargetCommands.DESTROY,
               null,
               null,

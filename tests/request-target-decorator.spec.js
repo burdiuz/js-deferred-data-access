@@ -28,7 +28,8 @@ describe('RequestTargetDecorator', function() {
     handlers = RequestHandlers.create();
     handlers.setHandlers({
       action: sandbox.spy(),
-      type: sandbox.spy()
+      type: sandbox.spy(),
+      property: CommandDescriptor.create('command', function(){}, 'property', null, false, true)
     });
 
     resolveRequest = true;
@@ -64,7 +65,7 @@ describe('RequestTargetDecorator', function() {
     });
   });
   describe('When requesting resource factory', function() {
-    beforeEach(function(){
+    beforeEach(function() {
       decorator.getFactory();
     });
     it('should return stored factory', function() {
@@ -93,6 +94,10 @@ describe('RequestTargetDecorator', function() {
       expect(resource.type).to.be.equal(commandHandlerResult);
     });
 
+    it('should skip virtual descriptors', function() {
+      expect(resource).to.not.have.property('property');
+    });
+
     it('should request members from CommandHandlerFactory', function() {
       expect(commandHFInstance.get).to.be.calledTwice;
       expect(commandHFInstance.get.getCall(0).args[0]).to.be.an.instanceof(CommandDescriptor);
@@ -108,7 +113,7 @@ describe('RequestTargetDecorator', function() {
         expect(newRequest.action).to.be.equal(resource.action);
         expect(newRequest.type).to.be.equal(resource.type);
       });
-    });
+    })
 
     describe('When handlers changed', function() {
       beforeEach(function() {

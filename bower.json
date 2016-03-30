@@ -1,6 +1,6 @@
 {
   "name": "deferred-data-access",
-  "description": "",
+  "description": "Delayed data access library, allows access to remote data using dot notation via fields get/set or method calls",
   "version": "0.0.4",
   "main": [
     "dist/deferred-data-access.min.js"
@@ -30,7 +30,8 @@
     "data",
     "access",
     "deferred",
-    "promise"
+    "promise",
+	"interface"
   ],
   "homepage": "https://github.com/burdiuz/js-deferred-data-access",
   "repository": {

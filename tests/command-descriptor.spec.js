@@ -3,13 +3,15 @@ describe('CommandDescriptor', function() {
   describe('When created', function() {
 
     describe('With all arguments', function() {
-      var descriptor, isTemporary, handle;
+      var descriptor, isTemporary, handle, cacheable, virtual;
       beforeEach(function() {
+        cacheable = 1;
+        virtual = 1;
         handle = function() {
         };
         isTemporary = function() {
         };
-        descriptor = new CommandDescriptor('command', handle, 'name', isTemporary);
+        descriptor = new CommandDescriptor('command', handle, 'name', isTemporary, cacheable, virtual);
       });
 
       it('should store arguments as fields', function() {
@@ -17,6 +19,8 @@ describe('CommandDescriptor', function() {
         expect(descriptor.type).to.be.equal('command');
         expect(descriptor.isTemporary).to.be.equal(isTemporary);
         expect(descriptor.handle).to.be.equal(handle);
+        expect(descriptor.cacheable).to.be.equal(Boolean(cacheable));
+        expect(descriptor.virtual).to.be.equal(Boolean(virtual));
       });
     });
 
@@ -96,7 +100,33 @@ describe('descriptorGeneratorFactory()', function() {
     expect(item.isTemporary).to.be.equal(isTemporary);
   });
 });
+
+describe('RequestTargetCommands', function() {
+  describe('createDESTROYDescriptor()', function() {
+    var handle, descriptor;
+    beforeEach(function() {
+      handle = function() {
+      };
+      descriptor = RequestTargetCommands.createDESTROYDescriptor(handle);
+    });
+    it('should has DESTROY name/type', function(){
+      expect(descriptor.name).to.be.equal(RequestTargetCommands.fields.DESTROY);
+      expect(descriptor.type).to.be.equal(RequestTargetCommands.DESTROY);
+    });
+    it('should store handler function ', function(){
+      expect(descriptor.handle).to.be.equal(handle);
+    });
+    it('should create not cacheable descriptor', function(){
+      expect(descriptor.cacheable).to.be.false;
+    });
+    it('should create virtual descriptor', function(){
+      expect(descriptor.virtual).to.be.true;
+    });
+  });
+});
+
 describe('ProxyCommands', function() {
+
   describe('list', function() {
     it('should contain all Proxy commands', function() {
       var list = ProxyCommands.list;
@@ -132,7 +162,13 @@ describe('ProxyCommands', function() {
     it('should contain handler function', function() {
       expect(descriptor.handle).to.be.equal(handle);
     });
+    it('should not be virtual', function() {
+      expect(descriptor.virtual).to.be.false;
+    });
     it('should contain isTemporary function', function() {
+      expect(descriptor.isTemporary).to.be.equal(isTemporary);
+    });
+    it('should be cacheable', function() {
       expect(descriptor.isTemporary).to.be.equal(isTemporary);
     });
 
@@ -182,6 +218,9 @@ describe('ProxyCommands', function() {
     it('should contain isTemporary function', function() {
       expect(descriptor.isTemporary).to.be.equal(isTemporary);
     });
+    it('should not be virtual', function() {
+      expect(descriptor.virtual).to.be.false;
+    });
   });
 
   describe('createAPPLYDescriptor()', function() {
@@ -205,6 +244,9 @@ describe('ProxyCommands', function() {
     it('should contain isTemporary function', function() {
       expect(descriptor.isTemporary).to.be.equal(isTemporary);
     });
+    it('should not be virtual', function() {
+      expect(descriptor.virtual).to.be.false;
+    });
   });
 
   describe('createDescriptors()', function() {
@@ -221,12 +263,14 @@ describe('ProxyCommands', function() {
     });
 
     describe('When no target supplied', function() {
+      var cacheable;
       beforeEach(function() {
+        cacheable = true;
         target = ProxyCommands.createDescriptors({
           get: getHandle,
           set: setHandle,
           apply: applyHandle
-        }, isTemporary);
+        }, isTemporary, null, cacheable);
       });
       it('should create target object', function() {
         expect(target).to.be.an('object');
@@ -245,6 +289,11 @@ describe('ProxyCommands', function() {
         expect(target[ProxyCommands.fields.get].isTemporary).to.be.equal(isTemporary);
         expect(target[ProxyCommands.fields.set].isTemporary).to.be.equal(isTemporary);
         expect(target[ProxyCommands.fields.apply].isTemporary).to.be.equal(isTemporary);
+      });
+      it('should pass cacheable argument', function() {
+        expect(target[ProxyCommands.fields.get].cacheable).to.be.equal(cacheable);
+        expect(target[ProxyCommands.fields.set].cacheable).to.be.equal(cacheable);
+        expect(target[ProxyCommands.fields.apply].cacheable).to.be.equal(cacheable);
       });
     });
 

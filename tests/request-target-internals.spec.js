@@ -224,7 +224,7 @@ describe('RequestTargetInternals', function() {
 
       it('should send "destroy" request', function() {
         expect(target.sendRequest).to.be.calledOnce;
-        expect(target.sendRequest.getCall(0).args[0]).to.be.equal(RequestTargetCommands.DESTROY);
+        expect(target.sendRequest.getCall(0).args[0]).to.be.equal(RequestTargetCommands.fields.DESTROY);
         expect(target.sendRequest.getCall(0).args[1].type).to.be.equal(RequestTargetCommands.DESTROY);
       });
     });
@@ -248,7 +248,7 @@ describe('RequestTargetInternals', function() {
 
     it('should send "destroy" request', function() {
       expect(target.sendRequest).to.be.calledOnce;
-      expect(target.sendRequest.getCall(0).args[0]).to.be.equal(RequestTargetCommands.DESTROY);
+      expect(target.sendRequest.getCall(0).args[0]).to.be.equal(RequestTargetCommands.fields.DESTROY);
       expect(target.sendRequest.getCall(0).args[1].type).to.be.equal(RequestTargetCommands.DESTROY);
     });
   });

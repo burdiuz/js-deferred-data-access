@@ -16,7 +16,7 @@ var CommandDescriptor = (function() {
    * @param {Function} [isTemporary=]
    * @constructor
    */
-  function CommandDescriptor(type, handle, name, isTemporary, cacheable) {
+  function CommandDescriptor(type, handle, name, isTemporary, cacheable, virtual) {
     /**
      * @type {String|Symbol}
      */
@@ -33,8 +33,14 @@ var CommandDescriptor = (function() {
      * @type {Function}
      */
     this.isTemporary = isTemporary || Default_isTemporary;
-
+    /**
+     * @type {boolean}
+     */
     this.cacheable = Boolean(cacheable);
+    /**
+     * @type {boolean}
+     */
+    this.virtual = Boolean(virtual);
   }
 
   // Since its VO it should not contain any methods that may change its internal state
@@ -50,8 +56,8 @@ var CommandDescriptor = (function() {
    * @param {Boolean} [cacheable=false]
    * @returns {CommandDescriptor}
    */
-  function CommandDescriptor_create(command, handle, name, isTemporary, cacheable) {
-    var descriptor = new CommandDescriptor(command, handle, name, isTemporary, cacheable);
+  function CommandDescriptor_create(command, handle, name, isTemporary, cacheable, virtual) {
+    var descriptor = new CommandDescriptor(command, handle, name, isTemporary, cacheable, virtual);
     // We can use Object.freeze(), it keeps class/constructor information
     return Object.freeze(descriptor);
   }
@@ -61,14 +67,18 @@ var CommandDescriptor = (function() {
   return CommandDescriptor;
 })();
 
+function addDescriptorTo(descriptor, target) {
+  if (target instanceof Array) {
+    target.push(descriptor);
+  } else if (target) {
+    target[descriptor.name] = descriptor;
+  }
+}
+
 function descriptorGeneratorFactory(command, name) {
-  return function descriptorSetter(handle, isTemporary, target) {
-    var descriptor = CommandDescriptor.create(command, handle, name, isTemporary);
-    if (target instanceof Array) {
-      target.push(descriptor);
-    } else if (target) {
-      target[name] = descriptor;
-    }
+  return function descriptorSetter(handle, isTemporary, target, cacheable) {
+    var descriptor = CommandDescriptor.create(command, handle, name, isTemporary, cacheable);
+    addDescriptorTo(descriptor, target);
     return descriptor;
   }
 }
@@ -78,9 +88,21 @@ function descriptorGeneratorFactory(command, name) {
  * This type will be send each time RequestTarget.destroy() is applied to RequestTarget in stance.
  * @type {Object}
  */
-var RequestTargetCommands = Object.freeze({
-  DESTROY: '::destroy.resource'
-});
+var RequestTargetCommands = (function() {
+  var DESTROY_FIELD = Symbol('::destroy.resource');
+  var commands = {
+    DESTROY: '::destroy.resource',
+    fields: Object.freeze({
+      DESTROY: DESTROY_FIELD
+    })
+  };
+  commands.createDESTROYDescriptor = function(handle, target) {
+    var descriptor = CommandDescriptor.create(commands.DESTROY, handle, commands.fields.DESTROY, null, false, true);
+    addDescriptorTo(descriptor, target);
+    return descriptor;
+  };
+  return Object.freeze(commands);
+})();
 
 /**
  * Commands used by Proxy wrapper to get/set properties and call functions/methods.
@@ -113,7 +135,7 @@ var ProxyCommands = (function() {
     return [commands.GET, commands.SET, commands.APPLY];
   }
 
-  function createDescriptors(handlers, isTemporary, target) {
+  function createDescriptors(handlers, isTemporary, target, cacheable) {
     var handler, name, field, descriptor;
     var list = ProxyCommands.list;
     var length = list.length;
@@ -123,7 +145,7 @@ var ProxyCommands = (function() {
       handler = handlers[name];
       field = ProxyCommands.fields[name];
       if (handler instanceof Function) {
-        descriptor = CommandDescriptor.create(name, handler, field, isTemporary);
+        descriptor = CommandDescriptor.create(name, handler, field, isTemporary, cacheable);
         if (target instanceof Array) {
           target.push(descriptor);
         } else if (target) {
@@ -157,8 +179,5 @@ var Reserved = Object.freeze({
     then: true,
     //INFO Exposed Promise method, cannot be overwritten by type
     catch: true
-  }),
-  commands: Object.freeze({
-    '::destroy.resource': true
   })
 });
