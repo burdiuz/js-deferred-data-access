@@ -14,7 +14,6 @@ describe('RequestTargetDecorator', function() {
         return commandHandlerResult;
       });
       this.setFactory = sandbox.spy();
-      this.getFactory = sandbox.spy();
     });
   });
 
@@ -62,14 +61,6 @@ describe('RequestTargetDecorator', function() {
     it('should not pass NULL factory', function() {
       decorator.setFactory(null);
       expect(commandHFInstance.setFactory).to.be.calledOnce;
-    });
-  });
-  describe('When requesting resource factory', function() {
-    beforeEach(function() {
-      decorator.getFactory();
-    });
-    it('should return stored factory', function() {
-      expect(commandHFInstance.getFactory).to.be.calledOnce;
     });
   });
 

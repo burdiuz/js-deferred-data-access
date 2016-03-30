@@ -26,35 +26,10 @@ var Deferred = (function() {
   function Deferred() {
     this._status = TargetStatus.PENDING;
     this.promise = new Promise(function(resolve, reject) {
-      this._resolveHandler = resolve;
-      this._rejectHandler = reject;
+      this.resolve = resolve;
+      this.reject = reject;
     }.bind(this));
-    Object.defineProperties(this, {
-      status: {
-        get: get_status
-      }
-    });
   }
-
-  function get_status() {
-    return this._status;
-  }
-
-  function _resolve() {
-    var result = this._resolveHandler.apply(null, arguments);
-    // changing status later will keep same it in case of Promise internal error
-    this._status = TargetStatus.RESOLVED;
-    return result;
-  }
-
-  function _reject() {
-    var result = this._rejectHandler.apply(null, arguments);
-    this._status = TargetStatus.REJECTED;
-    return result;
-  }
-
-  Deferred.prototype.resolve = _resolve;
-  Deferred.prototype.reject = _reject;
 
   return Deferred;
 })();

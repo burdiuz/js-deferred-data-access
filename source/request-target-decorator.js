@@ -35,13 +35,8 @@ var RequestTargetDecorator = (function() {
       }
     }
 
-    function _getFactory() {
-      return _members.getFactory();
-    }
-
     this.apply = _apply;
     this.setFactory = _setFactory;
-    this.getFactory = _getFactory;
   }
 
   //------------------- static

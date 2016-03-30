@@ -19,9 +19,6 @@ describe('createDeferred()', function() {
     it('should create instance of Deferred object', function() {
       expect(deferred).to.be.an('object');
     });
-    it('Deferred object should have "pending" status', function() {
-      expect(deferred.status).to.be.equal(TargetStatus.PENDING);
-    });
     it('result should have handlers', function() {
       expect(deferred.resolve).to.be.a('function');
       expect(deferred.reject).to.be.a('function');
@@ -45,9 +42,6 @@ describe('createDeferred()', function() {
         });
         deferred.resolve('le data');
       });
-      it('Deferred object should change status to "resolved"', function() {
-        expect(deferred.status).to.be.equal(TargetStatus.RESOLVED);
-      });
     });
 
     describe('When deferred failed', function() {
@@ -59,9 +53,6 @@ describe('createDeferred()', function() {
           done();
         });
         deferred.reject('le error');
-      });
-      it('Deferred object should change status to "rejected"', function() {
-        expect(deferred.status).to.be.equal(TargetStatus.REJECTED);
       });
     });
 

@@ -77,14 +77,9 @@ var CommandHandlerFactory = (function() {
       _factory = factory;
     }
 
-    function _getFactory() {
-      return _factory;
-    }
-
     this.get = _get;
 
     this.setFactory = _setFactory;
-    this.getFactory = _getFactory;
   }
 
   return CommandHandlerFactory;

@@ -59,10 +59,6 @@ describe('CommandHandlerFactory', function() {
     factory.setFactory(resourceFactory);
   });
 
-  it('should store factory value', function() {
-    expect(factory.getFactory()).to.be.equal(resourceFactory);
-  });
-
   describe('When requested new member', function() {
     var result;
     beforeEach(function() {
