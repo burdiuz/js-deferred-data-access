@@ -46,35 +46,10 @@
       function Deferred() {
         this._status = TargetStatus.PENDING;
         this.promise = new Promise(function(resolve, reject) {
-          this._resolveHandler = resolve;
-          this._rejectHandler = reject;
+          this.resolve = resolve;
+          this.reject = reject;
         }.bind(this));
-        Object.defineProperties(this, {
-          status: {
-            get: get_status
-          }
-        });
       }
-    
-      function get_status() {
-        return this._status;
-      }
-    
-      function _resolve() {
-        var result = this._resolveHandler.apply(null, arguments);
-        // changing status later will keep same it in case of Promise internal error
-        this._status = TargetStatus.RESOLVED;
-        return result;
-      }
-    
-      function _reject() {
-        var result = this._rejectHandler.apply(null, arguments);
-        this._status = TargetStatus.REJECTED;
-        return result;
-      }
-    
-      Deferred.prototype.resolve = _resolve;
-      Deferred.prototype.reject = _reject;
     
       return Deferred;
     })();
@@ -244,8 +219,8 @@
     }
     
     function descriptorGeneratorFactory(command, name) {
-      return function descriptorSetter(handle, isTemporary, target) {
-        var descriptor = CommandDescriptor.create(command, handle, name, isTemporary);
+      return function descriptorSetter(handle, isTemporary, target, cacheable) {
+        var descriptor = CommandDescriptor.create(command, handle, name, isTemporary, cacheable);
         addDescriptorTo(descriptor, target);
         return descriptor;
       }
@@ -303,7 +278,7 @@
         return [commands.GET, commands.SET, commands.APPLY];
       }
     
-      function createDescriptors(handlers, isTemporary, target) {
+      function createDescriptors(handlers, isTemporary, target, cacheable) {
         var handler, name, field, descriptor;
         var list = ProxyCommands.list;
         var length = list.length;
@@ -313,7 +288,7 @@
           handler = handlers[name];
           field = ProxyCommands.fields[name];
           if (handler instanceof Function) {
-            descriptor = CommandDescriptor.create(name, handler, field, isTemporary);
+            descriptor = CommandDescriptor.create(name, handler, field, isTemporary, cacheable);
             if (target instanceof Array) {
               target.push(descriptor);
             } else if (target) {
@@ -977,8 +952,8 @@
           }
         }
     
-        function _hasHandler(type) {
-          return _descriptors.hasOwnProperty(type);
+        function _hasHandler(name) {
+          return _descriptors.hasOwnProperty(name);
         }
     
         function _getHandlers() {
@@ -993,8 +968,8 @@
           return _propertyKeys.slice();
         }
     
-        function _getHandler(type) {
-          return _descriptors[type] || null;
+        function _getHandler(name) {
+          return _descriptors[name] || null;
         }
     
         function _handle(parentRequest, name, pack, deferred, resultRequest) {
@@ -1250,14 +1225,9 @@
           _factory = factory;
         }
     
-        function _getFactory() {
-          return _factory;
-        }
-    
         this.get = _get;
     
         this.setFactory = _setFactory;
-        this.getFactory = _getFactory;
       }
     
       return CommandHandlerFactory;
@@ -1300,13 +1270,8 @@
           }
         }
     
-        function _getFactory() {
-          return _members.getFactory();
-        }
-    
         this.apply = _apply;
         this.setFactory = _setFactory;
-        this.getFactory = _getFactory;
       }
     
       //------------------- static
