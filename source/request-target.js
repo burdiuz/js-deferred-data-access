@@ -1,13 +1,19 @@
 'use strict';
+/**
+ * @exports DataAccessInterface.RequestTarget
+ */
+/**
+ * @ignore
+ */
 var RequestTarget = (function() {
 
   var PROMISE_FIELD = Symbol('request.target::promise');
 
   /**
    * The object that will be available on other side
+   * @class DataAccessInterface.RequestTarget
    * @param _promise {Promise}
    * @param _requestHandlers {RequestHandlers}
-   * @constructor
    */
   function RequestTarget(_promise, _requestHandlers) {
     var promiseHandler;
@@ -111,6 +117,11 @@ var RequestTarget = (function() {
   }
 
   function RequestTarget_getChildrenCount(target) {
+    var list = target && target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].children : null;
+    return list ? list.length : 0;
+  }
+
+  function RequestTarget_sendRequest(target) {
     var list = target && target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].children : null;
     return list ? list.length : 0;
   }

@@ -1,12 +1,18 @@
 'use strict';
+/**
+ * @exports RequestTargetDecorator
+ */
 
+/**
+ * @ignore
+ */
 var RequestTargetDecorator = (function() {
 
   /**
-   *
+   * @class RequestTargetDecorator
    * @param {RequestFactory} _factory
    * @param {RequestHandlers} _handlers
-   * @constructor
+   * @private
    */
   function RequestTargetDecorator(_factory, _handlers) {
 

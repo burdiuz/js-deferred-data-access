@@ -3,10 +3,12 @@ Thumbs.db
 ehthumbs.db
 
 .idea/
+dist/api.md
 
 bower_components/
 node_modules/
 coverage/
+docs/
 
 # Folder config file
 Desktop.ini

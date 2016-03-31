@@ -1,4 +1,17 @@
 'use strict';
+/**
+ * @exports DataAccessInterface.ResourceConverter
+ */
+
+/**
+ * @typedef {Object} DataAccessInterface.ResourceConverter~Events
+ * @property {string} RESOURCE_CREATED Event fired when RequestTarget created from RAWResource object
+ * @property {string} RESOURCE_CONVERTED Event fired when resource created from target value
+ */
+
+/**
+ * @ignore
+ */
 var ResourceConverter = (function() {
 
   /**
@@ -17,7 +30,7 @@ var ResourceConverter = (function() {
   var POOL_FIELD = Symbol('resource.converter::resourcePool');
 
   /**
-   * @private
+   * @member {DataAccessInterface.ResourceConverter~Events} DataAccessInterface.ResourceConverter.Events
    */
   var ResourceConverterEvents = Object.freeze({
     RESOURCE_CREATED: 'resourceCreated',
@@ -25,12 +38,19 @@ var ResourceConverter = (function() {
   });
 
   /**
+   * @class DataAccessInterface.ResourceConverter
+   * @classdesc Resource converter contains bunch of methods to lookup for resources and registering them, converting them into RAWResource or into RequestTargets, depending on their origin.
+   * Before sending data, bundled resources should be registered in ResourcePool and then converted to RAWResource objects.
+   * After data received, its RAWResources should be converted to RequestTargets for not resolved resources or to resource target values otherwise.
+   * Resource can be resolved by its `id` and `poolId`, if ResourceConverter can find ResourcePool with id from poolId, it will try to get target resource value and
+   * replace with it RAWResource object. It ResourcePool not found, ResourceConverter assumes that resource come from other origin/environment and
+   * creates RequestTarget object that can be target object for commands.
+   * ResourceConverter while handling data does not look deeply, so its developer responsibility to convert deeply nested resource targets.
    * @param {RequestFactory} factory
-   * @param {ResourcePoolRegistry} registry
-   * @param {ResourcePool} pool
+   * @param {DataAccessInterface.ResourcePoolRegistry} registry
+   * @param {DataAccessInterface.ResourcePool} pool
    * @param {RequestHandlers} handlers
    * @extends EventDispatcher
-   * @constructor
    */
   function ResourceConverter(factory, registry, pool, handlers) {
     this[FACTORY_FIELD] = factory;
@@ -42,6 +62,11 @@ var ResourceConverter = (function() {
     }
   }
 
+  /**
+   * @method DataAccessInterface.ResourceConverter#resourceToObject
+   * @param {*} data
+   * @returns {*}
+   */
   function _resourceToObject(data) {
     var result;
 
@@ -63,6 +88,12 @@ var ResourceConverter = (function() {
     return result;
   }
 
+  /**
+   * @method DataAccessInterface.ResourceConverter#objectToResource
+   * @param {*} data
+   * @returns {*}
+   * @private
+   */
   function _objectToResource(data) {
     var result = data;
     var poolId;
@@ -86,6 +117,13 @@ var ResourceConverter = (function() {
     return result;
   }
 
+  /**
+   * @method DataAccessInterface.ResourceConverter#lookupArray
+   * @param list
+   * @param linkConvertHandler
+   * @returns {Array}
+   * @private
+   */
   function _lookupArray(list, linkConvertHandler) {
     var result = [];
     var length = list.length;
@@ -95,6 +133,13 @@ var ResourceConverter = (function() {
     return result;
   }
 
+  /**
+   * @method DataAccessInterface.ResourceConverter#lookupObject
+   * @param {*} data
+   * @param {Function} linkConvertHandler
+   * @returns {*}
+   * @private
+   */
   function _lookupObject(data, linkConvertHandler) {
     var result = {};
     for (var name in data) {
@@ -104,6 +149,12 @@ var ResourceConverter = (function() {
     return result;
   }
 
+  /**
+   * @method DataAccessInterface.ResourceConverter#toJSON
+   * @param {*} data
+   * @returns {*}
+   * @private
+   */
   function _toJSON(data) {
     var result = data;
     if (data !== undefined && data !== null) {
@@ -118,6 +169,12 @@ var ResourceConverter = (function() {
     return result;
   }
 
+  /**
+   * @method DataAccessInterface.ResourceConverter#parse
+   * @param {*} data
+   * @returns {*}
+   * @private
+   */
   function _parse(data) {
     var result = data;
     if (data !== undefined && data !== null) {
@@ -132,6 +189,11 @@ var ResourceConverter = (function() {
     return result;
   }
 
+  /**
+   * @method DataAccessInterface.ResourceConverter#lookupForPending
+   * @param {*} data
+   * @returns {Array}
+   */
   function _lookupForPending(data) {
     var result = [];
 
@@ -167,9 +229,10 @@ var ResourceConverter = (function() {
   //------------------------ static
 
   /**
+   * @method DataAccessInterface.ResourceConverter.create
    * @param {RequestFactory} factory
-   * @param {ResourcePoolRegistry} registry
-   * @param {ResourcePool} pool
+   * @param {DataAccessInterface.ResourcePoolRegistry} registry
+   * @param {DataAccessInterface.ResourcePool} pool
    * @param {RequestHandlers} handlers
    * @returns {ResourceConverter}
    */

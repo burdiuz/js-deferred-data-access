@@ -1,8 +1,15 @@
 'use strict';
+/**
+ * @export RequestFactory
+ */
+
 var FACTORY_DECORATOR_FIELD = Symbol('request.factory::decorator');
 
 var FACTORY_HANDLERS_FIELD = Symbol('request.factory::handlers');
 
+/**
+ * @ignore
+ */
 var RequestFactory = (function() {
   var NOINIT = {};
   /*
@@ -14,6 +21,12 @@ var RequestFactory = (function() {
 
    };
    }
+   */
+  /**
+   * @class RequestFactory
+   * @param handlers
+   * @param {ICacheImpl} _cacheImpl
+   * @private
    */
   function RequestFactory(handlers, _cacheImpl) {
     if (handlers === NOINIT) {

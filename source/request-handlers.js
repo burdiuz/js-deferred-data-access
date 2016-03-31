@@ -1,4 +1,10 @@
 'use strict';
+/**
+ * @exports RequestHandlers
+ */
+/**
+ * @ignore
+ */
 var RequestHandlers = (function() {
 
   var RequestHandlersEvents = Object.freeze({
@@ -6,7 +12,9 @@ var RequestHandlers = (function() {
   });
 
   /**
-   * @constructor
+   * @class RequestHandlers
+   * @param {boolean} proxyEnabled
+   * @private
    */
   function RequestHandlers(proxyEnabled) {
     var _keys = [];
@@ -86,7 +94,7 @@ var RequestHandlers = (function() {
 
     this.setConverter = _setConverter;
     /**
-     * @param {Array<Number, CommandDescriptor>, Object<String, Function|CommandDescriptor>} handlers
+     * @param {DataAccessInterface.CommandDescriptor[]|Object.<string, Function|DataAccessInterface.CommandDescriptor>} handlers
      */
     this.setHandlers = _setHandlers;
     this.hasHandler = _hasHandler;

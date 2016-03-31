@@ -1,13 +1,19 @@
 'use strict';
+/**
+ * @exports DataAccessInterface
+ */
+/**
+ * @ignore
+ */
 var DataAccessInterface = (function() {
 
   /**
-   *
-   * @param handlers
-   * @param {} proxyEnabled
-   * @param {ResourcePoolRegistry} [_poolRegistry]
-   * @param {ResourcePool} [_pool]
-   * @constructor
+   * @class DataAccessInterface
+   * @param {DataAccessInterface.CommandDescriptor[]|Object.<string, Function|DataAccessInterface.CommandDescriptor>} handlers
+   * @param {boolean} [proxyEnabled=false]
+   * @param {ResourcePoolRegistry} [poolRegistry]
+   * @param {ResourcePool} [pool]
+   * @param {ICacheImpl} [cacheImpl]
    */
   function DataAccessInterface(handlers, proxyEnabled, _poolRegistry, _pool, _cacheImpl) {
     proxyEnabled = Boolean(proxyEnabled);
@@ -25,20 +31,40 @@ var DataAccessInterface = (function() {
       _pool = ResourcePoolRegistry.defaultResourcePool;
     }
     Object.defineProperties(this, {
+      /**
+       * @member {ResourcePoolRegistry} DataAccessInterface#poolRegistry
+       * @readonly
+       */
       poolRegistry: {
         value: _poolRegistry
       },
+      /**
+       * @member {ResourcePool} DataAccessInterface#pool
+       * @readonly
+       */
       pool: {
         get: function() {
           return _pool;
         }
       },
+      /**
+       * @member {ResourceConverter} DataAccessInterface#resourceConverter
+       * @readonly
+       */
       resourceConverter: {
         value: ResourceConverter.create(_factory, _poolRegistry, _pool, _handlers)
       },
+      /**
+       * @member {RequestFactory} DataAccessInterface#factory
+       * @readonly
+       */
       factory: {
         value: _factory
       },
+      /**
+       * @member {boolean} DataAccessInterface#proxyEnabled
+       * @readonly
+       */
       proxyEnabled: {
         get: function() {
           return _handlers.proxyEnabled;
@@ -64,7 +90,18 @@ var DataAccessInterface = (function() {
     return this.resourceConverter.toJSON(data);
   }
 
+  /**
+   * @method DataAccessInterface#parse
+   * @param {Object|string} data
+   * @returns {Object}
+   */
   DataAccessInterface.prototype.parse = _parse;
+
+  /**
+   * @method DataAccessInterface#toJSON
+   * @param {Object} data
+   * @returns {Object}
+   */
   DataAccessInterface.prototype.toJSON = _toJSON;
 
   //------------------ static
@@ -73,19 +110,34 @@ var DataAccessInterface = (function() {
     return new DataAccessInterface(handlers, proxyEnabled, poolRegistry, pool, cacheImpl);
   }
 
+  /**
+   * @method DataAccessInterface.create
+   * @param {CommandDescriptor[]|Object.<string, Function|CommandDescriptor>} handlers
+   * @param {boolean} [proxyEnabled=false]
+   * @param {ResourcePoolRegistry} [poolRegistry]
+   * @param {ResourcePool} [pool]
+   * @param {ICacheImpl} [cacheImpl]
+   * @returns {DataAccessInterface}
+   */
   DataAccessInterface.create = DataAccessInterface_create;
+  /**
+   * @method DataAccessInterface.createDeferred
+   * @returns {Deferred}
+   */
   DataAccessInterface.createDeferred = createDeferred;
-
+  // ---- classes
   DataAccessInterface.IConvertible = IConvertible;
   DataAccessInterface.RequestTarget = RequestTarget;
   DataAccessInterface.Deferred = Deferred;
-  DataAccessInterface.Reserved = Reserved;
-  DataAccessInterface.RequestTargetCommands = RequestTargetCommands;
   DataAccessInterface.CommandDescriptor = CommandDescriptor;
-  DataAccessInterface.ProxyCommands = ProxyCommands;
   DataAccessInterface.ResourcePool = ResourcePool;
   DataAccessInterface.ResourcePoolRegistry = ResourcePoolRegistry;
   DataAccessInterface.ResourceConverter = ResourceConverter;
+  // ---- namespaces
+  DataAccessInterface.Reserved = Reserved;
+  DataAccessInterface.RequestTargetCommands = RequestTargetCommands;
+  DataAccessInterface.ProxyCommands = ProxyCommands;
+  // ---- functions
   DataAccessInterface.getRAWResource = getRAWResource;
   DataAccessInterface.getResourceData = getResourceData;
   DataAccessInterface.getResourceId = getResourceId;

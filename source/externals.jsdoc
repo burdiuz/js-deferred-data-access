@@ -1,0 +1,50 @@
+/**
+ * @exports ICacheImpl
+ * @exports CommandDataPack
+ * @exports EventDispatcher
+ * @exports RAWResource
+ */
+
+/**
+ * @typedef {Object} EventDispatcher For more information look in GitHub [EventDispatcher]{@link https://github.com/burdiuz/js-event-dispatcher} repo.
+ * @property {Function} addEventListener
+ * @property {Function} removeEventListener
+ * @property {Function} hasEventListener
+ * @property {Function} dispatchEvent
+ */
+
+/**
+ * @typedef {Object} CommandDataPack
+ * @property {string} type Command type
+ * @property {string} cmd Command string
+ * @property {*} value Command value
+ * @property {string} target Target resource ID that issued command
+ */
+
+/**
+ * @typedef {Object} RAWResource
+ * @property {string} id Id string of registered resource target
+ * @property {string} type
+ * @property {string} poolId
+ */
+
+/**
+ * @typedef {Object} ICacheImpl
+ * @property {ICacheImpl~get} get Retrieve from cache RequestTarget instance by property name and command data
+ * @property {ICacheImpl~set} set Store to cache RequestTarget instance by property name and command data
+ * @interface
+ */
+
+/**
+ * @callback ICacheImpl~get
+ * @param {string} propertyName Command property name
+ * @param {CommandDataPack} pack Command data pack
+ * @returns {RequestTarget|null}
+ */
+
+/**
+ * @callback ICacheImpl~set
+ * @param {RequestTarget} request RequestTarget that should be stored
+ * @param {string} propertyName Command property name
+ * @param {CommandDataPack} pack Command data pack
+ */

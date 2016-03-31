@@ -1,7 +1,11 @@
 /**
  * Created by Oleg Galaburda on 29.03.16.
  */
+ /**
+ * @ignore
+ */
 var DataAccessInterface = (function() {
+  //=include externals.jsdoc
   //=include core.js
   //=include command-descriptor.js
   //=include target-resource.js

@@ -1,10 +1,25 @@
 'use strict';
 /**
- * @constructor
- * @extends EventDispatcher
+ * @exports DataAccessInterface.ResourcePool
+ */
+
+/**
+ * @typedef {Object} DataAccessInterface.ResourcePool~Events
+ * @property {string} RESOURCE_ADDED Event for added resource
+ * @property {string} RESOURCE_REMOVED Event for removed resource
+ * @property {string} POOL_CLEAR Event for ResourcePool being cleared
+ * @property {string} POOL_CLEARED Event for cleared ResourcePool
+ * @property {string} POOL_DESTROYED Event for destroyed ResourcePool
+ */
+
+/**
+ * @ignore
  */
 var ResourcePool = (function() {
 
+  /**
+   * @member {DataAccessInterface.ResourcePool~Events} DataAccessInterface.ResourcePool.Events
+   */
   var ResourcePoolEvents = Object.freeze({
     RESOURCE_ADDED: 'resourceAdded',
     RESOURCE_REMOVED: 'resourceRemoved',
@@ -20,7 +35,8 @@ var ResourcePool = (function() {
   var validTargets = {};
 
   /**
-   * @ignore
+   * @class DataAccessInterface.ResourcePool
+   * @extends EventDispatcher
    */
   function ResourcePool() {
     this[MAP_FIELD] = new Map();
@@ -35,7 +51,13 @@ var ResourcePool = (function() {
   }
 
   //------------ instance
-
+  /**
+   * @method DataAccessInterface.ResourcePool#set
+   * @param target
+   * @param type
+   * @returns {TargetResource}
+   * @private
+   */
   function _set(target, type) {
     var link = null;
     if (ResourcePool.isValidTarget(target)) {
@@ -53,14 +75,28 @@ var ResourcePool = (function() {
     return link;
   }
 
+  /**
+   * @method DataAccessInterface.ResourcePool#has
+   * @param target
+   * @returns {*}
+   */
   function _has(target) {
     return this[MAP_FIELD].has(target);
   }
 
+  /**
+   * @method DataAccessInterface.ResourcePool#get
+   * @param target
+   * @returns {TargetResource}
+   */
   function _get(target) {
     return this[MAP_FIELD].get(target);
   }
 
+  /**
+   * @method DataAccessInterface.ResourcePool#remove
+   * @param target
+   */
   function _remove(target) {
     var link = this[MAP_FIELD].get(target);
     if (link) {
@@ -73,6 +109,9 @@ var ResourcePool = (function() {
     }
   }
 
+  /**
+   * @method DataAccessInterface.ResourcePool#clear
+   */
   function _clear() {
     if (this.hasEventListener(ResourcePoolEvents.POOL_CLEAR)) {
       this.dispatchEvent(ResourcePoolEvents.POOL_CLEAR, this);
@@ -92,10 +131,17 @@ var ResourcePool = (function() {
     }
   }
 
+  /**
+   * @method DataAccessInterface.ResourcePool#isActive
+   * @returns {boolean}
+   */
   function _isActive() {
     return Boolean(this[MAP_FIELD]);
   }
 
+  /**
+   * @method DataAccessInterface.ResourcePool#destroy
+   */
   function _destroy() {
     this.clear();
     // intentionally make it not usable after its destroyed
@@ -117,13 +163,17 @@ var ResourcePool = (function() {
   ResourcePool.prototype.destroy = _destroy;
 
   //------------ static
-
+  /**
+   * @method DataAccessInterface.ResourcePool.isValidTarget
+   * @param target
+   * @returns {boolean}
+   */
   function ResourcePool_isValidTarget(target) {
     return !isResource(target) && Boolean(validTargets[typeof(target)]);
   }
 
   /**
-   *
+   * @method DataAccessInterface.ResourcePool.setValidTargets
    * @param list {string[]} Types acceptable as resource targets to be stored in ResourcePool
    * @returns void
    */
@@ -136,16 +186,15 @@ var ResourcePool = (function() {
   }
 
   /**
-   *
-   * @returns {string[]} Default types acceptable by ResourcePool
-   * @returns Array
+   * @method DataAccessInterface.ResourcePool.getDefaultValidTargets
+   * @returns {string[]} Default types acceptable by ResourcePool -- only "object" and "function".
    */
   function ResourcePool_getDefaultValidTargets() {
     return ['object', 'function'];
   }
 
   /**
-   *
+   * @method DataAccessInterface.ResourcePool.create
    * @returns {ResourcePool}
    */
   function ResourcePool_create() {

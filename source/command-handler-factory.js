@@ -1,9 +1,13 @@
-/**
- * Created by Oleg Galaburda on 29.03.16.
- */
 'use strict';
 
+/**
+ * @ignore
+ */
 var CommandHandlerFactory = (function() {
+  /**
+   * @constructor
+   * @private
+   */
   function CommandHandlerFactory() {
     var _members = new Map();
     var _factory;

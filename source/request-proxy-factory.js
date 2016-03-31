@@ -1,4 +1,11 @@
 'use strict';
+/**
+ * @exports RequestProxyFactory
+ */
+
+/**
+ * @ignore
+ */
 var RequestProxyFactory = (function() {
 
   var FACTORY_FIELD = Symbol('request.proxy.factory::factory');
@@ -116,6 +123,12 @@ var RequestProxyFactory = (function() {
 
   var PROXY_HANDLERS = createHandlers();
 
+  /**
+   * @class RequestProxyFactory
+   * @param handlers
+   * @param cacheImpl
+   * @private
+   */
   function RequestProxyFactory(handlers, cacheImpl) {
     this[FACTORY_HANDLERS_FIELD] = handlers;
     this[FACTORY_FIELD] = RequestFactory.create(handlers, cacheImpl);

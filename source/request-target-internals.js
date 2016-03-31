@@ -1,12 +1,19 @@
 'use strict';
+/**
+ * @exports RequestTargetInternals
+ */
+
+/**
+ * @ignore
+ */
 var RequestTargetInternals = (function() {
 
   /**
-   *
+   * @class RequestTargetInternals
    * @param _requestTarget {RequestTarget}
    * @param _promise {Promise}
    * @param _requestHandlers {RequestHandlers}
-   * @constructor
+   * @private
    */
   function RequestTargetInternals(_requestTarget, _promise, _requestHandlers) {
     this.requestHandlers = _requestHandlers;
@@ -94,8 +101,9 @@ var RequestTargetInternals = (function() {
     var error = new Error(message || 'This request was rejected before sending.');
     while (this.queue && this.queue.length) {
       /**
-       * @type {[string, {type:string, cmd:string, value:*, target:string}, Deferred]}
+       * @type {Array.<string, CommandDataPack, DataAccessInterface.Deferred>}
        */
+      //FIXME [string, {type:string, cmd:string, value:*, target:string}, Deferred] -- how to describe this in JSDoc?
       var request = this.queue.shift();
       request[2].reject(error);
     }

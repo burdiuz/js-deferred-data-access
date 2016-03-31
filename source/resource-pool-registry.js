@@ -1,9 +1,23 @@
 'use strict';
 /**
- * Global registry per environment
+ * @exports DataAccessInterface.ResourcePoolRegistry
+ */
+
+/**
+ * @typedef {Object} DataAccessInterface.ResourcePoolRegistry~Events
+ * @property {string} RESOURCE_POOL_CREATED Event for created ResourcePool
+ * @property {string} RESOURCE_POOL_REGISTERED Event for registered ResourcePool
+ * @property {string} RESOURCE_POOL_REMOVED Event for removed ResourcePool
+ */
+
+/**
+ * @ignore
  */
 var ResourcePoolRegistry = (function() {
 
+  /**
+   * @member {DataAccessInterface.ResourcePoolRegistry~Events} DataAccessInterface.ResourcePoolRegistry.Events
+   */
   var ResourcePoolRegistryEvents = Object.freeze({
     RESOURCE_POOL_CREATED: 'resourcePoolCreated',
     RESOURCE_POOL_REGISTERED: 'resourcePoolRegistered',
@@ -18,7 +32,7 @@ var ResourcePoolRegistry = (function() {
 
   /**
    * @constructor
-   * @extends {ResourcePool}
+   * @extends {DataAccessInterface.ResourcePool}
    * @private
    */
   function _DefaultResourcePool() {
@@ -32,7 +46,10 @@ var ResourcePoolRegistry = (function() {
   _DefaultResourcePool.prototype = ResourcePool.prototype;
 
   /**
-   * @constructor
+   * @class DataAccessInterface.ResourcePoolRegistry
+   * @extends EventDispatcher
+   * @classdesc Collection of ResourcePool instances. Allows lookup for ResourcePool by its Id.
+   * When ResourcePool is registered in ResourcePoolRegistry, it subscribes to ResourcePool POOL_DESTROYED event and removes pool from registry after its destroyed.
    */
   function ResourcePoolRegistry() {
     Object.defineProperty(this, POOLS_FIELD, {
@@ -45,8 +62,8 @@ var ResourcePoolRegistry = (function() {
   }
 
   /**
-   *
-   * @returns {ResourcePool}
+   * Create and register ResourcePool
+   * @returns {DataAccessInterface.ResourcePool} New ResourcePool instance
    */
   function _createPool() {
     var pool = ResourcePool.create();
@@ -58,8 +75,8 @@ var ResourcePoolRegistry = (function() {
   }
 
   /**
-   *
-   * @param pool {ResourcePool}
+   * Register ResourcePool instance.
+   * @param pool {DataAccessInterface.ResourcePool} ResourcePool instance to be registered
    */
   function _register(pool) {
     if (this[POOLS_FIELD].hasOwnProperty(pool.id)) return;
@@ -71,17 +88,17 @@ var ResourcePoolRegistry = (function() {
   }
 
   /**
-   *
-   * @param poolId {String}
-   * @returns {ResourcePool|null}
+   * Retrieve ResourcePool instance from registry by its Id.
+   * @param poolId {String} ResourcePool instance Id
+   * @returns {DataAccessInterface.ResourcePool|null}
    */
   function _get(poolId) {
     return this[POOLS_FIELD][poolId] || null;
   }
 
   /**
-   *
-   * @param pool {ResourcePool|String}
+   * Check if ResourcePool registered in this registry instance.
+   * @param pool {DataAccessInterface.ResourcePool|String} ResourcePool instance or its Id.
    * @returns {Boolean}
    */
   function _isRegistered(pool) {
@@ -89,8 +106,8 @@ var ResourcePoolRegistry = (function() {
   }
 
   /**
-   *
-   * @param pool {ResourcePool|String}
+   * Remove ResourcePool from current registry instance.
+   * @param pool {DataAccessInterface.ResourcePool|String} ResourcePool instance or its Id.
    * @returns {Boolean}
    */
   function _remove(pool) {
@@ -116,13 +133,23 @@ var ResourcePoolRegistry = (function() {
 
   //--------------- static
 
-
+  /**
+   * Create new instance of ResourcePoolRegistry.
+   * @method DataAccessInterface.ResourcePoolRegistry.create
+   * @returns {DataAccessInterface.ResourcePoolRegistry}
+   */
   function ResourcePoolRegistry_create() {
     return new ResourcePoolRegistry();
   }
 
   ResourcePoolRegistry.create = ResourcePoolRegistry_create;
   ResourcePoolRegistry.Events = ResourcePoolRegistryEvents;
+  /**
+   * Default ResourcePool is created immediately after class initialization and available via ResourcePoolRegistry class, as static property.
+   * Its used as default ResourcePool in `DataAccessInterface` if other not supplied.
+   * Default ResourcePool cannot be destroyed, destroy() method call throws Error.
+   * @member {DataAccessInterface.ResourcePool} DataAccessInterface.ResourcePoolRegistry.defaultResourcePool
+   */
   ResourcePoolRegistry.defaultResourcePool = new _DefaultResourcePool();
 
   return ResourcePoolRegistry;
