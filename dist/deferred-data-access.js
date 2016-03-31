@@ -17,8 +17,63 @@
   /**
    * Created by Oleg Galaburda on 29.03.16.
    */
+   /**
+   * @ignore
+   */
   var DataAccessInterface = (function() {
+    /**
+     * @exports ICacheImpl
+     * @exports CommandDataPack
+     * @exports EventDispatcher
+     * @exports RAWResource
+     */
+    
+    /**
+     * @typedef {Object} EventDispatcher For more information look in GitHub [EventDispatcher]{@link https://github.com/burdiuz/js-event-dispatcher} repo.
+     * @property {Function} addEventListener
+     * @property {Function} removeEventListener
+     * @property {Function} hasEventListener
+     * @property {Function} dispatchEvent
+     */
+    
+    /**
+     * @typedef {Object} CommandDataPack
+     * @property {string} type Command type
+     * @property {string} cmd Command string
+     * @property {*} value Command value
+     * @property {string} target Target resource ID that issued command
+     */
+    
+    /**
+     * @typedef {Object} RAWResource
+     * @property {string} id Id string of registered resource target
+     * @property {string} type
+     * @property {string} poolId
+     */
+    
+    /**
+     * @typedef {Object} ICacheImpl
+     * @property {ICacheImpl~get} get Retrieve from cache RequestTarget instance by property name and command data
+     * @property {ICacheImpl~set} set Store to cache RequestTarget instance by property name and command data
+     * @interface
+     */
+    
+    /**
+     * @callback ICacheImpl~get
+     * @param {string} propertyName Command property name
+     * @param {CommandDataPack} pack Command data pack
+     * @returns {RequestTarget|null}
+     */
+    
+    /**
+     * @callback ICacheImpl~set
+     * @param {RequestTarget} request RequestTarget that should be stored
+     * @param {string} propertyName Command property name
+     * @param {CommandDataPack} pack Command data pack
+     */
+    
     'use strict';
+    
     var TargetStatus = Object.freeze({
       PENDING: 'pending',
       RESOLVED: 'resolved',
@@ -26,10 +81,21 @@
       DESTROYED: 'destroyed'
     });
     
-    
+    /**
+     * @type {Symbol}
+     * @private
+     */
     var TARGET_INTERNALS = Symbol('request.target:internals');
+    /**
+     *
+     * @type {string}
+     * @private
+     */
     var TARGET_DATA = 'resource::data';
     
+    /**
+     * @private
+     */
     var getId = (function() {
       var _base = 'DA/' + String(Date.now()) + '/';
       var _index = 0;
@@ -38,11 +104,11 @@
       };
     })();
     
+    /**
+     * @constructor
+     * @alias DataAccessInterface.Deferred
+     */
     var Deferred = (function() {
-    
-      /**
-       * @constructor
-       */
       function Deferred() {
         this._status = TargetStatus.PENDING;
         this.promise = new Promise(function(resolve, reject) {
@@ -56,23 +122,33 @@
     
     /**
      * @returns {Deferred}
+     * @private
      */
     function createDeferred() {
       return new Deferred();
     }
-    
+    /**
+     * @returns {boolean}
+     * @private
+     */
     function areProxiesAvailable() {
       return typeof(Proxy) === 'function';
     }
     
     /**
      * Interface for all resource types, these will be treated as resources automatically
-     * @constructor
+     * @interface
+     * @alias DataAccessInterface.IConvertible
      */
     function IConvertible() {
     
     }
-    
+    /**
+     * @method DataAccessInterface.getRAWResource
+     * @param object
+     * @param pool
+     * @returns {*}
+     */
     function getRAWResource(object, pool) {
       pool = pool || ResourcePoolRegistry.defaultResourcePool;
       var data = null;
@@ -88,11 +164,21 @@
       return data;
     }
     
+    /**
+     * @method DataAccessInterface.getResourceData
+     * @param {*} object
+     * @returns {null}
+     */
     function getResourceData(object) {
       var data = getRAWResource(object);
       return data ? data[TARGET_DATA] : null;
     }
     
+    /**
+     * @method DataAccessInterface.getResourceId
+     * @param object
+     * @returns {*}
+     */
     function getResourceId(object) {
       var id = null;
       //if (object instanceof TargetResource || object instanceof RequestTarget) {
@@ -104,6 +190,11 @@
       return id;
     }
     
+    /**
+     * @method DataAccessInterface.getResourcePoolId
+     * @param object
+     * @returns {*}
+     */
     function getResourcePoolId(object) {
       var poolId = null;
       if (typeof(object[TARGET_INTERNALS]) === 'object') {
@@ -114,6 +205,11 @@
       return poolId;
     }
     
+    /**
+     * @method DataAccessInterface.getResourceType
+     * @param object
+     * @returns {*}
+     */
     function getResourceType(object) {
       var type = null;
       if (typeof(object[TARGET_INTERNALS]) === 'object') {
@@ -124,6 +220,11 @@
       return type;
     }
     
+    /**
+     * @method DataAccessInterface.isResource
+     * @param object
+     * @returns {boolean|*}
+     */
     function isResource(object) {
       return object instanceof TargetResource ||
         object instanceof RequestTarget ||
@@ -137,11 +238,56 @@
         ));
     }
     
+    /**
+     * @method DataAccessInterface.isResourceConvertible
+     * @param data
+     * @returns {boolean|*|boolean}
+     */
     function isResourceConvertible(data) {
       return isResource(data) || typeof(data) === 'function' || data instanceof IConvertible;
     }
     
     'use strict';
+    /**
+     * @exports DataAccessInterface.CommandDescriptor
+     * @exports DataAccessInterface.ProxyCommands
+     * @exports DataAccessInterface.Reserved
+     */
+    
+    /**
+     * @callback DataAccessInterface.CommandDescriptor~handle
+     * @param {DataAccessInterface.RequestTarget} parentRequest
+     * @param {CommandDataPack} pack
+     * @param {DataAccessInterface.Deferred} deferred
+     * @param {DataAccessInterface.RequestTarget} [resultRequest]
+     * @returns {void}
+     */
+    
+    /**
+     * @callback DataAccessInterface.CommandDescriptor~isTemporary
+     * @param {DataAccessInterface.RequestTarget} parentRequest
+     * @param {?DataAccessInterface.RequestTarget} resultRequest
+     * @param {CommandDataPack} pack
+     * @param {*} data
+     * @returns {boolean} If true, RequestTarget object will be destroyed after serving last command in its queue.
+     */
+    
+    /**
+     * @typedef {Object} DataAccessInterface.ProxyCommands~fields
+     * @property {Symbol} get
+     * @property {Symbol} set
+     * @property {Symbol} apply
+     * @property {Symbol} deleteProperty
+     */
+    /**
+     * @typedef {Object} DataAccessInterface.Reserved~names
+     * @property {boolean} then "then" is a reserved word for property name and cannot be used in CommandDescriptor.
+     * @property {boolean} catch "catch" is a reserved word for property name and cannot be used in CommandDescriptor.
+     */
+    
+    /**
+     * @ignore
+     */
     var CommandDescriptor = (function() {
     
       /**
@@ -152,36 +298,52 @@
       }
     
       /**
-       * Immutable
-       * @param {String|Object} type
-       * @param {Function} handle
-       * @param {String|Symbol} [name=]
-       * @param {Function} [isTemporary=]
-       * @constructor
+       * @class DataAccessInterface.CommandDescriptor
+       * @classdesc CommandDescriptor represents command that should be executed on resource object.
+       * Each CommandDescriptor must describe property name, command type and handler function that will be called when command should be executed.
+       * When new resource parsed from RAW object, it will be converted to RequestTarget.
+       * Each RequestTarget object is decorated with methods named by `CommandDescriptor.name`.
+       * Calling this method will start `CommandDescriptor.type` command execution and immediately returns a Promise that should be resolved in `CommandDescriptor.handle`.
+       * Optionally isTemporary, cacheable and virtual parameters may be supplied.
+       * @param {String|Object} type Command type
+       * @param {DataAccessInterface.CommandDescriptor~handle} handle Command handle function
+       * @param {String|Symbol} [name=] Method name
+       * @param {DataAccessInterface.CommandDescriptor~isTemporary} [isTemporary=]
+       * @param {boolean} [cacheable=false]
+       * @param {boolean} [virtual=false]
        */
       function CommandDescriptor(type, handle, name, isTemporary, cacheable, virtual) {
         /**
-         * @type {String|Symbol}
+         * Property name that will be used to place command handler function into RequestTarget.
+         * If name was not provided, command type string will be used instead.
+         * It is allowed to have multiple CommandDescriptors for same command type but with different property names.
+         * @member {String|Symbol} DataAccessInterface.CommandDescriptor#
          */
         this.name = name !== undefined ? name : type;
         /**
-         * @type {String|Object}
+         * Command type, it will be passed to handler
+         * @member {String|Object} DataAccessInterface.CommandDescriptor#type
          */
         this.type = type;
         /**
-         * @type {Function}
+         * Handler function, it will be called each time when RequestTarget[name]() executed
+         * @member {DataAccessInterface.CommandDescriptor~handle} DataAccessInterface.CommandDescriptor#handle
          */
         this.handle = handle;
         /**
-         * @type {Function}
+         * This callback must return true if RequestTarget should be destroyed after resolving promise passed to handler function.
+         * If not provided, will be used default isTemplate() implementation, that always returns false.
+         * @member {DataAccessInterface.CommandDescriptor~isTemporary} DataAccessInterface.CommandDescriptor#isTemporary
          */
         this.isTemporary = isTemporary || Default_isTemporary;
         /**
-         * @type {boolean}
+         * If true and ICacheImpl instance was provided, RequestTarget will be passed to ICacheImpl. By default, false.
+         * @member {boolean} DataAccessInterface.CommandDescriptor#cacheable
          */
         this.cacheable = Boolean(cacheable);
         /**
-         * @type {boolean}
+         * If true, command handler will not be created on RequestTarget instance. So it can be called only using internal methods. By default, false.
+         * @member {boolean} DataAccessInterface.CommandDescriptor#virtual
          */
         this.virtual = Boolean(virtual);
       }
@@ -191,12 +353,14 @@
       //---------------
     
       /**
-       *
+       * Creates immutable CommandDescriptor instance. It is strongly recommended to use CommandDescriptor.create() instead of using "new" operator.
+       * @method DataAccessInterface.CommandDescriptor.create
        * @param {string} command
        * @param {Function} handle
        * @param {string} [name=]
        * @param {Function} [isTemporary=]
        * @param {Boolean} [cacheable=false]
+       * @param {Boolean} [virtual=false]
        * @returns {CommandDescriptor}
        */
       function CommandDescriptor_create(command, handle, name, isTemporary, cacheable, virtual) {
@@ -246,28 +410,39 @@
       };
       return Object.freeze(commands);
     })();
-    
     /**
      * Commands used by Proxy wrapper to get/set properties and call functions/methods.
-     * @type {Object}
+     * @namespace {Object} DataAccessInterface.ProxyCommands
      */
     var ProxyCommands = (function() {
-      var GET_FIELD = Symbol('proxy.commands::get');
-      var SET_FIELD = Symbol('proxy.commands::set');
-      var APPLY_FIELD = Symbol('proxy.commands::apply');
-      var DELETE_PROPERTY_FIELD = Symbol('proxy.commands::deleteProperty');
     
       var commands = {
+        /**
+         * @member {string} DataAccessInterface.ProxyCommands.GET
+         */
         GET: 'get',
+        /**
+         * @member {string} DataAccessInterface.ProxyCommands.SET
+         */
         SET: 'set',
+        /**
+         * @member {string} DataAccessInterface.ProxyCommands.APPLY
+         */
         APPLY: 'apply',
+        /**
+         * @member {string} DataAccessInterface.ProxyCommands.DELETE_PROPERTY
+         */
         DELETE_PROPERTY: 'deleteProperty'
       };
+      /**
+       * Property names for CommandDescriptor's created for Proxy wrappers.
+       * @member {DataAccessInterface.ProxyCommands~fields} DataAccessInterface.ProxyCommands.fields
+       */
       commands.fields = Object.freeze({
-        get: GET_FIELD,
-        set: SET_FIELD,
-        apply: APPLY_FIELD,
-        deleteProperty: DELETE_PROPERTY_FIELD
+        get: Symbol('proxy.commands::get'),
+        set: Symbol('proxy.commands::set'),
+        apply: Symbol('proxy.commands::apply'),
+        deleteProperty: Symbol('proxy.commands::deleteProperty')
       });
     
       function get_list() {
@@ -300,9 +475,17 @@
       }
     
       Object.defineProperties(commands, {
+        /**
+         * List of possible commands forProxy wrapper.
+         * @member {string[]} DataAccessInterface.ProxyCommands.list
+         */
         list: {
           get: get_list
         },
+        /**
+         * List of required commands for Proxy wrapper to work properly, if one of required CommandDescriptor's was not provided, Error will be raised.
+         * @member {string[]} DataAccessInterface.ProxyCommands.required
+         */
         required: {
           get: get_required
         }
@@ -315,8 +498,16 @@
       return Object.freeze(commands);
     })();
     
-    
+    /**
+     * Reserved words
+     * @namespace {Object} DataAccessInterface.Reserved
+     */
     var Reserved = Object.freeze({
+      /**
+       * Contains property names that cannot be used for CommandDescriptor's
+       * @member {DataAccessInterface.Reserved~names} DataAccessInterface.Reserved.names
+       * @see DataAccessInterface.CommandDescriptor#name
+       */
       names: Object.freeze({
         //INFO Exposed Promise method, cannot be overwritten by type
         then: true,
@@ -326,10 +517,21 @@
     });
     
     'use strict';
+    /**
+     * @exports TargetResource
+     */
+    /**
+     * @ignore
+     */
     var TargetResource = (function() {
       /**
-       * The object that can be used to send Target to other side
-       * @constructor
+       * @class TargetResource
+       * @classdesc Instance of TargetResource represents resource that is ready to send to other environment. They are generated when target value added to ResourcePool via `set()` method.
+       * @param {DataAccessInterface.ResourcePool} pool Resource pool where resource target was registered
+       * @param {*} resource Resource target value, should be value of acceptable type
+       * @param {string} resourceType Resource target type string, custom or generated by typeof() operator
+       * @param {string} id Resource Id string
+       * @see DataAccessInterface.ResourcePool#set
        */
       function TargetResource(_pool, _resource, resourceType, _id) {
         Object.defineProperty(this, TARGET_INTERNALS, { // private read-only property
@@ -347,18 +549,39 @@
         });
     
         Object.defineProperties(this, {
+          /**
+           * TRUE while resource is available in ResourcePool, after TargetResource is destroyed, its `active` property changes to FALSE.
+           * @member {boolean} TargetResource#active
+           */
           active: {
             get: get_active
           },
+          /**
+           * Id of ResourcePool where target value is stored.
+           * @member {string} TargetResource#poolId
+           * @see DataAccessInterface.ResourcePool
+           */
           poolId: {
             get: get_poolId
           },
+          /**
+           * Target resource value that was stored in ResourcePool
+           * @member {*} TargetResource#resource
+           */
           resource: {
             get: get_resource
           },
+          /**
+           * Resource value type, it may be custom string or result of typeof() operator.
+           * @member {string} TargetResource#type
+           */
           type: {
             get: get_type
           },
+          /**
+           * Resource Id, unique identifier, generated for each target value stored in ResourcePool. TargetResource instance can be requested from pool via Id.
+           * @member {string} TargetResource#id
+           */
           id: {
             get: get_id
           }
@@ -389,6 +612,10 @@
         return this[TARGET_INTERNALS].id;
       }
     
+      /**
+       * @method TargetResource#toJSON
+       * @returns {RAWResource}
+       */
       function _toJSON() {
         var data = {};
         data[TARGET_DATA] = {
@@ -399,6 +626,11 @@
         return data;
       }
     
+      /**
+       * Remove target value from its ResourcePool and destroy TargetResource. After its destroyed, it cannot be used anywhere, all its values will be cleared.
+       * @method TargetResource#destroy
+       * @returns {void}
+       */
       function _destroy() {
         var id = this[TARGET_INTERNALS].id;
         var pool = this[TARGET_INTERNALS].pool;
@@ -418,8 +650,16 @@
       TargetResource.prototype.toJSON = _toJSON;
       TargetResource.prototype.destroy = _destroy;
     
-      function TargetResource_create(pool, target, targetType, id) {
-        return new TargetResource(pool, target, targetType, id || getId());
+      /**
+       * @method TargetResource.create
+       * @param {DataAccessInterface.ResourcePool} pool
+       * @param {*} resource
+       * @param {string} resourceType
+       * @param {string} [id]
+       * @returns {TargetResource}
+       */
+      function TargetResource_create(pool, resource, resourceType, id) {
+        return new TargetResource(pool, resource, resourceType, id || getId());
       }
     
       TargetResource.create = TargetResource_create;
@@ -429,11 +669,26 @@
     
     'use strict';
     /**
-     * @constructor
-     * @extends EventDispatcher
+     * @exports DataAccessInterface.ResourcePool
+     */
+    
+    /**
+     * @typedef {Object} DataAccessInterface.ResourcePool~Events
+     * @property {string} RESOURCE_ADDED Event for added resource
+     * @property {string} RESOURCE_REMOVED Event for removed resource
+     * @property {string} POOL_CLEAR Event for ResourcePool being cleared
+     * @property {string} POOL_CLEARED Event for cleared ResourcePool
+     * @property {string} POOL_DESTROYED Event for destroyed ResourcePool
+     */
+    
+    /**
+     * @ignore
      */
     var ResourcePool = (function() {
     
+      /**
+       * @member {DataAccessInterface.ResourcePool~Events} DataAccessInterface.ResourcePool.Events
+       */
       var ResourcePoolEvents = Object.freeze({
         RESOURCE_ADDED: 'resourceAdded',
         RESOURCE_REMOVED: 'resourceRemoved',
@@ -449,7 +704,8 @@
       var validTargets = {};
     
       /**
-       * @ignore
+       * @class DataAccessInterface.ResourcePool
+       * @extends EventDispatcher
        */
       function ResourcePool() {
         this[MAP_FIELD] = new Map();
@@ -464,7 +720,13 @@
       }
     
       //------------ instance
-    
+      /**
+       * @method DataAccessInterface.ResourcePool#set
+       * @param target
+       * @param type
+       * @returns {TargetResource}
+       * @private
+       */
       function _set(target, type) {
         var link = null;
         if (ResourcePool.isValidTarget(target)) {
@@ -482,14 +744,28 @@
         return link;
       }
     
+      /**
+       * @method DataAccessInterface.ResourcePool#has
+       * @param target
+       * @returns {*}
+       */
       function _has(target) {
         return this[MAP_FIELD].has(target);
       }
     
+      /**
+       * @method DataAccessInterface.ResourcePool#get
+       * @param target
+       * @returns {TargetResource}
+       */
       function _get(target) {
         return this[MAP_FIELD].get(target);
       }
     
+      /**
+       * @method DataAccessInterface.ResourcePool#remove
+       * @param target
+       */
       function _remove(target) {
         var link = this[MAP_FIELD].get(target);
         if (link) {
@@ -502,6 +778,9 @@
         }
       }
     
+      /**
+       * @method DataAccessInterface.ResourcePool#clear
+       */
       function _clear() {
         if (this.hasEventListener(ResourcePoolEvents.POOL_CLEAR)) {
           this.dispatchEvent(ResourcePoolEvents.POOL_CLEAR, this);
@@ -521,10 +800,17 @@
         }
       }
     
+      /**
+       * @method DataAccessInterface.ResourcePool#isActive
+       * @returns {boolean}
+       */
       function _isActive() {
         return Boolean(this[MAP_FIELD]);
       }
     
+      /**
+       * @method DataAccessInterface.ResourcePool#destroy
+       */
       function _destroy() {
         this.clear();
         // intentionally make it not usable after its destroyed
@@ -546,13 +832,17 @@
       ResourcePool.prototype.destroy = _destroy;
     
       //------------ static
-    
+      /**
+       * @method DataAccessInterface.ResourcePool.isValidTarget
+       * @param target
+       * @returns {boolean}
+       */
       function ResourcePool_isValidTarget(target) {
         return !isResource(target) && Boolean(validTargets[typeof(target)]);
       }
     
       /**
-       *
+       * @method DataAccessInterface.ResourcePool.setValidTargets
        * @param list {string[]} Types acceptable as resource targets to be stored in ResourcePool
        * @returns void
        */
@@ -565,16 +855,15 @@
       }
     
       /**
-       *
-       * @returns {string[]} Default types acceptable by ResourcePool
-       * @returns Array
+       * @method DataAccessInterface.ResourcePool.getDefaultValidTargets
+       * @returns {string[]} Default types acceptable by ResourcePool -- only "object" and "function".
        */
       function ResourcePool_getDefaultValidTargets() {
         return ['object', 'function'];
       }
     
       /**
-       *
+       * @method DataAccessInterface.ResourcePool.create
        * @returns {ResourcePool}
        */
       function ResourcePool_create() {
@@ -596,10 +885,24 @@
     
     'use strict';
     /**
-     * Global registry per environment
+     * @exports DataAccessInterface.ResourcePoolRegistry
+     */
+    
+    /**
+     * @typedef {Object} DataAccessInterface.ResourcePoolRegistry~Events
+     * @property {string} RESOURCE_POOL_CREATED Event for created ResourcePool
+     * @property {string} RESOURCE_POOL_REGISTERED Event for registered ResourcePool
+     * @property {string} RESOURCE_POOL_REMOVED Event for removed ResourcePool
+     */
+    
+    /**
+     * @ignore
      */
     var ResourcePoolRegistry = (function() {
     
+      /**
+       * @member {DataAccessInterface.ResourcePoolRegistry~Events} DataAccessInterface.ResourcePoolRegistry.Events
+       */
       var ResourcePoolRegistryEvents = Object.freeze({
         RESOURCE_POOL_CREATED: 'resourcePoolCreated',
         RESOURCE_POOL_REGISTERED: 'resourcePoolRegistered',
@@ -614,7 +917,7 @@
     
       /**
        * @constructor
-       * @extends {ResourcePool}
+       * @extends {DataAccessInterface.ResourcePool}
        * @private
        */
       function _DefaultResourcePool() {
@@ -628,7 +931,10 @@
       _DefaultResourcePool.prototype = ResourcePool.prototype;
     
       /**
-       * @constructor
+       * @class DataAccessInterface.ResourcePoolRegistry
+       * @extends EventDispatcher
+       * @classdesc Collection of ResourcePool instances. Allows lookup for ResourcePool by its Id.
+       * When ResourcePool is registered in ResourcePoolRegistry, it subscribes to ResourcePool POOL_DESTROYED event and removes pool from registry after its destroyed.
        */
       function ResourcePoolRegistry() {
         Object.defineProperty(this, POOLS_FIELD, {
@@ -641,8 +947,8 @@
       }
     
       /**
-       *
-       * @returns {ResourcePool}
+       * Create and register ResourcePool
+       * @returns {DataAccessInterface.ResourcePool} New ResourcePool instance
        */
       function _createPool() {
         var pool = ResourcePool.create();
@@ -654,8 +960,8 @@
       }
     
       /**
-       *
-       * @param pool {ResourcePool}
+       * Register ResourcePool instance.
+       * @param pool {DataAccessInterface.ResourcePool} ResourcePool instance to be registered
        */
       function _register(pool) {
         if (this[POOLS_FIELD].hasOwnProperty(pool.id)) return;
@@ -667,17 +973,17 @@
       }
     
       /**
-       *
-       * @param poolId {String}
-       * @returns {ResourcePool|null}
+       * Retrieve ResourcePool instance from registry by its Id.
+       * @param poolId {String} ResourcePool instance Id
+       * @returns {DataAccessInterface.ResourcePool|null}
        */
       function _get(poolId) {
         return this[POOLS_FIELD][poolId] || null;
       }
     
       /**
-       *
-       * @param pool {ResourcePool|String}
+       * Check if ResourcePool registered in this registry instance.
+       * @param pool {DataAccessInterface.ResourcePool|String} ResourcePool instance or its Id.
        * @returns {Boolean}
        */
       function _isRegistered(pool) {
@@ -685,8 +991,8 @@
       }
     
       /**
-       *
-       * @param pool {ResourcePool|String}
+       * Remove ResourcePool from current registry instance.
+       * @param pool {DataAccessInterface.ResourcePool|String} ResourcePool instance or its Id.
        * @returns {Boolean}
        */
       function _remove(pool) {
@@ -712,19 +1018,42 @@
     
       //--------------- static
     
-    
+      /**
+       * Create new instance of ResourcePoolRegistry.
+       * @method DataAccessInterface.ResourcePoolRegistry.create
+       * @returns {DataAccessInterface.ResourcePoolRegistry}
+       */
       function ResourcePoolRegistry_create() {
         return new ResourcePoolRegistry();
       }
     
       ResourcePoolRegistry.create = ResourcePoolRegistry_create;
       ResourcePoolRegistry.Events = ResourcePoolRegistryEvents;
+      /**
+       * Default ResourcePool is created immediately after class initialization and available via ResourcePoolRegistry class, as static property.
+       * Its used as default ResourcePool in `DataAccessInterface` if other not supplied.
+       * Default ResourcePool cannot be destroyed, destroy() method call throws Error.
+       * @member {DataAccessInterface.ResourcePool} DataAccessInterface.ResourcePoolRegistry.defaultResourcePool
+       */
       ResourcePoolRegistry.defaultResourcePool = new _DefaultResourcePool();
     
       return ResourcePoolRegistry;
     })();
     
     'use strict';
+    /**
+     * @exports DataAccessInterface.ResourceConverter
+     */
+    
+    /**
+     * @typedef {Object} DataAccessInterface.ResourceConverter~Events
+     * @property {string} RESOURCE_CREATED Event fired when RequestTarget created from RAWResource object
+     * @property {string} RESOURCE_CONVERTED Event fired when resource created from target value
+     */
+    
+    /**
+     * @ignore
+     */
     var ResourceConverter = (function() {
     
       /**
@@ -743,7 +1072,7 @@
       var POOL_FIELD = Symbol('resource.converter::resourcePool');
     
       /**
-       * @private
+       * @member {DataAccessInterface.ResourceConverter~Events} DataAccessInterface.ResourceConverter.Events
        */
       var ResourceConverterEvents = Object.freeze({
         RESOURCE_CREATED: 'resourceCreated',
@@ -751,12 +1080,19 @@
       });
     
       /**
+       * @class DataAccessInterface.ResourceConverter
+       * @classdesc Resource converter contains bunch of methods to lookup for resources and registering them, converting them into RAWResource or into RequestTargets, depending on their origin.
+       * Before sending data, bundled resources should be registered in ResourcePool and then converted to RAWResource objects.
+       * After data received, its RAWResources should be converted to RequestTargets for not resolved resources or to resource target values otherwise.
+       * Resource can be resolved by its `id` and `poolId`, if ResourceConverter can find ResourcePool with id from poolId, it will try to get target resource value and
+       * replace with it RAWResource object. It ResourcePool not found, ResourceConverter assumes that resource come from other origin/environment and
+       * creates RequestTarget object that can be target object for commands.
+       * ResourceConverter while handling data does not look deeply, so its developer responsibility to convert deeply nested resource targets.
        * @param {RequestFactory} factory
-       * @param {ResourcePoolRegistry} registry
-       * @param {ResourcePool} pool
+       * @param {DataAccessInterface.ResourcePoolRegistry} registry
+       * @param {DataAccessInterface.ResourcePool} pool
        * @param {RequestHandlers} handlers
        * @extends EventDispatcher
-       * @constructor
        */
       function ResourceConverter(factory, registry, pool, handlers) {
         this[FACTORY_FIELD] = factory;
@@ -768,6 +1104,11 @@
         }
       }
     
+      /**
+       * @method DataAccessInterface.ResourceConverter#resourceToObject
+       * @param {*} data
+       * @returns {*}
+       */
       function _resourceToObject(data) {
         var result;
     
@@ -789,6 +1130,12 @@
         return result;
       }
     
+      /**
+       * @method DataAccessInterface.ResourceConverter#objectToResource
+       * @param {*} data
+       * @returns {*}
+       * @private
+       */
       function _objectToResource(data) {
         var result = data;
         var poolId;
@@ -812,6 +1159,13 @@
         return result;
       }
     
+      /**
+       * @method DataAccessInterface.ResourceConverter#lookupArray
+       * @param list
+       * @param linkConvertHandler
+       * @returns {Array}
+       * @private
+       */
       function _lookupArray(list, linkConvertHandler) {
         var result = [];
         var length = list.length;
@@ -821,6 +1175,13 @@
         return result;
       }
     
+      /**
+       * @method DataAccessInterface.ResourceConverter#lookupObject
+       * @param {*} data
+       * @param {Function} linkConvertHandler
+       * @returns {*}
+       * @private
+       */
       function _lookupObject(data, linkConvertHandler) {
         var result = {};
         for (var name in data) {
@@ -830,6 +1191,12 @@
         return result;
       }
     
+      /**
+       * @method DataAccessInterface.ResourceConverter#toJSON
+       * @param {*} data
+       * @returns {*}
+       * @private
+       */
       function _toJSON(data) {
         var result = data;
         if (data !== undefined && data !== null) {
@@ -844,6 +1211,12 @@
         return result;
       }
     
+      /**
+       * @method DataAccessInterface.ResourceConverter#parse
+       * @param {*} data
+       * @returns {*}
+       * @private
+       */
       function _parse(data) {
         var result = data;
         if (data !== undefined && data !== null) {
@@ -858,6 +1231,11 @@
         return result;
       }
     
+      /**
+       * @method DataAccessInterface.ResourceConverter#lookupForPending
+       * @param {*} data
+       * @returns {Array}
+       */
       function _lookupForPending(data) {
         var result = [];
     
@@ -893,9 +1271,10 @@
       //------------------------ static
     
       /**
+       * @method DataAccessInterface.ResourceConverter.create
        * @param {RequestFactory} factory
-       * @param {ResourcePoolRegistry} registry
-       * @param {ResourcePool} pool
+       * @param {DataAccessInterface.ResourcePoolRegistry} registry
+       * @param {DataAccessInterface.ResourcePool} pool
        * @param {RequestHandlers} handlers
        * @returns {ResourceConverter}
        */
@@ -910,6 +1289,12 @@
     })();
     
     'use strict';
+    /**
+     * @exports RequestHandlers
+     */
+    /**
+     * @ignore
+     */
     var RequestHandlers = (function() {
     
       var RequestHandlersEvents = Object.freeze({
@@ -917,7 +1302,9 @@
       });
     
       /**
-       * @constructor
+       * @class RequestHandlers
+       * @param {boolean} proxyEnabled
+       * @private
        */
       function RequestHandlers(proxyEnabled) {
         var _keys = [];
@@ -997,7 +1384,7 @@
     
         this.setConverter = _setConverter;
         /**
-         * @param {Array<Number, CommandDescriptor>, Object<String, Function|CommandDescriptor>} handlers
+         * @param {DataAccessInterface.CommandDescriptor[]|Object.<string, Function|DataAccessInterface.CommandDescriptor>} handlers
          */
         this.setHandlers = _setHandlers;
         this.hasHandler = _hasHandler;
@@ -1146,12 +1533,16 @@
     })
     ();
     
-    /**
-     * Created by Oleg Galaburda on 29.03.16.
-     */
     'use strict';
     
+    /**
+     * @ignore
+     */
     var CommandHandlerFactory = (function() {
+      /**
+       * @constructor
+       * @private
+       */
       function CommandHandlerFactory() {
         var _members = new Map();
         var _factory;
@@ -1234,14 +1625,20 @@
     })();
     
     'use strict';
+    /**
+     * @exports RequestTargetDecorator
+     */
     
+    /**
+     * @ignore
+     */
     var RequestTargetDecorator = (function() {
     
       /**
-       *
+       * @class RequestTargetDecorator
        * @param {RequestFactory} _factory
        * @param {RequestHandlers} _handlers
-       * @constructor
+       * @private
        */
       function RequestTargetDecorator(_factory, _handlers) {
     
@@ -1292,10 +1689,17 @@
     
     
     'use strict';
+    /**
+     * @export RequestFactory
+     */
+    
     var FACTORY_DECORATOR_FIELD = Symbol('request.factory::decorator');
     
     var FACTORY_HANDLERS_FIELD = Symbol('request.factory::handlers');
     
+    /**
+     * @ignore
+     */
     var RequestFactory = (function() {
       var NOINIT = {};
       /*
@@ -1307,6 +1711,12 @@
     
        };
        }
+       */
+      /**
+       * @class RequestFactory
+       * @param handlers
+       * @param {ICacheImpl} _cacheImpl
+       * @private
        */
       function RequestFactory(handlers, _cacheImpl) {
         if (handlers === NOINIT) {
@@ -1365,6 +1775,13 @@
     })();
     
     'use strict';
+    /**
+     * @exports RequestProxyFactory
+     */
+    
+    /**
+     * @ignore
+     */
     var RequestProxyFactory = (function() {
     
       var FACTORY_FIELD = Symbol('request.proxy.factory::factory');
@@ -1482,6 +1899,12 @@
     
       var PROXY_HANDLERS = createHandlers();
     
+      /**
+       * @class RequestProxyFactory
+       * @param handlers
+       * @param cacheImpl
+       * @private
+       */
       function RequestProxyFactory(handlers, cacheImpl) {
         this[FACTORY_HANDLERS_FIELD] = handlers;
         this[FACTORY_FIELD] = RequestFactory.create(handlers, cacheImpl);
@@ -1531,14 +1954,21 @@
     })();
     
     'use strict';
+    /**
+     * @exports RequestTargetInternals
+     */
+    
+    /**
+     * @ignore
+     */
     var RequestTargetInternals = (function() {
     
       /**
-       *
+       * @class RequestTargetInternals
        * @param _requestTarget {RequestTarget}
        * @param _promise {Promise}
        * @param _requestHandlers {RequestHandlers}
-       * @constructor
+       * @private
        */
       function RequestTargetInternals(_requestTarget, _promise, _requestHandlers) {
         this.requestHandlers = _requestHandlers;
@@ -1626,8 +2056,9 @@
         var error = new Error(message || 'This request was rejected before sending.');
         while (this.queue && this.queue.length) {
           /**
-           * @type {[string, {type:string, cmd:string, value:*, target:string}, Deferred]}
+           * @type {Array.<string, CommandDataPack, DataAccessInterface.Deferred>}
            */
+          //FIXME [string, {type:string, cmd:string, value:*, target:string}, Deferred] -- how to describe this in JSDoc?
           var request = this.queue.shift();
           request[2].reject(error);
         }
@@ -1778,15 +2209,21 @@
     })();
     
     'use strict';
+    /**
+     * @exports DataAccessInterface.RequestTarget
+     */
+    /**
+     * @ignore
+     */
     var RequestTarget = (function() {
     
       var PROMISE_FIELD = Symbol('request.target::promise');
     
       /**
        * The object that will be available on other side
+       * @class DataAccessInterface.RequestTarget
        * @param _promise {Promise}
        * @param _requestHandlers {RequestHandlers}
-       * @constructor
        */
       function RequestTarget(_promise, _requestHandlers) {
         var promiseHandler;
@@ -1894,6 +2331,11 @@
         return list ? list.length : 0;
       }
     
+      function RequestTarget_sendRequest(target) {
+        var list = target && target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].children : null;
+        return list ? list.length : 0;
+      }
+    
       /**
        *
        * @param promise {Promise}
@@ -1926,15 +2368,21 @@
     })();
     
     'use strict';
+    /**
+     * @exports DataAccessInterface
+     */
+    /**
+     * @ignore
+     */
     var DataAccessInterface = (function() {
     
       /**
-       *
-       * @param handlers
-       * @param {} proxyEnabled
-       * @param {ResourcePoolRegistry} [_poolRegistry]
-       * @param {ResourcePool} [_pool]
-       * @constructor
+       * @class DataAccessInterface
+       * @param {DataAccessInterface.CommandDescriptor[]|Object.<string, Function|DataAccessInterface.CommandDescriptor>} handlers
+       * @param {boolean} [proxyEnabled=false]
+       * @param {ResourcePoolRegistry} [poolRegistry]
+       * @param {ResourcePool} [pool]
+       * @param {ICacheImpl} [cacheImpl]
        */
       function DataAccessInterface(handlers, proxyEnabled, _poolRegistry, _pool, _cacheImpl) {
         proxyEnabled = Boolean(proxyEnabled);
@@ -1952,20 +2400,40 @@
           _pool = ResourcePoolRegistry.defaultResourcePool;
         }
         Object.defineProperties(this, {
+          /**
+           * @member {ResourcePoolRegistry} DataAccessInterface#poolRegistry
+           * @readonly
+           */
           poolRegistry: {
             value: _poolRegistry
           },
+          /**
+           * @member {ResourcePool} DataAccessInterface#pool
+           * @readonly
+           */
           pool: {
             get: function() {
               return _pool;
             }
           },
+          /**
+           * @member {ResourceConverter} DataAccessInterface#resourceConverter
+           * @readonly
+           */
           resourceConverter: {
             value: ResourceConverter.create(_factory, _poolRegistry, _pool, _handlers)
           },
+          /**
+           * @member {RequestFactory} DataAccessInterface#factory
+           * @readonly
+           */
           factory: {
             value: _factory
           },
+          /**
+           * @member {boolean} DataAccessInterface#proxyEnabled
+           * @readonly
+           */
           proxyEnabled: {
             get: function() {
               return _handlers.proxyEnabled;
@@ -1991,7 +2459,18 @@
         return this.resourceConverter.toJSON(data);
       }
     
+      /**
+       * @method DataAccessInterface#parse
+       * @param {Object|string} data
+       * @returns {Object}
+       */
       DataAccessInterface.prototype.parse = _parse;
+    
+      /**
+       * @method DataAccessInterface#toJSON
+       * @param {Object} data
+       * @returns {Object}
+       */
       DataAccessInterface.prototype.toJSON = _toJSON;
     
       //------------------ static
@@ -2000,19 +2479,34 @@
         return new DataAccessInterface(handlers, proxyEnabled, poolRegistry, pool, cacheImpl);
       }
     
+      /**
+       * @method DataAccessInterface.create
+       * @param {CommandDescriptor[]|Object.<string, Function|CommandDescriptor>} handlers
+       * @param {boolean} [proxyEnabled=false]
+       * @param {ResourcePoolRegistry} [poolRegistry]
+       * @param {ResourcePool} [pool]
+       * @param {ICacheImpl} [cacheImpl]
+       * @returns {DataAccessInterface}
+       */
       DataAccessInterface.create = DataAccessInterface_create;
+      /**
+       * @method DataAccessInterface.createDeferred
+       * @returns {Deferred}
+       */
       DataAccessInterface.createDeferred = createDeferred;
-    
+      // ---- classes
       DataAccessInterface.IConvertible = IConvertible;
       DataAccessInterface.RequestTarget = RequestTarget;
       DataAccessInterface.Deferred = Deferred;
-      DataAccessInterface.Reserved = Reserved;
-      DataAccessInterface.RequestTargetCommands = RequestTargetCommands;
       DataAccessInterface.CommandDescriptor = CommandDescriptor;
-      DataAccessInterface.ProxyCommands = ProxyCommands;
       DataAccessInterface.ResourcePool = ResourcePool;
       DataAccessInterface.ResourcePoolRegistry = ResourcePoolRegistry;
       DataAccessInterface.ResourceConverter = ResourceConverter;
+      // ---- namespaces
+      DataAccessInterface.Reserved = Reserved;
+      DataAccessInterface.RequestTargetCommands = RequestTargetCommands;
+      DataAccessInterface.ProxyCommands = ProxyCommands;
+      // ---- functions
       DataAccessInterface.getRAWResource = getRAWResource;
       DataAccessInterface.getResourceData = getResourceData;
       DataAccessInterface.getResourceId = getResourceId;
