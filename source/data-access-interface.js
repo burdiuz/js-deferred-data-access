@@ -9,6 +9,7 @@ var DataAccessInterface = (function() {
 
   /**
    * @class DataAccessInterface
+   * @classdesc Facade of Deferred Data Access library, it holds all of public API -- objects like ResourcePool and methods to work with resources.
    * @param {DataAccessInterface.CommandDescriptor[]|Object.<string, Function|DataAccessInterface.CommandDescriptor>} handlers
    * @param {boolean} [proxyEnabled=false]
    * @param {ResourcePoolRegistry} [poolRegistry]
@@ -90,6 +91,22 @@ var DataAccessInterface = (function() {
     return this.resourceConverter.toJSON(data);
   }
 
+  function _isOwnResource(resource) {
+    /**
+     * @type {boolean|undefined}
+     */
+    var result;
+    /**
+     * @type {DataAccessInterface.ResourcePool}
+     */
+    var pool;
+    if (isResource(resource)) {
+      pool = this.poolRegistry.get(getResourcePoolId(resource));
+      result = pool && pool.has(getResourceId(resource));
+    }
+    return result;
+  }
+
   /**
    * @method DataAccessInterface#parse
    * @param {Object|string} data
@@ -104,10 +121,23 @@ var DataAccessInterface = (function() {
    */
   DataAccessInterface.prototype.toJSON = _toJSON;
 
+  /**
+   * Check if resource belongs to DataAccessInterface instance.
+   * @method DataAccessInterface#isOwnResource
+   * @param {RAWResource|TargetResource|RequestTarget} resource
+   * @returns {Object}
+   */
+  DataAccessInterface.prototype.isOwnResource = _isOwnResource;
+
   //------------------ static
 
   function DataAccessInterface_create(handlers, proxyEnabled, poolRegistry, pool, cacheImpl) {
     return new DataAccessInterface(handlers, proxyEnabled, poolRegistry, pool, cacheImpl);
+  }
+
+  function DataAccessInterface_dummy(handlers, proxyEnabled, poolRegistry, pool, cacheImpl) {
+    var api = new DataAccessInterface(handlers, proxyEnabled, poolRegistry, pool, cacheImpl);
+    return api.parse(DataAccessInterface.createForeignResource());
   }
 
   /**
@@ -120,6 +150,7 @@ var DataAccessInterface = (function() {
    * @returns {DataAccessInterface}
    */
   DataAccessInterface.create = DataAccessInterface_create;
+  DataAccessInterface.dummy = DataAccessInterface_dummy;
   /**
    * @method DataAccessInterface.createDeferred
    * @returns {Deferred}
@@ -143,8 +174,10 @@ var DataAccessInterface = (function() {
   DataAccessInterface.getResourceId = getResourceId;
   DataAccessInterface.getResourcePoolId = getResourcePoolId;
   DataAccessInterface.getResourceType = getResourceType;
+  DataAccessInterface.createForeignResource = createForeignResource;
   DataAccessInterface.isResource = isResource;
   DataAccessInterface.isResourceConvertible = isResourceConvertible;
+  DataAccessInterface.areSameResource = areSameResource;
 
   return DataAccessInterface;
 })();

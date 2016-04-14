@@ -1,7 +1,7 @@
 {
   "name": "deferred-data-access",
   "description": "",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "main": "dist/deferred-data-access.min.js",
   "keywords": [
     "data",
@@ -42,7 +42,8 @@
     "lolex": "^1.4.0",
     "mocha": "^2.4.5",
     "sinon": "^1.17.3",
-    "sinon-chai": "^2.8.0"
+    "sinon-chai": "^2.8.0",
+    "websocket-server": "git://github.com/burdiuz/js-websocket-server.git"
   },
   "scripts": {
     "test": "./node_modules/.bin/karma start --single-run --browsers Firefox karma.conf.js"

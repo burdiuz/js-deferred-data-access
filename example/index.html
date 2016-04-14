@@ -4,21 +4,61 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Deferred Data Access Example</title>
-  <script type="text/javascript" src="../bower_components/event-dispatcher/dist/event-dispatcher.js"></script>
-  <script type="text/javascript" src="../source/core.js"></script>
-  <script type="text/javascript" src="../source/target-resource.js"></script>
-  <script type="text/javascript" src="../source/resource-pool.js"></script>
-  <script type="text/javascript" src="../source/resource-pool-registry.js"></script>
-  <script type="text/javascript" src="../source/resource-converter.js"></script>
-  <script type="text/javascript" src="../source/command-descriptor.js"></script>
-  <script type="text/javascript" src="../source/request-handlers.js"></script>
-  <script type="text/javascript" src="../source/request-target-decorator.js"></script>
-  <script type="text/javascript" src="../source/request-factory.js"></script>
-  <script type="text/javascript" src="../source/request-proxy-factory.js"></script>
-  <script type="text/javascript" src="../source/request-target-internals.js"></script>
-  <script type="text/javascript" src="../source/request-target.js"></script>
-  <script type="text/javascript" src="../source/data-access-interface.js"></script>
+  <script type="text/javascript" src="../dist/deferred-data-access.standalone.js"></script>
   <script type="text/javascript">
+    var participants;
+    function messageHandler(target, pack, deferred) {
+      deferred.resolve();
+    }
+    var api = DataAccessInterface.create({
+      message: messageHandler
+    }, false);
+    var socket = new WebSocket('ws://localhost:8081/ws');
+    socket.onopen = function() {
+      console.log('open', arguments);
+      //TODO create UI to request name
+      socket.send(JSON.stringify({
+        type: 'init',
+        name: 'First one'
+      }));
+    };
+    socket.onerror = function() {
+      //TODO Error should be displayed as system message and then display UI to request name
+      console.log('error', arguments);
+    };
+    socket.onclose = function() {
+      //TODO After closing connection, try to reconnect and then display UI to request name
+      console.log('close', arguments);
+    };
+    socket.onmessage = function(event) {
+      console.log('message', arguments);
+      var message = JSON.parse(event.data);
+      switch (message.type) {
+        case 'participants':
+          participants = api.parse(message.data); // this will create resources for each participant
+          break;
+        case 'participantAdd':
+          participants.push(api.parse(message.source));
+          break;
+        case 'participantRemove':
+          var sourceId = DataAccessInterface.getResourceId(message.source);
+          for (var index = 0; index < participants.length; index++) {
+            if (DataAccessInterface.getResourceId(participants[index]) === sourceId) {
+              participants.splice(index, 1);
+              break;
+            }
+          }
+          break;
+        case 'message':
+          //TODO display message, should we display difference between private and global messages?
+          break;
+        case 'system':
+          //TODO display system message
+          break;
+      }
+    };
+  </script>
+  <!--script type="text/javascript">
     // Create interface
     var api;
     var ProxyCommands = DataAccessInterface.ProxyCommands;
@@ -58,7 +98,7 @@
     request.get('My Command', 'any-value-here');
     // make Proxy'ed request
     request.MyCommand = 'any-value-here';
-  </script>
+  </script-->
 </head>
 <body>
 </body>

@@ -31,7 +31,7 @@ var CommandHandlerFactory = (function() {
         var result;
         var promise;
         if (this[TARGET_INTERNALS]) {
-          var pack = RequestTargetInternals.createRequestPackage(commandType, command, value, this[TARGET_INTERNALS].id);
+          var pack = RequestTargetInternals.createRequestPackage(commandType, arguments, this[TARGET_INTERNALS].id);
           var request = getChildRequest(propertyName, pack, cacheable);
           result = request.child;
           if (request.deferred) {

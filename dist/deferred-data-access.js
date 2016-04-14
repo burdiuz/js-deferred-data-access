@@ -42,13 +42,14 @@
      * @property {string} cmd Command string
      * @property {*} value Command value
      * @property {string} target Target resource ID that issued command
+     * @property {Arguments} args Non-enumerable property that holds Arguments passed to command handler function. Since its non-enumerable, it will not be processed `JSON.stringify()`.
      */
     
     /**
      * @typedef {Object} RAWResource
      * @property {string} id Id string of registered resource target
-     * @property {string} type
-     * @property {string} poolId
+     * @property {string} type Resource target value type
+     * @property {string} poolId ResourcePool Id where resource is stored, was registered
      */
     
     /**
@@ -220,6 +221,16 @@
       return type;
     }
     
+    function createForeignResource(type) {
+      var resource = {};
+      resource[TARGET_DATA] = {
+        id: 'foreign-id-' + getId(),
+        type: type || typeof(resource),
+        poolId: 'foreign-poolId-' + getId()
+      };
+      return resource;
+    }
+    
     /**
      * @method DataAccessInterface.isResource
      * @param object
@@ -241,10 +252,22 @@
     /**
      * @method DataAccessInterface.isResourceConvertible
      * @param data
-     * @returns {boolean|*|boolean}
+     * @returns {boolean}
      */
     function isResourceConvertible(data) {
       return isResource(data) || typeof(data) === 'function' || data instanceof IConvertible;
+    }
+    
+    /**
+     * @method DataAccessInterface.isResourceConvertible
+     * @param {RAWResource|TargetResource|RequestTarget} resource1
+     * @param {RAWResource|TargetResource|RequestTarget} resource2
+     * @returns {boolean}
+     */
+    function areSameResource(resource1, resource2) {
+      return isResource(resource1) && isResource(resource2) &&
+        getResourceId(resource1) === getResourceId(resource2) &&
+        getResourcePoolId(resource1) === getResourcePoolId(resource2);
     }
     
     'use strict';
@@ -725,7 +748,6 @@
        * @param target
        * @param type
        * @returns {TargetResource}
-       * @private
        */
       function _set(target, type) {
         var link = null;
@@ -747,7 +769,7 @@
       /**
        * @method DataAccessInterface.ResourcePool#has
        * @param target
-       * @returns {*}
+       * @returns {boolean}
        */
       function _has(target) {
         return this[MAP_FIELD].has(target);
@@ -1566,7 +1588,7 @@
             var result;
             var promise;
             if (this[TARGET_INTERNALS]) {
-              var pack = RequestTargetInternals.createRequestPackage(commandType, command, value, this[TARGET_INTERNALS].id);
+              var pack = RequestTargetInternals.createRequestPackage(commandType, arguments, this[TARGET_INTERNALS].id);
               var request = getChildRequest(propertyName, pack, cacheable);
               result = request.child;
               if (request.deferred) {
@@ -1965,9 +1987,10 @@
     
       /**
        * @class RequestTargetInternals
-       * @param _requestTarget {RequestTarget}
-       * @param _promise {Promise}
-       * @param _requestHandlers {RequestHandlers}
+       * @param {DataAccessInterface.RequestTarget} _requestTarget
+       * @param {Promise} _promise
+       * @param {RequestHandlers} _requestHandlers
+       * @mixin Promise
        * @private
        */
       function RequestTargetInternals(_requestTarget, _promise, _requestHandlers) {
@@ -1984,12 +2007,24 @@
         this.promise = this._deferred.promise;
     
         Object.defineProperties(this, {
+          /**
+           * @member {?string} RequestTargetInternals#poolId
+           * @readonly
+           */
           poolId: {
             get: get_poolId
           },
+          /**
+           * @member {?string} RequestTargetInternals#type
+           * @readonly
+           */
           type: {
             get: get_type
           },
+          /**
+           * @member {?string} RequestTargetInternals#id
+           * @readonly
+           */
           id: {
             get: get_id
           }
@@ -2001,14 +2036,23 @@
         );
       }
     
+      /**
+       * @private
+       */
       function get_poolId() {
         return this.link.poolId || null;
       }
     
+      /**
+       * @private
+       */
       function get_type() {
         return this.link.type || null;
       }
     
+      /**
+       * @private
+       */
       function get_id() {
         return this.link.id || null;
       }
@@ -2137,10 +2181,7 @@
           //INFO I should not clear children list, since they are pending and requests already sent.
           if (this.status === TargetStatus.RESOLVED) {
             promise = this.sendRequest(RequestTargetCommands.fields.DESTROY, RequestTargetInternals.createRequestPackage(
-              RequestTargetCommands.DESTROY,
-              null,
-              null,
-              this.id
+              RequestTargetCommands.DESTROY, [null, null], this.id
             ));
           } else {
             promise = Promise.resolve();
@@ -2152,6 +2193,12 @@
         return promise;
       }
     
+      /**
+       * @method RequestTargetInternals#then
+       * @param {Function} [resolveHandler]
+       * @param {Function} [rejectHandler]
+       * @returns {Promise}
+       */
       function _then() {
         var child = this.promise.then.apply(this.promise, arguments);
         if (child) {
@@ -2160,6 +2207,11 @@
         return child;
       }
     
+      /**
+       * @method RequestTargetInternals#catch
+       * @param {Function} [rejectHandler]
+       * @returns {Promise}
+       */
       function _catch() {
         var child = this.promise.catch.apply(this.promise, arguments);
         if (child) {
@@ -2168,6 +2220,10 @@
         return child;
       }
     
+      /**
+       * @method RequestTargetInternals#toJSON
+       * @returns {RAWResource}
+       */
       function _toJSON() {
         var data = {};
         data[TARGET_DATA] = {
@@ -2194,13 +2250,24 @@
     
       //----------- static
     
-      function _createRequestPackage(type, cmd, value, targetId) {
-        return {
+      /**
+       * @member {RequestTargetInternals.createRequestPackage}
+       * @param {string} type
+       * @param {Arguments} args
+       * @param {string} targetId
+       * @returns {{type: string, cmd: string, value: *, target: string, args: Arguments}}
+       */
+      function _createRequestPackage(type, args, targetId) {
+        var result = {
           type: type,
-          cmd: cmd,
-          value: value,
+          cmd: args[0], //cmd,
+          value: args[1], //value,
           target: targetId
         };
+        Object.defineProperty(result, 'args', {
+          value: args
+        });
+        return result;
       }
     
       RequestTargetInternals.createRequestPackage = _createRequestPackage;
@@ -2378,6 +2445,7 @@
     
       /**
        * @class DataAccessInterface
+       * @classdesc Facade of Deferred Data Access library, it holds all of public API -- objects like ResourcePool and methods to work with resources.
        * @param {DataAccessInterface.CommandDescriptor[]|Object.<string, Function|DataAccessInterface.CommandDescriptor>} handlers
        * @param {boolean} [proxyEnabled=false]
        * @param {ResourcePoolRegistry} [poolRegistry]
@@ -2459,6 +2527,22 @@
         return this.resourceConverter.toJSON(data);
       }
     
+      function _isOwnResource(resource) {
+        /**
+         * @type {boolean|undefined}
+         */
+        var result;
+        /**
+         * @type {DataAccessInterface.ResourcePool}
+         */
+        var pool;
+        if (isResource(resource)) {
+          pool = this.poolRegistry.get(getResourcePoolId(resource));
+          result = pool && pool.has(getResourceId(resource));
+        }
+        return result;
+      }
+    
       /**
        * @method DataAccessInterface#parse
        * @param {Object|string} data
@@ -2472,6 +2556,14 @@
        * @returns {Object}
        */
       DataAccessInterface.prototype.toJSON = _toJSON;
+    
+      /**
+       * Check if resource belongs to DataAccessInterface instance.
+       * @method DataAccessInterface#isOwnResource
+       * @param {RAWResource|TargetResource|RequestTarget} resource
+       * @returns {Object}
+       */
+      DataAccessInterface.prototype.isOwnResource = _isOwnResource;
     
       //------------------ static
     
@@ -2512,8 +2604,10 @@
       DataAccessInterface.getResourceId = getResourceId;
       DataAccessInterface.getResourcePoolId = getResourcePoolId;
       DataAccessInterface.getResourceType = getResourceType;
+      DataAccessInterface.createForeignResource = createForeignResource;
       DataAccessInterface.isResource = isResource;
       DataAccessInterface.isResourceConvertible = isResourceConvertible;
+      DataAccessInterface.areSameResource = areSameResource;
     
       return DataAccessInterface;
     })();

@@ -10,9 +10,10 @@ var RequestTargetInternals = (function() {
 
   /**
    * @class RequestTargetInternals
-   * @param _requestTarget {RequestTarget}
-   * @param _promise {Promise}
-   * @param _requestHandlers {RequestHandlers}
+   * @param {DataAccessInterface.RequestTarget} _requestTarget
+   * @param {Promise} _promise
+   * @param {RequestHandlers} _requestHandlers
+   * @mixin Promise
    * @private
    */
   function RequestTargetInternals(_requestTarget, _promise, _requestHandlers) {
@@ -29,12 +30,24 @@ var RequestTargetInternals = (function() {
     this.promise = this._deferred.promise;
 
     Object.defineProperties(this, {
+      /**
+       * @member {?string} RequestTargetInternals#poolId
+       * @readonly
+       */
       poolId: {
         get: get_poolId
       },
+      /**
+       * @member {?string} RequestTargetInternals#type
+       * @readonly
+       */
       type: {
         get: get_type
       },
+      /**
+       * @member {?string} RequestTargetInternals#id
+       * @readonly
+       */
       id: {
         get: get_id
       }
@@ -46,14 +59,23 @@ var RequestTargetInternals = (function() {
     );
   }
 
+  /**
+   * @private
+   */
   function get_poolId() {
     return this.link.poolId || null;
   }
 
+  /**
+   * @private
+   */
   function get_type() {
     return this.link.type || null;
   }
 
+  /**
+   * @private
+   */
   function get_id() {
     return this.link.id || null;
   }
@@ -182,10 +204,7 @@ var RequestTargetInternals = (function() {
       //INFO I should not clear children list, since they are pending and requests already sent.
       if (this.status === TargetStatus.RESOLVED) {
         promise = this.sendRequest(RequestTargetCommands.fields.DESTROY, RequestTargetInternals.createRequestPackage(
-          RequestTargetCommands.DESTROY,
-          null,
-          null,
-          this.id
+          RequestTargetCommands.DESTROY, [null, null], this.id
         ));
       } else {
         promise = Promise.resolve();
@@ -197,6 +216,12 @@ var RequestTargetInternals = (function() {
     return promise;
   }
 
+  /**
+   * @method RequestTargetInternals#then
+   * @param {Function} [resolveHandler]
+   * @param {Function} [rejectHandler]
+   * @returns {Promise}
+   */
   function _then() {
     var child = this.promise.then.apply(this.promise, arguments);
     if (child) {
@@ -205,6 +230,11 @@ var RequestTargetInternals = (function() {
     return child;
   }
 
+  /**
+   * @method RequestTargetInternals#catch
+   * @param {Function} [rejectHandler]
+   * @returns {Promise}
+   */
   function _catch() {
     var child = this.promise.catch.apply(this.promise, arguments);
     if (child) {
@@ -213,6 +243,10 @@ var RequestTargetInternals = (function() {
     return child;
   }
 
+  /**
+   * @method RequestTargetInternals#toJSON
+   * @returns {RAWResource}
+   */
   function _toJSON() {
     var data = {};
     data[TARGET_DATA] = {
@@ -239,13 +273,24 @@ var RequestTargetInternals = (function() {
 
   //----------- static
 
-  function _createRequestPackage(type, cmd, value, targetId) {
-    return {
+  /**
+   * @member {RequestTargetInternals.createRequestPackage}
+   * @param {string} type
+   * @param {Arguments} args
+   * @param {string} targetId
+   * @returns {{type: string, cmd: string, value: *, target: string, args: Arguments}}
+   */
+  function _createRequestPackage(type, args, targetId) {
+    var result = {
       type: type,
-      cmd: cmd,
-      value: value,
+      cmd: args[0], //cmd,
+      value: args[1], //value,
       target: targetId
     };
+    Object.defineProperty(result, 'args', {
+      value: args
+    });
+    return result;
   }
 
   RequestTargetInternals.createRequestPackage = _createRequestPackage;

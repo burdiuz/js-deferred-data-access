@@ -146,6 +146,16 @@ function getResourceType(object) {
   return type;
 }
 
+function createForeignResource(type) {
+  var resource = {};
+  resource[TARGET_DATA] = {
+    id: 'foreign-id-' + getId(),
+    type: type || typeof(resource),
+    poolId: 'foreign-poolId-' + getId()
+  };
+  return resource;
+}
+
 /**
  * @method DataAccessInterface.isResource
  * @param object
@@ -167,8 +177,20 @@ function isResource(object) {
 /**
  * @method DataAccessInterface.isResourceConvertible
  * @param data
- * @returns {boolean|*|boolean}
+ * @returns {boolean}
  */
 function isResourceConvertible(data) {
   return isResource(data) || typeof(data) === 'function' || data instanceof IConvertible;
+}
+
+/**
+ * @method DataAccessInterface.isResourceConvertible
+ * @param {RAWResource|TargetResource|RequestTarget} resource1
+ * @param {RAWResource|TargetResource|RequestTarget} resource2
+ * @returns {boolean}
+ */
+function areSameResource(resource1, resource2) {
+  return isResource(resource1) && isResource(resource2) &&
+    getResourceId(resource1) === getResourceId(resource2) &&
+    getResourcePoolId(resource1) === getResourcePoolId(resource2);
 }

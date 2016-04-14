@@ -19,13 +19,14 @@
  * @property {string} cmd Command string
  * @property {*} value Command value
  * @property {string} target Target resource ID that issued command
+ * @property {Arguments} args Non-enumerable property that holds Arguments passed to command handler function. Since its non-enumerable, it will not be processed `JSON.stringify()`.
  */
 
 /**
  * @typedef {Object} RAWResource
  * @property {string} id Id string of registered resource target
- * @property {string} type
- * @property {string} poolId
+ * @property {string} type Resource target value type
+ * @property {string} poolId ResourcePool Id where resource is stored, was registered
  */
 
 /**

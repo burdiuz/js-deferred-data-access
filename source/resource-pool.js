@@ -56,7 +56,6 @@ var ResourcePool = (function() {
    * @param target
    * @param type
    * @returns {TargetResource}
-   * @private
    */
   function _set(target, type) {
     var link = null;
@@ -78,7 +77,7 @@ var ResourcePool = (function() {
   /**
    * @method DataAccessInterface.ResourcePool#has
    * @param target
-   * @returns {*}
+   * @returns {boolean}
    */
   function _has(target) {
     return this[MAP_FIELD].has(target);
