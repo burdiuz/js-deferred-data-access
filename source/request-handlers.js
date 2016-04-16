@@ -7,6 +7,16 @@
  */
 var RequestHandlers = (function() {
 
+  /**
+   * Key for default type for handlers that will be applied to any resource that does not have type-specific handlers registered
+   * @type {string}
+   * @private
+   */
+  var DEFAULT_KEY = '';
+
+  /**
+   * @member {Object} RequestHandlers.Events
+   */
   var RequestHandlersEvents = Object.freeze({
     HANDLERS_UPDATED: 'handlersUpdated'
   });
@@ -17,17 +27,23 @@ var RequestHandlers = (function() {
    * @private
    */
   function RequestHandlers(proxyEnabled) {
-    var _keys = [];
-    var _propertyKeys = [];
+    // named collection of CommandDescriptor lists that may be applied
+    var _properties = {};
     var _descriptors = {};
     var _converter;
 
     proxyEnabled = Boolean(proxyEnabled);
 
     Object.defineProperties(this, {
+      /**
+       * @member {Boolean} RequestHandlers#proxyEnabled
+       */
       proxyEnabled: {
         value: proxyEnabled
       },
+      /**
+       * @member {Boolean} RequestHandlers#available
+       */
       available: {
         get: function() {
           return Boolean(_keys.length);
@@ -39,36 +55,78 @@ var RequestHandlers = (function() {
       _converter = converter;
     }
 
+    /**
+     * @method RequestHandlers#setHandlers
+     * @param {DataAccessInterface.CommandDescriptor[]|Object.<string, Function|DataAccessInterface.CommandDescriptor>} handlers
+     */
     function _setHandlers(handlers) {
-      _descriptors = {};
-      RequestHandlers.filterHandlers(handlers, _descriptors);
-      _keys = Object.getOwnPropertyNames(_descriptors).concat(Object.getOwnPropertySymbols(_descriptors));
-      _propertyKeys = getNonVirtualNames(_descriptors, _keys);
+      _setHandlersByType(DEFAULT_KEY, handlers);
+      for (var name in handlers) {
+        var type = handlers[name];
+        if (type && type.constructor === Object || type instanceof Array) {
+          _setHandlersByType(name, type);
+        }
+      }
       if (proxyEnabled) {
         RequestHandlers.areProxyHandlersAvailable(_descriptors, true);
       }
     }
 
-    function _hasHandler(name) {
-      return _descriptors.hasOwnProperty(name);
+    function _setHandlersByType(type, handlers) {
+      var descrs = {};
+      var props = [];
+      RequestHandlers.filterHandlers(handlers, descrs, props);
+      _descriptors[type] = descrs;
+      _properties[type] = props;
     }
 
-    function _getHandlers() {
-      return _descriptors;
+    /**
+     * @method RequestHandlers#hasHandler
+     * @param {String|Symbol} name Property name of CommandDescriptor
+     * @param {String} [type] Resource type for type-specific handlers
+     * @returns {boolean}
+     */
+    function _hasHandler(name, type) {
+      return (_descriptors[type] && _descriptors[type].hasOwnProperty(name)) ||
+        (_descriptors[DEFAULT_KEY] && _descriptors[DEFAULT_KEY].hasOwnProperty(name));
     }
 
-    function _getHandlerNames() {
-      return _keys.slice();
+    /**
+     * IMPORTANT: Returns original list of CommandDescriptors, changing it may cause unexpected result with newly decorated resources.
+     * @method RequestHandlers#getHandlers
+     * @param {String} [type]
+     * @returns {CommandDescriptor[]|null}
+     * @private
+     */
+    function _getHandlers(type) {
+      var descrs = _descriptors[type || DEFAULT_KEY];
+      if (!descrs) {
+        descrs = _descriptors[DEFAULT_KEY];
+      }
+      return descrs || null;
     }
 
-    function _getPropertyNames() {
-      return _propertyKeys.slice();
+    /**
+     * @method RequestHandlers#getHandler
+     * @param name
+     * @param {String} [type]
+     * @returns {*|null}
+     * @private
+     */
+    function _getHandler(name, type) {
+      var handler = (_descriptors[type] && _descriptors[type][name]) || (_descriptors[DEFAULT_KEY] && _descriptors[DEFAULT_KEY][name]);
+      return handler || null;
     }
 
-    function _getHandler(name) {
-      return _descriptors[name] || null;
-    }
-
+    /**
+     * @method RequestHandlers#handle
+     * @param {DataAccessInterface.RequestTarget} parentRequest
+     * @param {String|Symbol} name
+     * @param {CommandDataPack} pack
+     * @param {DataAccessInterface.Deferred} deferred
+     * @param {DataAccessInterface.RequestTarget} [resultRequest]
+     * @private
+     */
     function _handle(parentRequest, name, pack, deferred, resultRequest) {
       var list = _converter ? _converter.lookupForPending(pack.value) : null;
       if (list && list.length) {
@@ -81,11 +139,23 @@ var RequestHandlers = (function() {
       }
     }
 
+    /**
+     *
+     * @param {DataAccessInterface.RequestTarget} parentRequest
+     * @param {String|Symbol} name
+     * @param {CommandDataPack} data
+     * @param {DataAccessInterface.Deferred} deferred
+     * @param {DataAccessInterface.RequestTarget} [resultRequest]
+     * @private
+     */
     function _handleImmediately(parentRequest, name, data, deferred, resultRequest) {
-      var handler = _getHandler(name);
+      /**
+       * @type {DataAccessInterface.CommandDescriptor|null}
+       */
+      var handler = _getHandler(name, getResourceType(parentRequest));
       if (handler instanceof CommandDescriptor) {
         //INFO result should be applied to deferred.resolve() or deferred.reject()
-        handler.handle(parentRequest, data, deferred, resultRequest);
+        handler.handler(parentRequest, data, deferred, resultRequest);
       } else {
         throw new Error('Command descriptor for "' + name + '" was not found.');
       }
@@ -93,77 +163,38 @@ var RequestHandlers = (function() {
     }
 
     this.setConverter = _setConverter;
-    /**
-     * @param {DataAccessInterface.CommandDescriptor[]|Object.<string, Function|DataAccessInterface.CommandDescriptor>} handlers
-     */
     this.setHandlers = _setHandlers;
     this.hasHandler = _hasHandler;
     this.getHandlers = _getHandlers;
-    this.getHandlerNames = _getHandlerNames;
-    this.getPropertyNames = _getPropertyNames;
     this.getHandler = _getHandler;
     this.handle = _handle;
-    this[Symbol.iterator] = function() {
-      return new RequestHandlersIterator(this.getHandlers(), this.getPropertyNames());
-    };
-  }
-
-  function RequestHandlersIterator(_data, _keys) {
-    var _length = _keys.length;
-    var _index = -1;
-
-    function _next() {
-      var result;
-      if (++_index >= _length) {
-        result = {done: true};
-      } else {
-        result = {value: _data[_keys[_index]], done: false};
-      }
-      return result;
-    }
-
-    this.next = _next;
-    this[Symbol.iterator] = function() {
-      return this;
-    }.bind(this);
   }
 
   //------------------- static
-
-  function getNonVirtualNames(descriptors, list) {
-    var props = [];
-    var length = list.length;
-    for (var index = 0; index < length; index++) {
-      var name = list[index];
-      if (!descriptors[name].virtual) {
-        props.push(name);
-      }
-    }
-    return props;
-  }
 
   var RequestHandlers_filterHandlers = (function() {
     /**
      * @param {Array} handlers
      * @param {Object} descriptors
-     * @returns {void}
+     * @private
      */
-    function filterArray(handlers, descriptors) {
+    function filterArray(handlers, descriptors, properties) {
       var length = handlers.length;
       for (var index = 0; index < length; index++) {
         var value = handlers[index];
         if (value instanceof CommandDescriptor) {
-          applyDescriptor(value, descriptors);
+          applyDescriptor(value, descriptors, properties);
         }
       }
     }
 
     /**
      * @param {Object} handlers
-     * @param {Object} descriptors
-     * @returns {void}
+     * @param {Object.<string, DataAccessInterface.CommandDescriptor>} descriptors
+     * @param {Array.<number, DataAccessInterface.CommandDescriptor>} properties
+     * @private
      */
-    function filterHash(handlers, descriptors) {
+    function filterHash(handlers, descriptors, properties) {
       if (!handlers) return;
       var keys = Object.getOwnPropertyNames(handlers).concat(Object.getOwnPropertySymbols(handlers));
       var length = keys.length;
@@ -174,17 +205,19 @@ var RequestHandlers = (function() {
           value = CommandDescriptor.create(name, value);
         }
         if (value instanceof CommandDescriptor) {
-          applyDescriptor(value, descriptors);
+          applyDescriptor(value, descriptors, properties);
         }
       }
     }
 
     /**
      * Checks for CommandDescriptor uniqueness and reserved words usage.
-     * @param {CommandDescriptor} descriptor
-     * @param descriptors
+     * @param {DataAccessInterface.CommandDescriptor} descriptor
+     * @param {Object.<string, DataAccessInterface.CommandDescriptor>} descriptors
+     * @param {Array.<number, DataAccessInterface.CommandDescriptor>} properties
+     * @private
      */
-    function applyDescriptor(descriptor, descriptors) {
+    function applyDescriptor(descriptor, descriptors, properties) {
       var name = descriptor.name;
       if (name in Reserved.names) {
         throw new Error('Name "' + name + '" is reserved and cannot be used in descriptor.');
@@ -193,19 +226,22 @@ var RequestHandlers = (function() {
         throw new Error('Field names should be unique, "' + String(name) + '" field has duplicates.');
       }
       descriptors[name] = descriptor;
+      if (!descriptor.virtual) {
+        properties.push(descriptor);
+      }
     }
 
     /**
-     *
+     * @method RequestHandlers.filterHandlers
      * @param {Array|Object} handlers
-     * @param {Object<String, CommandDescriptor>} descriptors
-     * @returns {void}
+     * @param {Object.<string, DataAccessInterface.CommandDescriptor>} descriptors
+     * @param {Array.<number, DataAccessInterface.CommandDescriptor>} properties
      */
-    function RequestHandlers_filterHandlers(handlers, descriptors) {
+    function RequestHandlers_filterHandlers(handlers, descriptors, properties) {
       if (handlers instanceof Array) {
-        filterArray(handlers, descriptors);
+        filterArray(handlers, descriptors, properties);
       } else {
-        filterHash(handlers, descriptors);
+        filterHash(handlers, descriptors, properties);
       }
     }
 
@@ -213,12 +249,21 @@ var RequestHandlers = (function() {
   })();
 
   /**
+   * @member RequestHandlers.create
+   * @param {Boolean} proxyEnabled
    * @returns {RequestHandlers}
    */
   function RequestHandlers_create(proxyEnabled) {
     return new RequestHandlers(proxyEnabled);
   }
 
+  /**
+   * @method RequestHandlers.areProxyHandlersAvailable
+   * @param handlers
+   * @param throwError
+   * @returns {boolean}
+   * @constructor
+   */
   function RequestHandlers_areProxyHandlersAvailable(handlers, throwError) {
     var result = true;
     var list = ProxyCommands.required;
@@ -240,5 +285,4 @@ var RequestHandlers = (function() {
   RequestHandlers.create = RequestHandlers_create;
   RequestHandlers.Events = RequestHandlersEvents;
   return RequestHandlers;
-})
-();
+})();

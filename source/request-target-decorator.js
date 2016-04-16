@@ -26,7 +26,7 @@ var RequestTargetDecorator = (function() {
        request[descriptor.name] = _getMember(descriptor.name, descriptor.type);
        }
        */
-      var iterator = _handlers[Symbol.iterator]();
+      var iterator = _handlers.getHandlers(getResourceType(request));
       var result;
       while (!(result = iterator.next()).done) {
         var descriptor = result.value;

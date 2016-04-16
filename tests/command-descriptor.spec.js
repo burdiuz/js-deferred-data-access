@@ -1,42 +1,22 @@
-describe('CommandDescriptor', function() {
+describe.only('CommandDescriptor', function() {
 
   describe('When created', function() {
 
     describe('With all arguments', function() {
-      var descriptor, isTemporary, handle, cacheable, virtual;
+      var descriptor, handler;
       beforeEach(function() {
-        cacheable = 1;
-        virtual = 1;
-        handle = function() {
+        handler = function() {
         };
-        isTemporary = function() {
-        };
-        descriptor = new CommandDescriptor('command', handle, 'name', isTemporary, cacheable, virtual);
+        descriptor = new CommandDescriptor('command', handler, 'name');
       });
 
       it('should store arguments as fields', function() {
         expect(descriptor.name).to.be.equal('name');
         expect(descriptor.type).to.be.equal('command');
-        expect(descriptor.isTemporary).to.be.equal(isTemporary);
-        expect(descriptor.handle).to.be.equal(handle);
-        expect(descriptor.cacheable).to.be.equal(Boolean(cacheable));
-        expect(descriptor.virtual).to.be.equal(Boolean(virtual));
-      });
-    });
-
-    describe('Without isTemplate', function() {
-      var descriptor;
-      beforeEach(function() {
-        descriptor = new CommandDescriptor('name', function() {
-        }, 'command');
-      });
-      it('should contain default isTemporary', function() {
-        expect(descriptor.isTemporary).to.be.a('function');
-      });
-      it('isTemporary should return false by default', function() {
-        expect(descriptor.isTemporary(__createRequestTarget())).to.be.false;
-        expect(descriptor.isTemporary({})).to.be.false;
-        expect(descriptor.isTemporary()).to.be.false;
+        expect(descriptor.handler).to.be.equal(handler);
+        expect(descriptor.isTemporary).to.be.null;
+        expect(descriptor.cacheable).to.be.false;
+        expect(descriptor.virtual).to.be.false;
       });
     });
 
@@ -71,7 +51,7 @@ describe('CommandDescriptor', function() {
         item.type = null;
       }).to.throw(Error);
       expect(function() {
-        delete item.handle;
+        delete item.handler;
       }).to.throw(Error);
     });
   });
@@ -79,14 +59,14 @@ describe('CommandDescriptor', function() {
 });
 
 describe('descriptorGeneratorFactory()', function() {
-  var factory, item, handle, isTemporary;
+  var factory, item, handler, isTemporary;
   beforeEach(function() {
-    handle = function() {
+    handler = function() {
     };
     isTemporary = function() {
     };
     factory = descriptorGeneratorFactory('command', 'name');
-    item = factory(handle, isTemporary);
+    item = factory(handler, null, isTemporary);
   });
   it('should create new instance of CommandDescriptor', function() {
     expect(item).to.be.an.instanceof(CommandDescriptor);
@@ -96,25 +76,25 @@ describe('descriptorGeneratorFactory()', function() {
   it('created descriptor should have all properties set', function() {
     expect(item.name).to.be.equal('name');
     expect(item.type).to.be.equal('command');
-    expect(item.handle).to.be.equal(handle);
+    expect(item.handler).to.be.equal(handler);
     expect(item.isTemporary).to.be.equal(isTemporary);
   });
 });
 
 describe('RequestTargetCommands', function() {
   describe('createDESTROYDescriptor()', function() {
-    var handle, descriptor;
+    var handler, descriptor;
     beforeEach(function() {
-      handle = function() {
+      handler = function() {
       };
-      descriptor = RequestTargetCommands.createDESTROYDescriptor(handle);
+      descriptor = RequestTargetCommands.createDESTROYDescriptor(handler);
     });
     it('should has DESTROY name/type', function(){
       expect(descriptor.name).to.be.equal(RequestTargetCommands.fields.DESTROY);
       expect(descriptor.type).to.be.equal(RequestTargetCommands.DESTROY);
     });
     it('should store handler function ', function(){
-      expect(descriptor.handle).to.be.equal(handle);
+      expect(descriptor.handler).to.be.equal(handler);
     });
     it('should create not cacheable descriptor', function(){
       expect(descriptor.cacheable).to.be.false;
@@ -145,13 +125,13 @@ describe('ProxyCommands', function() {
   });
 
   describe('createGETDescriptor()', function() {
-    var descriptor, handle, isTemporary;
+    var descriptor, handler, isTemporary;
     beforeEach(function() {
-      handle = function() {
+      handler = function() {
       };
       isTemporary = function() {
       };
-      descriptor = ProxyCommands.createGETDescriptor(handle, isTemporary);
+      descriptor = ProxyCommands.createGETDescriptor(handler, null, isTemporary);
     });
     it('should contain Proxy GET property name', function() {
       expect(descriptor.name).to.be.equal(ProxyCommands.fields.get);
@@ -160,23 +140,23 @@ describe('ProxyCommands', function() {
       expect(descriptor.type).to.be.equal(ProxyCommands.GET);
     });
     it('should contain handler function', function() {
-      expect(descriptor.handle).to.be.equal(handle);
+      expect(descriptor.handler).to.be.equal(handler);
     });
     it('should not be virtual', function() {
       expect(descriptor.virtual).to.be.false;
     });
     it('should contain isTemporary function', function() {
-      expect(descriptor.isTemporary).to.be.equal(isTemporary);
+      expect(descriptor.isTemporary).to.be.null;
     });
     it('should be cacheable', function() {
-      expect(descriptor.isTemporary).to.be.equal(isTemporary);
+      expect(descriptor.cacheable).to.be.true;
     });
 
     describe('When target is Array', function() {
       var target;
       beforeEach(function() {
         target = [];
-        ProxyCommands.createGETDescriptor(handle, isTemporary, target);
+        ProxyCommands.createGETDescriptor(handler, target, isTemporary);
       });
       it('should add descriptor to Array', function() {
         expect(target).to.have.length(1);
@@ -188,7 +168,7 @@ describe('ProxyCommands', function() {
       var target;
       beforeEach(function() {
         target = {};
-        ProxyCommands.createGETDescriptor(handle, isTemporary, target);
+        ProxyCommands.createGETDescriptor(handler, target, isTemporary);
       });
       it('should add descriptor to Array', function() {
         expect(target[ProxyCommands.fields.get]).to.be.an.instanceof(CommandDescriptor);
@@ -198,13 +178,13 @@ describe('ProxyCommands', function() {
   });
 
   describe('createSETDescriptor()', function() {
-    var descriptor, handle, isTemporary;
+    var descriptor, handler, isTemporary;
     beforeEach(function() {
-      handle = function() {
+      handler = function() {
       };
       isTemporary = function() {
       };
-      descriptor = ProxyCommands.createGETDescriptor(handle, isTemporary);
+      descriptor = ProxyCommands.createGETDescriptor(handler, null, isTemporary);
     });
     it('should contain Proxy SET property name', function() {
       expect(descriptor.name).to.be.equal(ProxyCommands.fields.get);
@@ -213,10 +193,10 @@ describe('ProxyCommands', function() {
       expect(descriptor.type).to.be.equal(ProxyCommands.GET);
     });
     it('should contain handler function', function() {
-      expect(descriptor.handle).to.be.equal(handle);
+      expect(descriptor.handler).to.be.equal(handler);
     });
     it('should contain isTemporary function', function() {
-      expect(descriptor.isTemporary).to.be.equal(isTemporary);
+      expect(descriptor.isTemporary).to.be.null;
     });
     it('should not be virtual', function() {
       expect(descriptor.virtual).to.be.false;
@@ -224,13 +204,13 @@ describe('ProxyCommands', function() {
   });
 
   describe('createAPPLYDescriptor()', function() {
-    var descriptor, handle, isTemporary;
+    var descriptor, handler, isTemporary;
     beforeEach(function() {
-      handle = function() {
+      handler = function() {
       };
       isTemporary = function() {
       };
-      descriptor = ProxyCommands.createGETDescriptor(handle, isTemporary);
+      descriptor = ProxyCommands.createGETDescriptor(handler, isTemporary);
     });
     it('should contain Proxy APPLY property name', function() {
       expect(descriptor.name).to.be.equal(ProxyCommands.fields.get);
@@ -239,7 +219,7 @@ describe('ProxyCommands', function() {
       expect(descriptor.type).to.be.equal(ProxyCommands.GET);
     });
     it('should contain handler function', function() {
-      expect(descriptor.handle).to.be.equal(handle);
+      expect(descriptor.handler).to.be.equal(handler);
     });
     it('should contain isTemporary function', function() {
       expect(descriptor.isTemporary).to.be.equal(isTemporary);
@@ -250,13 +230,13 @@ describe('ProxyCommands', function() {
   });
 
   describe('createDescriptors()', function() {
-    var target, getHandle, setHandle, applyHandle, isTemporary;
+    var target, getHandler, setHandler, applyHandler, isTemporary;
     beforeEach(function() {
-      getHandle = function() {
+      getHandler = function() {
       };
-      setHandle = function() {
+      setHandler = function() {
       };
-      applyHandle = function() {
+      applyHandler = function() {
       };
       isTemporary = function() {
       };
@@ -267,10 +247,10 @@ describe('ProxyCommands', function() {
       beforeEach(function() {
         cacheable = true;
         target = ProxyCommands.createDescriptors({
-          get: getHandle,
-          set: setHandle,
-          apply: applyHandle
-        }, isTemporary, null, cacheable);
+          get: getHandler,
+          set: setHandler,
+          apply: applyHandler
+        }, null, isTemporary, cacheable);
       });
       it('should create target object', function() {
         expect(target).to.be.an('object');
@@ -281,9 +261,9 @@ describe('ProxyCommands', function() {
         expect(target[ProxyCommands.fields.apply]).to.be.an.instanceof(CommandDescriptor);
       });
       it('should assign handlers', function() {
-        expect(target[ProxyCommands.fields.get].handle).to.be.equal(getHandle);
-        expect(target[ProxyCommands.fields.set].handle).to.be.equal(setHandle);
-        expect(target[ProxyCommands.fields.apply].handle).to.be.equal(applyHandle);
+        expect(target[ProxyCommands.fields.get].handle).to.be.equal(getHandler);
+        expect(target[ProxyCommands.fields.set].handle).to.be.equal(setHandler);
+        expect(target[ProxyCommands.fields.apply].handle).to.be.equal(applyHandler);
       });
       it('should assign isTemporary to all descriptors', function() {
         expect(target[ProxyCommands.fields.get].isTemporary).to.be.equal(isTemporary);
@@ -301,10 +281,10 @@ describe('ProxyCommands', function() {
       beforeEach(function() {
         target = [];
         ProxyCommands.createDescriptors({
-          get: getHandle,
-          deleteProperty: setHandle,
-          set: applyHandle
-        }, isTemporary, target);
+          get: getHandler,
+          deleteProperty: setHandler,
+          set: applyHandler
+        }, target, isTemporary);
       });
       it('should have all descriptors added to target', function() {
         expect(target).to.have.length(3);
@@ -316,10 +296,10 @@ describe('ProxyCommands', function() {
       beforeEach(function() {
         target = {};
         ProxyCommands.createDescriptors({
-          get: getHandle,
-          set: setHandle,
-          apply: applyHandle
-        }, isTemporary, target);
+          get: getHandler,
+          set: setHandler,
+          apply: applyHandler
+        }, target, isTemporary);
       });
       it('should have all descriptors added to target', function() {
         expect(target[ProxyCommands.fields.get]).to.be.an.instanceof(CommandDescriptor);

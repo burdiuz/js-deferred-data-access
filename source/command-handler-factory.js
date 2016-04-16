@@ -36,10 +36,16 @@ var CommandHandlerFactory = (function() {
           result = request.child;
           if (request.deferred) {
             promise = this[TARGET_INTERNALS].sendRequest(propertyName, pack, request.deferred, result);
-            if (!promise) {
+            if (promise) {
+              if (isTemporary) {
+                //FIXME isTemporary must be called before `result` was resolved
+                //FIXME remove default `isTemporary`, if not defined just skip
+                checkState(promise, isTemporary, this, result, pack);
+              }
+            }else{
               result = null;
+              promise = Promise.reject(new Error('Initial request failed and didn\'t result in promise.'));
             }
-            promise = checkState(promise, isTemporary, this, result, pack);
           }
         } else {
           promise = Promise.reject(new Error('Target object is not a resource, so cannot be used for calls.'));
@@ -71,10 +77,7 @@ var CommandHandlerFactory = (function() {
         promise.then(function(data) {
           RequestTarget.setTemporary(childRequest, Boolean(isTemporary(parentRequest, childRequest, pack, data)));
         });
-      } else {
-        promise = Promise.reject(new Error('Initial request failed and didn\'t result in promise.'));
       }
-      return promise;
     }
 
     function _setFactory(factory) {

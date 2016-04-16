@@ -1,5 +1,25 @@
 # Deferred Data Access
 
+## TODOs
+introduce type-specific handlers
+1. add possibility to define child object or list of handlers when creating DAI
+```javascript
+DataAccessInterface.create({
+  defaultHandler: function(){},
+  myClass1: {
+    cmdHandler: function(){}
+  },
+  myClass1: [
+    CommandDescriptor.create(...)
+  ]
+});
+```
+2. add type argument to RequestHandlers, decorator, so type-specific handlers will be stored/applied
+3. type specific handlers always should fallback to defaults if not exists
+4. when applying handlers first should be applied default and then type-specific, default might be overwritten in case of name collision
+5. default handlers applied on RequestType creation and type-specific when its resolved.
+6. introduce CommandDescriptor.resourceType for supposed resource type. Can be string or function that results in a string.  
+
 [![Coverage Status](https://coveralls.io/repos/github/burdiuz/js-deferred-data-access/badge.svg?branch=master)](https://coveralls.io/github/burdiuz/js-deferred-data-access?branch=master)
 [![Build Status](https://travis-ci.org/burdiuz/js-deferred-data-access.svg?branch=master)](https://travis-ci.org/burdiuz/js-deferred-data-access)
 
