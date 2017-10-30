@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Deferred Data Access Example</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"
+        integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+  <link rel="stylesheet" href="chat.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.2/jquery.min.js"></script>
+  <script src="../dist/deferred-data-access.standalone.js"></script>
+  <script src="chat-ui.js"></script>
+  <script type="text/javascript">
+    var api = DataAccessInterface.create({});
+  </script>
+</head>
+<body>
+<div class="container">
+  <div class="row">
+    <div class="col-xs-12">
+      <h1>Chat built with <a href="https://github.com/burdiuz/js-websocket-server">WebSocket Server</a></h1>
+    </div>
+  </div>
+  <div class="row chat">
+    <div class="col-xs-2 panel participants-panel">
+    </div>
+    <div class="col-xs-9 chat">
+      <div class="row chat">
+        <div class="col-xs-9 panel chat-panel">
+
+        </div>
+        <div class="col-xs-9 panel input-panel">
+          <div class="row">
+            <div class="col-xs-4 selected-participant">
+            </div>
+            <div class="col-xs-8">
+              <input type="text" class="form-control message-input">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

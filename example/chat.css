@@ -1,0 +1,39 @@
+
+.panel {
+    border: 1px solid #eee;
+    height: 100%;
+    margin: 5px;
+}
+
+.chat {
+    height: 600px;
+}
+
+.participants-panel {
+    padding: 10px 5px;
+    overflow-y: auto;
+}
+
+.participants-panel .participant {
+    cursor: pointer;
+    font-size: 20px;
+    line-height: 36px;
+}
+
+.chat-panel {
+    height: calc(100% - 50px - 10px);
+}
+
+.message {
+
+}
+
+.input-panel {
+    padding: 7px;
+    height: 50px;
+}
+
+.input-panel .selected-participant {
+    line-height: 34px;
+    font-size: 18px;
+}

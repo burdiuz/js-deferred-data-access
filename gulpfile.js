@@ -40,26 +40,4 @@ gulp.task('build-nowrap', function(callback) {
     });
 });
 
-gulp.task('build', ['build-nowrap'], function() {
-  gulp.src('source/deferred-data-access-umd.js')
-    .pipe(include())
-    .pipe(rename('deferred-data-access.js'))
-    .pipe(gulp.dest('dist'))
-    .pipe(uglify())
-    .pipe(rename({suffix: '.min'}))
-    .pipe(gulp.dest('dist'));
-
-});
-
-gulp.task('build-standalone', ['build-nowrap'], function() {
-  gulp.src('source/deferred-data-access-umd.standalone.js')
-    .pipe(include())
-    .pipe(rename('deferred-data-access.standalone.js'))
-    .pipe(gulp.dest('dist'))
-    .pipe(uglify())
-    .pipe(rename({suffix: '.min'}))
-    .pipe(gulp.dest('dist'));
-
-});
-
-gulp.task('default', ['build-nowrap', 'build', 'build-standalone']);
+gulp.task('default', ['doc-md']);
