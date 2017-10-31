@@ -1,10 +1,11 @@
-'use strict';
-
-import CommandDescriptor, { createCommandDescriptor } from './CommandDescriptor';
+import CommandDescriptor, {
+  createCommandDescriptor,
+} from './CommandDescriptor';
 import CommandHandlerFactory from './CommandHandlerFactory';
 import ProxyCommands, {
   ProxyCommandNames,
   ProxyCommandFields,
+  createDescriptors,
 } from './ProxyCommands';
 import Reserved from './Reserved';
 import RequestTargetCommands, {
@@ -15,6 +16,7 @@ import RequestTargetCommands, {
 export {
   CommandDescriptor,
   createCommandDescriptor,
+  createDescriptors,
   CommandHandlerFactory,
   ProxyCommands,
   ProxyCommandNames,

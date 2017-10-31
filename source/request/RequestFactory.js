@@ -1,7 +1,5 @@
-'use strict';
-
 import { createRequestTargetDecorator } from './RequestTargetDecorator';
-import RequestTarget from './RequestTarget';
+import { createRequestTarget } from './RequestTarget';
 
 export const FACTORY_DECORATOR_FIELD = Symbol('request.factory::decorator');
 export const FACTORY_HANDLERS_FIELD = Symbol('request.factory::handlers');
@@ -17,29 +15,18 @@ class RequestFactory {
    };
    }
    */
-  /**
-   * @class RequestFactory
-   * @param handlers
-   * @param {ICacheImpl} _cacheImpl
-   * @private
-   */
   constructor(handlers, cacheImpl = null, noInit = false) {
     if (noInit) {
       return;
     }
 
+    this.cache = cacheImpl;
     this[FACTORY_HANDLERS_FIELD] = handlers;
     this[FACTORY_DECORATOR_FIELD] = createRequestTargetDecorator(this, handlers);
-
-    Object.defineProperties(this, {
-      cache: {
-        value: cacheImpl || null
-      }
-    });
   }
 
   create(promise) {
-    var request = RequestTarget.create(promise, this[FACTORY_HANDLERS_FIELD]);
+    const request = createRequestTarget(promise, this[FACTORY_HANDLERS_FIELD]);
     if (this[FACTORY_HANDLERS_FIELD].available) {
       this[FACTORY_DECORATOR_FIELD].apply(request);
     }
@@ -61,6 +48,8 @@ class RequestFactory {
 
 }
 
-export const createRequestFactory = (handlers, cacheImpl) => new RequestFactory(handlers, cacheImpl);
+export const createRequestFactory = (handlers, cacheImpl) => (
+  new RequestFactory(handlers, cacheImpl)
+);
 
 export default RequestFactory;

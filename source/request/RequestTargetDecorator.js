@@ -1,5 +1,3 @@
-'use strict';
-
 import CommandHandlerFactory from '../commands/CommandHandlerFactory';
 import { getResourceType } from '../resource';
 
@@ -40,9 +38,9 @@ class RequestTargetDecorator {
   }
 }
 
-export const createRequestTargetDecorator = (factory, handlers) => {
-  return new RequestTargetDecorator(factory, handlers);
-};
+export const createRequestTargetDecorator = (factory, handlers) => (
+  new RequestTargetDecorator(factory, handlers)
+);
 
 export default RequestTargetDecorator;
 

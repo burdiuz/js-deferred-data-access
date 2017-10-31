@@ -1,6 +1,5 @@
-'use strict';
 import EventDispatcher from 'event-dispatcher';
-import { getId, isResource } from '../core';
+import { getId, isResource } from '../utils';
 import { createTargetResource } from './TargetResource';
 
 export const ResourcePoolEvents = Object.freeze({
@@ -8,11 +7,27 @@ export const ResourcePoolEvents = Object.freeze({
   RESOURCE_REMOVED: 'resourceRemoved',
   POOL_CLEAR: 'poolClear',
   POOL_CLEARED: 'poolCleared',
-  POOL_DESTROYED: 'poolDestroyed'
+  POOL_DESTROYED: 'poolDestroyed',
 });
 
 const MAP_FIELD = Symbol('ResourcePool::map');
+
 let validTargets = {};
+
+export const isValidTarget = (target) => (
+  !isResource(target)
+  && Boolean(validTargets[typeof target])
+);
+
+export const setValidTargets = (list) => {
+  validTargets = {};
+  const { length } = list;
+  for (let index = 0; index < length; index++) {
+    validTargets[list[index]] = true;
+  }
+};
+
+export const getDefaultValidTargets = () => ['object', 'function'];
 
 class ResourcePool extends EventDispatcher {
   [MAP_FIELD] = new Map();
@@ -27,12 +42,12 @@ class ResourcePool extends EventDispatcher {
   }
 
   set(target, type) {
-    var link = null;
+    let link = null;
     if (isValidTarget(target)) {
       if (this[MAP_FIELD].has(target)) {
         link = this[MAP_FIELD].get(target);
       } else {
-        link = createTargetResource(this, target, type || typeof(target));
+        link = createTargetResource(this, target, type || typeof target);
         this[MAP_FIELD].set(link.id, link);
         this[MAP_FIELD].set(target, link);
         if (this.hasEventListener(ResourcePoolEvents.RESOURCE_ADDED)) {
@@ -69,9 +84,9 @@ class ResourcePool extends EventDispatcher {
     }
     let key;
     const keys = this[MAP_FIELD].keys();
-    //FIXME update to for...of loop when it comes to browsers
+    // FIXME update to for...of loop when it comes to browsers
     while (!(key = keys.next()).done) {
-      if (typeof(key.value) === 'string') {
+      if (typeof key.value === 'string') {
         const link = this[MAP_FIELD].get(key.value);
         link.destroy();
       }
@@ -97,25 +112,7 @@ class ResourcePool extends EventDispatcher {
   }
 }
 
-export const isValidTarget = (target) => {
-  return !isResource(target) && Boolean(validTargets[typeof(target)]);
-};
-
-export const setValidTargets = (list) => {
-  validTargets = {};
-  const length = list.length;
-  for (let index = 0; index < length; index++) {
-    validTargets[list[index]] = true;
-  }
-};
-
-export const getDefaultValidTargets = () => {
-  return ['object', 'function'];
-};
-
-export const create = () => {
-  return new ResourcePool();
-};
+export const createResourcePool = () => new ResourcePool();
 
 setValidTargets(getDefaultValidTargets());
 

@@ -1,6 +1,6 @@
-'use strict';
-import { TARGET_INTERNALS, TARGET_DATA } from '../core';
-import { createRequestPackage } from '../request/RequestTargetInternals';
+import { createDeferred, TARGET_INTERNALS } from '../utils';
+import { createRequestPackage } from '../request';
+import { setTemporary } from '../request/RequestTarget';
 
 const createCommandHandlerFor = (
   factoryWrapper,
@@ -11,11 +11,15 @@ const createCommandHandlerFor = (
 ) => {
   const { factory, checkState, getChildRequest } = factoryWrapper;
 
-  function commandHandler(command, value) {
+  function commandHandler(command, value, ...args) {
     let result;
     let promise;
     if (this[TARGET_INTERNALS]) {
-      const pack = createRequestPackage(commandType, arguments, this[TARGET_INTERNALS].id);
+      const pack = createRequestPackage(
+        commandType,
+        [command, value, ...args],
+        this[TARGET_INTERNALS].id,
+      );
       // FIXME Explicitly pass scope
       const request = getChildRequest(propertyName, pack, cacheable);
       result = request.child;
@@ -23,8 +27,8 @@ const createCommandHandlerFor = (
         promise = this[TARGET_INTERNALS].sendRequest(propertyName, pack, request.deferred, result);
         if (promise) {
           if (isTemporary) {
-            //FIXME isTemporary must be called before `result` was resolved
-            //FIXME remove default `isTemporary`, if not defined just skip
+            // FIXME isTemporary must be called before `result` was resolved
+            // FIXME remove default `isTemporary`, if not defined just skip
             checkState(promise, isTemporary, this, result, pack);
           }
         } else {
@@ -63,7 +67,7 @@ class CommandHandlerFactory {
           descriptor.name,
           descriptor.type,
           descriptor.isTemporary,
-          descriptor.cacheable
+          descriptor.cacheable,
         ),
       );
     }
@@ -75,10 +79,13 @@ class CommandHandlerFactory {
   }
 
   getChildRequest = (propertyName, pack, cacheable) => {
-    let child, deferred;
+    let child;
+    let deferred;
+
     if (cacheable) {
       child = this.factory.getCached(propertyName, pack);
     }
+
     if (!child) {
       deferred = createDeferred();
       if (cacheable) {
@@ -87,14 +94,14 @@ class CommandHandlerFactory {
         child = this.factory.create(deferred.promise, propertyName, pack);
       }
     }
-    return { child: child, deferred: deferred };
+    return { child, deferred };
   };
 
   checkState = (promise, isTemporaryFn, parentRequest, childRequest, pack) => {
     if (promise) {
       promise.then((data) => {
         const isTemporary = Boolean(isTemporaryFn(parentRequest, childRequest, pack, data));
-        RequestTarget.setTemporary(childRequest, isTemporary);
+        setTemporary(childRequest, isTemporary);
       });
     }
   };

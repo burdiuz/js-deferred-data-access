@@ -1,93 +1,104 @@
-describe('ResourcePool', function() {
+import { TARGET_DATA } from '../utils';
+import ResourcePool from './ResourcePool';
+import TargetResource from './TargetResource';
+
+describe('ResourcePool', () => {
   /**
    * @type {ResourcePool}
    */
-  var pool, target1, target2, resource1, resource2;
-  var sandbox;
-  beforeEach(function() {
+  let pool,
+    target1,
+    target2,
+    resource1,
+    resource2;
+  let sandbox;
+  beforeEach(() => {
     sandbox = sinon.sandbox.create();
     pool = new ResourcePool();
     resource1 = pool.set(target1 = {});
     resource2 = pool.set(target2 = {});
   });
 
-  afterEach(function() {
+  afterEach(() => {
     sandbox.restore();
   });
 
-  describe('When created', function() {
-    it('should have own ID', function() {
+  describe('When created', () => {
+    it('should have own ID', () => {
       expect(pool.id).to.be.a('string');
     });
-    it('should be active', function() {
+    it('should be active', () => {
       expect(pool.isActive()).to.be.true;
     });
   });
 
-  describe('When adding target', function() {
-    var target = {}, result;
+  describe('When adding target', () => {
+    let target = {},
+      result;
 
-    describe('When adding new', function() {
-      var listener;
-      beforeEach(function() {
+    describe('When adding new', () => {
+      let listener;
+      beforeEach(() => {
         listener = sandbox.spy();
         pool.addEventListener(ResourcePool.Events.RESOURCE_ADDED, listener);
         result = pool.set(target);
       });
 
-      it('should return instance of TargetResource', function() {
+      it('should return instance of TargetResource', () => {
         expect(result).to.be.an.instanceof(TargetResource);
       });
 
-      it('should fire event "' + ResourcePool.Events.RESOURCE_ADDED + '"', function() {
+      it(`should fire event "${ResourcePool.Events.RESOURCE_ADDED}"`, () => {
         expect(listener).to.be.calledOnce;
       });
 
-      it('should fire event with resource target data', function() {
-        var data = listener.getCall(0).args[0].data;
+      it('should fire event with resource target data', () => {
+        const data = listener.getCall(0).args[0].data;
         expect(data).to.be.equal(result);
       });
 
-      describe('When adding with custom type', function() {
-        var target, type, resource;
-        beforeEach(function() {
+      describe('When adding with custom type', () => {
+        let target,
+          type,
+          resource;
+        beforeEach(() => {
           target = {};
           type = 'target-type';
           resource = pool.set(target, type);
         });
-        it('should keep custom target type', function() {
+        it('should keep custom target type', () => {
           expect(resource.type).to.be.equal(type);
         });
       });
 
-      describe('When adding already existing', function() {
-        var nextResult;
-        beforeEach(function() {
+      describe('When adding already existing', () => {
+        let nextResult;
+        beforeEach(() => {
           listener.reset();
           nextResult = pool.set(target);
         });
-        it('should return same TargetResource instance', function() {
+        it('should return same TargetResource instance', () => {
           expect(nextResult).to.be.equal(result);
         });
 
-        it('should not fire event "' + ResourcePool.Events.RESOURCE_ADDED + '"', function() {
+        it(`should not fire event "${ResourcePool.Events.RESOURCE_ADDED}"`, () => {
           expect(listener).to.not.be.called;
         });
       });
 
-      describe('When adding Resource type', function() {
-        it('should not store to pool RequestTarget', function() {
+      describe('When adding Resource type', () => {
+        it('should not store to pool RequestTarget', () => {
           expect(pool.set(__createRequestTarget())).to.be.null;
         });
-        it('should not store to pool RequestTarget wrapped with Proxy', function() {
+        it('should not store to pool RequestTarget wrapped with Proxy', () => {
           expect(pool.set(__createRequestTargetProxy())).to.be.null;
 
         });
-        it('should not store to pool TargetResource', function() {
+        it('should not store to pool TargetResource', () => {
           expect(pool.set(__createTargetResource())).to.be.null;
         });
-        it('should not store to pool RAW resource', function() {
-          var target = {};
+        it('should not store to pool RAW resource', () => {
+          const target = {};
           target[TARGET_DATA] = {};
           expect(pool.set(target)).to.be.null;
         });
@@ -95,79 +106,85 @@ describe('ResourcePool', function() {
     });
   });
 
-  describe('When looking for target', function() {
+  describe('When looking for target', () => {
 
-    it('should return true for added targets', function() {
+    it('should return true for added targets', () => {
       expect(pool.has(target1)).to.be.true;
       expect(pool.has(target2)).to.be.true;
     });
 
-    it('should return false for unknown targets', function() {
+    it('should return false for unknown targets', () => {
       expect(pool.has({})).to.be.false;
       expect(pool.has('1111')).to.be.false;
     });
 
   });
 
-  describe('When requesting target', function() {
-    it('should return proper resource object by target', function() {
+  describe('When requesting target', () => {
+    it('should return proper resource object by target', () => {
       expect(pool.get(target1)).to.be.equal(resource1);
       expect(pool.get(target2)).to.be.equal(resource2);
     });
 
-    it('should return proper resource object by id', function() {
+    it('should return proper resource object by id', () => {
       expect(pool.get(resource1.id)).to.be.equal(resource1);
       expect(pool.get(resource2.id)).to.be.equal(resource2);
     });
 
-    describe('When looking for non-existent target', function() {
-      it('should return `undefined` for not found targets', function() {
+    describe('When looking for non-existent target', () => {
+      it('should return `undefined` for not found targets', () => {
         expect(pool.get({})).to.be.undefined;
       });
     });
   });
 
-  describe('When removing target', function() {
-    var listener, active;
-    beforeEach(function() {
+  describe('When removing target', () => {
+    let listener,
+      active;
+    beforeEach(() => {
       active = undefined;
-      listener = sandbox.spy(function(event) {
+      listener = sandbox.spy((event) => {
         active = event.data.active;
       });
       pool.addEventListener(ResourcePool.Events.RESOURCE_REMOVED, listener);
       sandbox.spy(resource1, 'destroy');
       pool.remove(target1);
     });
-    afterEach(function() {
+    afterEach(() => {
       resource1.destroy.restore();
     });
-    it('removed target should be excluded from pool', function() {
+    it('removed target should be excluded from pool', () => {
       expect(pool.has(target1)).to.be.false;
       expect(pool.has(target2)).to.be.true;
     });
-    it('should fire event "' + ResourcePool.Events.RESOURCE_REMOVED + '"', function() {
+    it(`should fire event "${ResourcePool.Events.RESOURCE_REMOVED}"`, () => {
       expect(listener).to.be.calledOnce;
     });
-    it('should fire event with resource as event data', function() {
-      var data = listener.getCall(0).args[0].data;
+    it('should fire event with resource as event data', () => {
+      const data = listener.getCall(0).args[0].data;
       expect(data).to.be.equal(resource1);
     });
-    it('resource should be active when event fired', function() {
+    it('resource should be active when event fired', () => {
       expect(active).to.be.true;
     });
-    it('resource should be destroyed immediately after event fired', function() {
+    it('resource should be destroyed immediately after event fired', () => {
       expect(resource1.active).to.be.false;
     });
   });
 
-  describe('When clearing pool', function() {
-    var beforeListener, afterListener, beforeActive, beforeExists, afterActive, afterExists;
-    beforeEach(function() {
-      beforeListener = sandbox.spy(function() {
+  describe('When clearing pool', () => {
+    let beforeListener,
+      afterListener,
+      beforeActive,
+      beforeExists,
+      afterActive,
+      afterExists;
+    beforeEach(() => {
+      beforeListener = sandbox.spy(() => {
         beforeActive = resource1.active;
         beforeExists = pool.has(target2);
       });
-      afterListener = sandbox.spy(function() {
+      afterListener = sandbox.spy(() => {
         afterActive = resource2.active;
         afterExists = pool.has(target1);
       });
@@ -176,56 +193,57 @@ describe('ResourcePool', function() {
       pool.clear();
     });
 
-    it('should fire "' + ResourcePool.Events.POOL_CLEAR + '" event', function() {
+    it(`should fire "${ResourcePool.Events.POOL_CLEAR}" event`, () => {
       expect(beforeListener).to.be.calledOnce;
     });
 
-    it('"' + ResourcePool.Events.POOL_CLEAR + '" event should target to own pool', function() {
+    it(`"${ResourcePool.Events.POOL_CLEAR}" event should target to own pool`, () => {
       expect(beforeListener.getCall(0).args[0].data).to.be.equal(pool);
     });
 
-    it('should fire "' + ResourcePool.Events.POOL_CLEAR + '" event before destroying resources', function() {
+    it(`should fire "${ResourcePool.Events.POOL_CLEAR}" event before destroying resources`, () => {
       expect(beforeActive).to.be.true;
       expect(beforeExists).to.be.true;
     });
 
-    it('should fire "' + ResourcePool.Events.POOL_CLEARED + '" event', function() {
+    it(`should fire "${ResourcePool.Events.POOL_CLEARED}" event`, () => {
       expect(beforeListener).to.be.calledOnce;
     });
 
-    it('"' + ResourcePool.Events.POOL_CLEARED + '" event should target to own pool', function() {
+    it(`"${ResourcePool.Events.POOL_CLEARED}" event should target to own pool`, () => {
       expect(afterListener.getCall(0).args[0].data).to.be.equal(pool);
     });
 
-    it('should fire "' + ResourcePool.Events.POOL_CLEARED + '" event after resources destroyed', function() {
+    it(`should fire "${ResourcePool.Events.POOL_CLEARED}" event after resources destroyed`, () => {
       expect(afterActive).to.be.false;
       expect(afterExists).to.be.false;
     });
 
-    it('should fire events in order', function() {
+    it('should fire events in order', () => {
       sinon.assert.callOrder(beforeListener, afterListener);
     });
 
-    it('should exclude targets', function() {
+    it('should exclude targets', () => {
       expect(pool.has(target1)).to.be.false;
       expect(pool.has(target2)).to.be.false;
     });
 
-    it('should destroy resources', function() {
+    it('should destroy resources', () => {
       expect(resource1.active).to.be.false;
       expect(resource2.active).to.be.false;
     });
 
-    it('should allow re-adding same targets', function() {
+    it('should allow re-adding same targets', () => {
       expect(pool.set(target1)).to.not.be.equal(resource1);
       expect(pool.set(target2)).to.not.be.equal(resource2);
     });
 
   });
 
-  describe('When destroying pool', function() {
-    var clearedListener, destroyedListener;
-    beforeEach(function() {
+  describe('When destroying pool', () => {
+    let clearedListener,
+      destroyedListener;
+    beforeEach(() => {
       clearedListener = sandbox.spy();
       destroyedListener = sandbox.spy();
       sandbox.spy(pool, 'clear');
@@ -233,73 +251,73 @@ describe('ResourcePool', function() {
       pool.addEventListener(ResourcePool.Events.POOL_DESTROYED, destroyedListener);
       pool.destroy();
     });
-    it('should become inactive', function() {
+    it('should become inactive', () => {
       expect(pool.isActive()).to.be.false;
     });
-    it('should clear() pool', function() {
+    it('should clear() pool', () => {
       expect(pool.clear).to.be.calledOnce;
     });
-    it('should fire "' + ResourcePool.Events.POOL_DESTROYED + '" event', function() {
+    it(`should fire "${ResourcePool.Events.POOL_DESTROYED}" event`, () => {
       expect(destroyedListener).to.be.calledOnce;
     });
-    it('should fire events in order', function() {
+    it('should fire events in order', () => {
       sinon.assert.callOrder(clearedListener, destroyedListener);
     });
-    describe('When trying to use destroyed pool', function() {
-      it('should cause error', function() {
-        expect(function() {
+    describe('When trying to use destroyed pool', () => {
+      it('should cause error', () => {
+        expect(() => {
           pool.set({});
         }).to.throw(Error);
       });
     });
   });
 
-  describe('isValidTarget()', function() {
-    beforeEach(function() {
+  describe('isValidTarget()', () => {
+    beforeEach(() => {
       ResourcePool.setValidTargets(['object']);
     });
-    afterEach(function() {
+    afterEach(() => {
       ResourcePool.setValidTargets(ResourcePool.getDefaultValidTargets());
     });
-    it('should say valid for stored target types', function() {
+    it('should say valid for stored target types', () => {
       expect(ResourcePool.isValidTarget({})).to.be.true;
-      expect(ResourcePool.isValidTarget(function() {
+      expect(ResourcePool.isValidTarget(() => {
       })).to.be.false;
     });
-    it('should say valid even if its value falsy', function() {
+    it('should say valid even if its value falsy', () => {
       expect(ResourcePool.isValidTarget(null)).to.be.true;
     });
   });
 
-  describe('setValidTargets()', function() {
-    beforeEach(function() {
+  describe('setValidTargets()', () => {
+    beforeEach(() => {
       ResourcePool.setValidTargets([]);
     });
-    afterEach(function() {
+    afterEach(() => {
       ResourcePool.setValidTargets(ResourcePool.getDefaultValidTargets());
     });
-    it('should apply passed list of targets', function() {
+    it('should apply passed list of targets', () => {
       expect(ResourcePool.isValidTarget({})).to.be.false;
       ResourcePool.setValidTargets(['object']);
       expect(ResourcePool.isValidTarget({})).to.be.true;
-      expect(ResourcePool.isValidTarget(function() {
+      expect(ResourcePool.isValidTarget(() => {
       })).to.be.false;
       ResourcePool.setValidTargets(['function']);
       expect(ResourcePool.isValidTarget({})).to.be.false;
-      expect(ResourcePool.isValidTarget(function() {
+      expect(ResourcePool.isValidTarget(() => {
       })).to.be.true;
     });
   });
 
-  describe('getDefaultValidTargets()', function() {
-    it('should contain list of strings', function() {
+  describe('getDefaultValidTargets()', () => {
+    it('should contain list of strings', () => {
       expect(ResourcePool.getDefaultValidTargets()).to.be.an.instanceof(Array);
       expect(ResourcePool.getDefaultValidTargets()[0]).to.be.a('string');
     });
   });
 
-  describe('create()', function() {
-    it('should return an instance of ResourcePool', function() {
+  describe('create()', () => {
+    it('should return an instance of ResourcePool', () => {
       expect(ResourcePool.create()).to.be.an.instanceof(ResourcePool);
     });
   });

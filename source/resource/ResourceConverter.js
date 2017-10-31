@@ -1,5 +1,12 @@
-'use strict';
 import EventDispatcher from 'event-dispatcher';
+import {
+  getResourcePoolId,
+  getResourceId,
+  isResource,
+  isResourceConvertible,
+  getRawResource,
+} from './utils';
+import { isPending } from '../request/RequestTarget';
 
 export const ResourceConverterEvents = Object.freeze({
   RESOURCE_CREATED: 'resourceCreated',
@@ -7,17 +14,24 @@ export const ResourceConverterEvents = Object.freeze({
 });
 
 /**
- * @class DataAccessInterface.ResourceConverter
- * @classdesc Resource converter contains bunch of methods to lookup for resources and registering them, converting them into RAWResource or into RequestTargets, depending on their origin.
- * Before sending data, bundled resources should be registered in ResourcePool and then converted to RAWResource objects.
- * After data received, its RAWResources should be converted to RequestTargets for not resolved resources or to resource target values otherwise.
- * Resource can be resolved by its `id` and `poolId`, if ResourceConverter can find ResourcePool with id from poolId, it will try to get target resource value and
- * replace with it RAWResource object. It ResourcePool not found, ResourceConverter assumes that resource come from other origin/environment and
- * creates RequestTarget object that can be target object for commands.
- * ResourceConverter while handling data does not look deeply, so its developer responsibility to convert deeply nested resource targets.
+ * Resource converter contains bunch of methods to lookup for resources
+ * and registering them, converting them into RAWResource or into
+ * RequestTargets, depending on their origin.
+ * Before sending data, bundled resources should be registered in ResourcePool
+ * and then converted to RAWResource objects.
+ * After data received, its RAWResources should be converted to RequestTargets
+ * for not resolved resources or to resource target values otherwise.
+ * Resource can be resolved by its `id` and `poolId`, if ResourceConverter
+ * can find ResourcePool with id from poolId, it will try to get target
+ * resource value and replace with it RAWResource object.
+ * If ResourcePool not found, ResourceConverter assumes that resource come from
+ * other origin/environment and creates RequestTarget object that can be target
+ * object for commands.
+ * ResourceConverter while handling data does not look deeply, so its developer
+ * responsibility to convert deeply nested resource targets.
  * @param {RequestFactory} factory
- * @param {DataAccessInterface.ResourcePoolRegistry} registry
- * @param {DataAccessInterface.ResourcePool} pool
+ * @param {ResourcePoolRegistry} registry
+ * @param {ResourcePool} pool
  * @param {RequestHandlers} handlers
  * @extends EventDispatcher
  */
@@ -37,8 +51,8 @@ class ResourceConverter extends EventDispatcher {
     let result;
 
     if (isResourceConvertible(data)) {
-      result = getRAWResource(data, this.pool);
-    } else if (typeof(data.toJSON) === 'function') {
+      result = getRawResource(data, this.pool);
+    } else if (typeof data.toJSON === 'function') {
       result = data.toJSON();
     } else {
       return data;
@@ -46,8 +60,8 @@ class ResourceConverter extends EventDispatcher {
 
     if (this.hasEventListener(ResourceConverterEvents.RESOURCE_CONVERTED)) {
       this.dispatchEvent(ResourceConverterEvents.RESOURCE_CONVERTED, {
-        data: data,
-        result: result,
+        data,
+        result,
       });
     }
 
@@ -61,25 +75,30 @@ class ResourceConverter extends EventDispatcher {
    * @private
    */
   objectToResource(data) {
-    var result = data;
-    var poolId;
+    let result = data;
+
     if (isResource(data)) {
-      poolId = getResourcePoolId(data);
+      const poolId = getResourcePoolId(data);
+
       if (this.registry.isRegistered(poolId)) { // target object is stored in current pool
-        var target = this.registry.get(poolId).get(getResourceId(data));
+        const target = this.registry.get(poolId).get(getResourceId(data));
+
         if (target) {
           result = target.resource;
         }
+
       } else { // target object has another origin, should be wrapped
         result = this.factory.create(Promise.resolve(data));
       }
     }
+
     if (result !== data && this.hasEventListener(ResourceConverterEvents.RESOURCE_CREATED)) {
       this.dispatchEvent(ResourceConverterEvents.RESOURCE_CREATED, {
-        data: data,
-        result: result
+        data,
+        result,
       });
     }
+
     return result;
   }
 
@@ -91,9 +110,10 @@ class ResourceConverter extends EventDispatcher {
    * @private
    */
   lookupArray(list, linkConvertHandler) {
-    var result = [];
-    var length = list.length;
-    for (var index = 0; index < length; index++) {
+    const result = [];
+    const { length } = list;
+    for (let index = 0; index < length; index++) {
+      // FIXME Array.map()
       result[index] = linkConvertHandler.call(this, list[index]);
     }
     return result;
@@ -107,9 +127,9 @@ class ResourceConverter extends EventDispatcher {
    * @private
    */
   lookupObject(data, linkConvertHandler) {
-    var result = {};
-    for (var name in data) {
-      if (!data.hasOwnProperty(name)) continue;
+    const result = {};
+    for (const name in data) {
+      if (!Object.property.hasOwnProperty.call(data, name)) continue;
       result[name] = linkConvertHandler.call(this, data[name]);
     }
     return result;
@@ -122,13 +142,17 @@ class ResourceConverter extends EventDispatcher {
    * @private
    */
   toJSON(data) {
-    var result = data;
+    let result = data;
+
     if (data !== undefined && data !== null) {
-      if (isResourceConvertible(data)) { // if data is RequestTarget, TargetResource, IConvertible, Function or RAW resource data
+      if (isResourceConvertible(data)) {
+        // if data is RequestTarget, TargetResource, IConvertible, Function or RAW resource data
         result = this.resourceToObject(data);
-      } else if (data instanceof Array) { // if data is Array of values, check its
+      } else if (data instanceof Array) {
+        // if data is Array of values, check its
         result = this.lookupArray(data, this.resourceToObject);
-      } else if (data.constructor === Object) { // only Object instances can be looked up, other object types must be converted by hand
+      } else if (data.constructor === Object) {
+        // only Object instances can be looked up, other object types must be converted by hand
         result = this.lookupObject(data, this.resourceToObject);
       }
     }
@@ -143,6 +167,7 @@ class ResourceConverter extends EventDispatcher {
    */
   parse(data) {
     let result = data;
+
     if (data !== undefined && data !== null) {
       if (isResource(data)) { // if data is RAW resource data
         result = this.objectToResource(data);
@@ -165,14 +190,14 @@ class ResourceConverter extends EventDispatcher {
     const result = [];
 
     const add = (value) => {
-      if (RequestTarget.isPending(value)) {
+      if (isPending(value)) {
         result.push(value);
       }
       return value;
     };
 
-    if (typeof(data) === 'object' && data !== null) {
-      if (RequestTarget.isPending(data)) {
+    if (typeof data === 'object' && data !== null) {
+      if (isPending(data)) {
         result.push(data);
       } else if (data instanceof Array) {
         this.lookupArray(data, add);
@@ -185,15 +210,14 @@ class ResourceConverter extends EventDispatcher {
 }
 
 /**
- * @method DataAccessInterface.ResourceConverter.create
  * @param {RequestFactory} factory
  * @param {DataAccessInterface.ResourcePoolRegistry} registry
  * @param {DataAccessInterface.ResourcePool} pool
  * @param {RequestHandlers} handlers
  * @returns {ResourceConverter}
  */
-export const createResourceConverter = (factory, registry, pool, handlers) => {
-  return new ResourceConverter(factory, registry, pool, handlers);
-}
+export const createResourceConverter = (factory, registry, pool, handlers) => (
+  new ResourceConverter(factory, registry, pool, handlers)
+);
 
 export default ResourceConverter;

@@ -1,9 +1,10 @@
-'use strict';
-
 import { CommandDescriptor, ProxyCommands, ProxyCommandFields } from '../commands';
+import { filterRequestHandlers } from './utils';
+import { getResourceType } from '../resource/utils';
 
 /**
- * Key for default type for handlers that will be applied to any resource that does not have type-specific handlers registered
+ * Key for default type for handlers that will be applied to any
+ * resource that does not have type-specific handlers registered
  * @type {string}
  */
 const DEFAULT_KEY = '';
@@ -11,7 +12,7 @@ const DEFAULT_KEY = '';
 export const areProxyHandlersAvailable = (handlers, throwError) => {
   let result = true;
   const list = ProxyCommands.required;
-  const length = list.length;
+  const { length } = list;
   for (let index = 0; index < length; index++) {
     const name = list[index];
     if (!(ProxyCommandFields[name] in handlers)) {
@@ -25,7 +26,7 @@ export const areProxyHandlersAvailable = (handlers, throwError) => {
 };
 
 export const RequestHandlersEvents = Object.freeze({
-  HANDLERS_UPDATED: 'handlersUpdated'
+  HANDLERS_UPDATED: 'handlersUpdated',
 });
 
 class RequestHandlers {
@@ -39,57 +40,40 @@ class RequestHandlers {
     // named collection of CommandDescriptor lists that may be applied
     this.properties = {};
     this.descriptors = {};
-    this.converter;
-    proxyEnabled = Boolean(proxyEnabled);
-
-    Object.defineProperties(this, {
-      /**
-       * @member {Boolean} RequestHandlers#proxyEnabled
-       */
-      proxyEnabled: {
-        value: proxyEnabled
-      },
-      /**
-       * @member {Boolean} RequestHandlers#available
-       */
-      : {
-      }
-    });
+    this.proxyEnabled = Boolean(proxyEnabled);
+    this.converter = null;
   }
 
   get available() {
-    return Boolean(keys.length);
+    const nonEmptyList = Object.keys(this.properties).find((item) => Boolean(item && item.length));
+    return Boolean(nonEmptyList);
   }
 
   setConverter(converter) {
     this.converter = converter;
   }
 
-  /**
-   * @method RequestHandlers#setHandlers
-   * @param {DataAccessInterface.CommandDescriptor[]|Object.<string, Function|DataAccessInterface.CommandDescriptor>} handlers
-   */
   setHandlers(handlers) {
     this.setHandlersByType(DEFAULT_KEY, handlers);
 
-    for (let name in handlers) {
+    Object.keys(handlers).forEach((name) => {
       const type = handlers[name];
-      if (type && type.constructor === Object || type instanceof Array) {
+      if (type && (type.constructor === Object || type instanceof Array)) {
         this.setHandlersByType(name, type);
       }
-    }
+    });
 
-    if (proxyEnabled) {
+    if (this.proxyEnabled) {
       areProxyHandlersAvailable(this.descriptors, true);
     }
   }
 
   setHandlersByType(type, handlers) {
-    var descrs = {};
-    var props = [];
-    RequestHandlers.filterHandlers(handlers, descrs, props);
-    _descriptors[type] = descrs;
-    _properties[type] = props;
+    const descrs = {};
+    const props = [];
+    filterRequestHandlers(handlers, descrs, props);
+    this.descriptors[type] = descrs;
+    this.properties[type] = props;
   }
 
   /**
@@ -99,13 +83,19 @@ class RequestHandlers {
    * @returns {boolean}
    */
   hasHandler(name, type) {
-    return (_descriptors[type] && _descriptors[type].hasOwnProperty(name)) ||
-      (_descriptors[DEFAULT_KEY] && _descriptors[DEFAULT_KEY].hasOwnProperty(name));
+    return (
+      this.descriptors[type]
+        && Object.prototype.hasOwnProperty.call(this.descriptors[type], name)
+    )
+      || (
+        this.descriptors[DEFAULT_KEY]
+        && Object.prototype.hasOwnProperty.call(this.descriptors[DEFAULT_KEY], name)
+      );
   }
 
   /**
-   * IMPORTANT: Returns original list of CommandDescriptors, changing it may cause unexpected result with newly decorated resources.
-   * @method RequestHandlers#getHandlers
+   * IMPORTANT: Returns original list of CommandDescriptors, changing it may cause
+   * unexpected result with newly decorated resources.
    * @param {String} [type]
    * @returns {CommandDescriptor[]|null}
    * @private
@@ -115,6 +105,7 @@ class RequestHandlers {
     if (!descrs) {
       descrs = this.descriptors[DEFAULT_KEY];
     }
+
     return descrs || null;
   }
 
@@ -127,13 +118,14 @@ class RequestHandlers {
    */
   getHandler(name, type) {
     const handler = (
-        this.descriptors[type]
+      this.descriptors[type]
         && this.descriptors[type][name]
-      )
+    )
       || (
         this.descriptors[DEFAULT_KEY]
         && this.descriptors[DEFAULT_KEY][name]
       );
+
     return handler || null;
   }
 
@@ -149,7 +141,8 @@ class RequestHandlers {
   handle(parentRequest, name, pack, deferred, resultRequest) {
     const list = this.converter ? this.converter.lookupForPending(pack.value) : null;
     if (list && list.length) {
-      // FIXME Need to test on all platforms: In other browsers this might not work because may need list of Promise objects, not RequestTargets
+      // FIXME Need to test on all platforms: In other browsers this might not work
+      // because may need list of Promise objects, not RequestTargets
       Promise.all(list).then(() => {
         this.handleImmediately(parentRequest, name, pack, deferred, resultRequest);
       });
@@ -173,12 +166,11 @@ class RequestHandlers {
      */
     const handler = this.getHandler(name, getResourceType(parentRequest));
     if (handler instanceof CommandDescriptor) {
-      //INFO result should be applied to deferred.resolve() or deferred.reject()
+      // INFO result should be applied to deferred.resolve() or deferred.reject()
       handler.handler(parentRequest, data, deferred, resultRequest);
     } else {
-      throw new Error('Command descriptor for "' + name + '" was not found.');
+      throw new Error(`Command descriptor for "${name}" was not found.`);
     }
-
   }
 }
 

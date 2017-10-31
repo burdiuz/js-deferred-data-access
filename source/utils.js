@@ -1,5 +1,3 @@
-'use strict';
-
 export const TargetStatus = Object.freeze({
   PENDING: 'pending',
   RESOLVED: 'resolved',
@@ -25,9 +23,7 @@ export const TARGET_DATA = 'resource::data';
 export const getId = (() => {
   const base = `DA/${Date.now()}/`;
   let index = 0;
-  return () => {
-    return `${base}${++index}/${Date.now()}`;
-  };
+  return () => `${base}${++index}/${Date.now()}`;
 })();
 
 /**
@@ -53,4 +49,4 @@ export const createDeferred = () => new Deferred();
  * @returns {boolean}
  * @private
  */
-export const areProxiesAvailable = () => (typeof(Proxy) === 'function');
+export const areProxiesAvailable = () => (typeof Proxy === 'function');

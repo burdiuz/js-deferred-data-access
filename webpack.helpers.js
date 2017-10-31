@@ -1,7 +1,7 @@
 const path = require('path');
 
 const LIBRARY_FILE_NAME = 'deferred-data-access';
-const LIBRARY_VAR_NAME = 'DeferredDataAccess';
+const LIBRARY_VAR_NAME = 'DataAccessInterface';
 
 const p = (value) => {
   return path.resolve(__dirname, value);
@@ -22,6 +22,7 @@ const getBabelLoader = (plugins = []) => ({
       ...plugins,
       'babel-plugin-transform-flow-strip-types',
       'babel-plugin-transform-class-properties',
+      ['babel-plugin-transform-object-rest-spread', { 'useBuiltIns': true }],
     ],
   },
 });

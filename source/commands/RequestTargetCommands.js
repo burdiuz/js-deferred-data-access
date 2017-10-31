@@ -1,4 +1,4 @@
-import { addDescriptorTo } from './CommandDescriptor';
+import CommandDescriptor, { addDescriptorTo } from './CommandDescriptor';
 
 export const RequestTargetCommandNames = Object.freeze({
   DESTROY: '::destroy.resource',
@@ -9,9 +9,10 @@ export const RequestTargetCommandFields = Object.freeze({
 });
 
 /**
- * Destroy is unique type that exists for every RequestTarget and does not have a method on its instances.
- * This type will be send each time RequestTarget.destroy() is applied to RequestTarget in stance.
- * @namespace {Object} DataAccessInterface.RequestTargetCommands
+ * Destroy is unique type that exists for every RequestTarget
+ * and does not have a method on its instances. This type will
+ * be send each time RequestTarget.destroy() is applied to
+ * RequestTarget in stance.
  */
 class RequestTargetCommands {
   constructor() {
@@ -22,7 +23,7 @@ class RequestTargetCommands {
     const descriptor = new CommandDescriptor(
       RequestTargetCommandNames.DESTROY,
       handler,
-      RequestTargetCommandFields.DESTROY
+      RequestTargetCommandFields.DESTROY,
     );
     descriptor.virtual = true;
     addDescriptorTo(descriptor, target);

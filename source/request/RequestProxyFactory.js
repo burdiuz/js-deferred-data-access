@@ -1,5 +1,3 @@
-'use strict';
-
 import RequestFactory, { FACTORY_DECORATOR_FIELD, FACTORY_HANDLERS_FIELD } from './RequestFactory';
 import { ProxyCommandFields } from '../commands/ProxyCommands';
 
@@ -8,11 +6,10 @@ const FACTORY_FIELD = Symbol('request.proxy.factory::factory');
 const EXCLUSIONS = {
   /*
    INFO arguments and caller were included because they are required function properties
-   https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/arguments
    */
-  'arguments': true,
-  'caller': true,
-  'prototype': true
+  arguments: true,
+  caller: true,
+  prototype: true,
 };
 
 const wrapWithProxy = (target, handlers) => {
@@ -25,32 +22,33 @@ const wrapWithProxy = (target, handlers) => {
 };
 
 const proxyGet = (wrapper, name) => {
-  let value;
-  const target = wrapper.target;
-  if (name in target || name in EXCLUSIONS || typeof(name) === 'symbol') {
-    value = target[name];
-  } else {
-    // INFO Proxy should be already applied, so no need in additional wrapping
-    value = target[ProxyCommandFields.get](name);
+  const { target } = wrapper;
+  if (name in target || name in EXCLUSIONS || typeof name === 'symbol') {
+    return target[name];
   }
-  return value;
+  // INFO Proxy should be already applied, so no need in additional wrapping
+  return target[ProxyCommandFields.get](name);
 };
 
 // INFO Proxy should be already applied, so no need in additional wrapping
-const proxyApply = (wrapper, thisValue, args) => wrapper.target[ProxyCommandFields.apply](null, args);
+const proxyApply = (wrapper, thisValue, args) => (
+  wrapper.target[ProxyCommandFields.apply](null, args)
+);
 
 const proxySet = (wrapper, name, value) => {
-  let result;
   const { target } = wrapper;
-  if (name in target || name in EXCLUSIONS || typeof(name) === 'symbol') {
-    result = target[name] = value;
-  } else {
-    result = target[ProxyCommandFields.set](name, value);
+
+  if (name in target || name in EXCLUSIONS || typeof name === 'symbol') {
+    target[name] = value;
+    return value;
   }
-  return result;
+
+  return target[ProxyCommandFields.set](name, value);
 };
 
-const proxyHas = (wrapper, name) => wrapper.target.hasOwnProperty(name);
+const proxyHas = (wrapper, name) => (
+  Object.prototype.hasOwnProperty.call(wrapper.target, name)
+);
 
 const proxyDeleteProperty = (wrapper, name) => {
   const { target } = wrapper;
@@ -68,15 +66,10 @@ const proxyOwnKeys = () => Object.getOwnPropertyNames(EXCLUSIONS);
 const proxyEnumerate = () => Object.getOwnPropertyNames(EXCLUSIONS)[Symbol.iterator]();
 
 const proxyGetOwnPropertyDescriptor = (wrapper, name) => {
-  let descr;
-
-  if (EXCLUSIONS.hasOwnProperty(name)) {
-    descr = Object.getOwnPropertyDescriptor(wrapper, name);
-  } else {
-    descr = Object.getOwnPropertyDescriptor(wrapper.target, name);
+  if (Object.prototype.hasOwnProperty.call(EXCLUSIONS, name)) {
+    return Object.getOwnPropertyDescriptor(wrapper, name);
   }
-
-  return descr;
+  return Object.getOwnPropertyDescriptor(wrapper.target, name);
 };
 
 /**
@@ -84,14 +77,14 @@ const proxyGetOwnPropertyDescriptor = (wrapper, name) => {
  * @returns {Function}
  */
 export const createProxyHandlers = (handlers = {}) => ({
-  'get': proxyGet,
-  'apply': proxyApply,
-  'set': proxySet,
-  'has': proxyHas,
-  'deleteProperty': proxyDeleteProperty,
-  'ownKeys': proxyOwnKeys,
-  'enumerate': proxyEnumerate,
-  'getOwnPropertyDescriptor': proxyGetOwnPropertyDescriptor,
+  get: proxyGet,
+  apply: proxyApply,
+  set: proxySet,
+  has: proxyHas,
+  deleteProperty: proxyDeleteProperty,
+  ownKeys: proxyOwnKeys,
+  enumerate: proxyEnumerate,
+  getOwnPropertyDescriptor: proxyGetOwnPropertyDescriptor,
   ...handlers,
 });
 
@@ -132,10 +125,8 @@ class RequestProxyFactory extends RequestFactory {
 
 }
 
-export const applyProxyWithDefaultHandlers = (target) => {
-  return wrapWithProxy(target, PROXY_HANDLERS);
-};
+export const applyProxyWithDefaultHandlers = (target) => wrapWithProxy(target, PROXY_HANDLERS);
 
-export const createRequestProxyFactory = (handlers, cacheImpl) => {
-  return new RequestProxyFactory(handlers, cacheImpl);
-};
+export const createRequestProxyFactory = (handlers, cacheImpl) => (
+  new RequestProxyFactory(handlers, cacheImpl)
+);

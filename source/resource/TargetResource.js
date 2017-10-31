@@ -1,8 +1,6 @@
-'use strict';
+import { TARGET_DATA, TARGET_INTERNALS, getId } from '../utils';
 
-import { TARGET_DATA, TARGET_INTERNALS, getId } from '../core';
-
-const getPoolId = (pool) => pool ? pool.id : null;
+const getPoolId = (pool) => (pool ? pool.id : null);
 
 /**
  * @exports TargetResource
@@ -36,7 +34,7 @@ class TargetResource {
   }
 
   get type() {
-    return this[TARGET_INTERNALS].type || typeof(this[TARGET_INTERNALS].resource);
+    return this[TARGET_INTERNALS].type || typeof this[TARGET_INTERNALS].resource;
   }
 
   get id() {
@@ -51,7 +49,7 @@ class TargetResource {
     [TARGET_DATA]: {
       id: this.id,
       type: this.type,
-      poolId: this.poolId
+      poolId: this.poolId,
     },
   });
 
@@ -66,14 +64,14 @@ class TargetResource {
     internals.active = false;
     pool.remove(id);
 
-    for (let name in internals) {
+    for (const name in internals) {
       delete internals[name];
     }
   }
 }
 
-export const createTargetResource = (pool, resource, resourceType, id) => {
-  return new TargetResource(pool, resource, resourceType, id || getId());
-};
+export const createTargetResource = (pool, resource, resourceType, id) => (
+  new TargetResource(pool, resource, resourceType, id || getId())
+);
 
 export default TargetResource;

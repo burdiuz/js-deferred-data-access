@@ -1,6 +1,4 @@
-'use strict';
-
-import { Reserved, CommandDescriptor } from '../../commands';
+import { Reserved, createCommandDescriptor, CommandDescriptor } from '../../commands';
 
 /**
  * Checks for CommandDescriptor uniqueness and reserved words usage.
@@ -10,12 +8,15 @@ import { Reserved, CommandDescriptor } from '../../commands';
  * @private
  */
 const applyDescriptor = (descriptor, descriptors, properties) => {
-  const name = descriptor.name;
+  const { name } = descriptor;
   if (name in Reserved.names) {
-    throw new Error('Name "' + name + '" is reserved and cannot be used in descriptor.');
+    throw new Error(`Name "${name}" is reserved and cannot be used in descriptor.`);
   }
-  if (descriptors.hasOwnProperty(name) && descriptors[name] instanceof CommandDescriptor) {
-    throw new Error('Field names should be unique, "' + String(name) + '" field has duplicates.');
+  if (
+    Object.prototype.hasOwnProperty.call(descriptors, name)
+    && descriptors[name] instanceof CommandDescriptor
+  ) {
+    throw new Error(`Field names should be unique, "${String(name)}" field has duplicates.`);
   }
   descriptors[name] = descriptor;
   if (!descriptor.virtual) {
@@ -29,7 +30,7 @@ const applyDescriptor = (descriptor, descriptors, properties) => {
  * @private
  */
 const filterArray = (handlers, descriptors, properties) => {
-  const length = handlers.length;
+  const { length } = handlers;
   for (let index = 0; index < length; index++) {
     const value = handlers[index];
     if (value instanceof CommandDescriptor) {
@@ -47,12 +48,12 @@ const filterArray = (handlers, descriptors, properties) => {
 const filterHash = (handlers, descriptors, properties) => {
   if (!handlers) return;
   const keys = Object.getOwnPropertyNames(handlers).concat(Object.getOwnPropertySymbols(handlers));
-  const length = keys.length;
+  const { length } = keys;
   for (let index = 0; index < length; index++) {
     const name = keys[index];
     let value = handlers[name];
-    if (typeof(value) === 'function') {
-      value = CommandDescriptor.create(name, value);
+    if (typeof value === 'function') {
+      value = createCommandDescriptor(name, value);
     }
     if (value instanceof CommandDescriptor) {
       applyDescriptor(value, descriptors, properties);
