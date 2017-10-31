@@ -23,7 +23,8 @@ describe('isResourceConvertible()', () => {
   });
 
   it('should return true for RequestTarget wrapped into Proxy', () => {
-    expect(isResourceConvertible(__createRequestTargetProxy(__createDataResolvedPromise()))).to.be.true;
+    expect(isResourceConvertible(__createRequestTargetProxy(__createDataResolvedPromise())))
+      .to.be.true;
   });
 
   it('should return true for RAW resource', () => {

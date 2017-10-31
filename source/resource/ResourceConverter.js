@@ -129,8 +129,9 @@ class ResourceConverter extends EventDispatcher {
   lookupObject(data, linkConvertHandler) {
     const result = {};
     for (const name in data) {
-      if (!Object.property.hasOwnProperty.call(data, name)) continue;
-      result[name] = linkConvertHandler.call(this, data[name]);
+      if (Object.property.hasOwnProperty.call(data, name)) {
+        result[name] = linkConvertHandler.call(this, data[name]);
+      }
     }
     return result;
   }

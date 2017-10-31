@@ -10,12 +10,19 @@ export const __createRequestTargetData = () => ({
   },
 });
 
-export const __createDataResolvedPromise = () => Promise.resolve(__createRequestTargetData());
+export const __createDataResolvedPromise = () => (
+  Promise.resolve(__createRequestTargetData())
+);
 
-export const __createRequestTarget = (promise) => createRequestTarget(promise !== undefined ? promise : __createDataResolvedPromise(), {});
+export const __createRequestTarget = (promise) => (
+  createRequestTarget(promise !== undefined ? promise : __createDataResolvedPromise(), {})
+);
 
 export const __createRequestTargetProxy = (promise) => (
-  applyProxyWithDefaultHandlers(createRequestTarget(promise !== undefined ? promise : __createDataResolvedPromise(), {}))
+  applyProxyWithDefaultHandlers(createRequestTarget(
+    promise !== undefined ? promise : __createDataResolvedPromise(),
+    {},
+  ))
 );
 
 export const __createTargetResourceData = () => ({

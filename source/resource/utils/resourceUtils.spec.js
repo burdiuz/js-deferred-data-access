@@ -14,6 +14,7 @@ import ResourcePoolRegistry from '../ResourcePoolRegistry';
 import {
   __createDataResolvedPromise,
   __createRequestTarget,
+  __createTargetResource,
   __createRequestTargetData,
   __createRequestTargetProxy,
 } from '../../../tests/stubs';
@@ -25,7 +26,7 @@ describe('getRawResource()', () => {
 
   it('should result into RAW resource data from TargetResource', () => {
     const resource = __createTargetResource();
-    data = {};
+    const data = {};
     data[TARGET_DATA] = {
       id: resource.id,
       type: resource.type,
@@ -188,7 +189,7 @@ describe('getResourceData()', () => {
 
   it('should return raw data for TargetResource', () => {
     const resource = __createTargetResource();
-    data = {
+    const data = {
       id: resource.id,
       type: resource.type,
       poolId: resource.poolId,
@@ -245,7 +246,8 @@ describe('getResourcePoolId()', () => {
     const promise = __createDataResolvedPromise();
     const resource = __createRequestTarget(promise);
     promise.then(() => {
-      expect(getResourcePoolId(resource)).to.be.equal(__createRequestTargetData()[TARGET_DATA].poolId);
+      expect(getResourcePoolId(resource))
+        .to.be.equal(__createRequestTargetData()[TARGET_DATA].poolId);
       done();
     });
   });
@@ -254,7 +256,8 @@ describe('getResourcePoolId()', () => {
     const promise = __createDataResolvedPromise();
     const resource = __createRequestTargetProxy();
     promise.then(() => {
-      expect(getResourcePoolId(resource)).to.be.equal(__createRequestTargetData()[TARGET_DATA].poolId);
+      expect(getResourcePoolId(resource))
+        .to.be.equal(__createRequestTargetData()[TARGET_DATA].poolId);
       data();
     });
   });
@@ -279,7 +282,8 @@ describe('getResourceType()', () => {
     const promise = __createDataResolvedPromise();
     const resource = __createRequestTarget(promise);
     promise.then(() => {
-      expect(getResourceType(resource)).to.be.equal(__createRequestTargetData()[TARGET_DATA].type);
+      expect(getResourceType(resource))
+        .to.be.equal(__createRequestTargetData()[TARGET_DATA].type);
       done();
     });
   });
@@ -288,7 +292,8 @@ describe('getResourceType()', () => {
     const promise = __createDataResolvedPromise();
     const resource = __createRequestTargetProxy();
     promise.then(() => {
-      expect(getResourceType(resource)).to.be.equal(__createRequestTargetData()[TARGET_DATA].type);
+      expect(getResourceType(resource))
+        .to.be.equal(__createRequestTargetData()[TARGET_DATA].type);
       data();
     });
   });

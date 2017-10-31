@@ -25,7 +25,7 @@ class RequestTargetInternals {
     this.requestTarget = requestTarget;
     this.link = {};
     // INFO this should be not initialized i.e. keep it undefined, this will be checked later
-    this.temporary;
+    this.temporary = undefined;
     this.hadChildPromises = false;
     this.status = TargetStatus.PENDING;
     this.queue = [];

@@ -66,7 +66,13 @@ describe('DataAccessInterface', () => {
     });
     it('should create ResourceConverter', () => {
       expect(ResourceConverter.create).to.be.calledOnce;
-      expect(ResourceConverter.create).to.be.calledWith(factory, poolRegistry, ResourcePoolRegistry.defaultResourcePool, handlers);
+      expect(ResourceConverter.create)
+          .to.be.calledWith(
+          factory,
+          poolRegistry,
+          defaultResourcePool,
+          handlers,
+      );
     });
     it('should apply custom handlers', () => {
       expect(handlers.setHandlers).to.be.calledOnce;
@@ -74,7 +80,8 @@ describe('DataAccessInterface', () => {
     });
     it('should add listener to pool destroy event', () => {
       expect(ResourcePoolRegistry.defaultResourcePool.addEventListener).to.be.calledOnce;
-      expect(ResourcePoolRegistry.defaultResourcePool.addEventListener).to.be.calledWith(ResourcePool.Events.POOL_DESTROYED, sinon.match.func);
+      expect(ResourcePoolRegistry.defaultResourcePool.addEventListener)
+      .to.be.calledWith(ResourcePool.Events.POOL_DESTROYED, sinon.match.func);
     });
     it('should have proxyEnabled = false', () => {
       expect(instance.proxyEnabled).to.be.false;
@@ -132,7 +139,8 @@ describe('DataAccessInterface', () => {
     });
     it('should subscribe to pool events', () => {
       expect(pool.addEventListener).to.be.calledOnce;
-      expect(pool.addEventListener).to.be.calledWith(ResourcePool.Events.POOL_DESTROYED, sinon.match.func);
+      expect(pool.addEventListener)
+      .to.be.calledWith(ResourcePool.Events.POOL_DESTROYED, sinon.match.func);
     });
   });
   describe('When created with pool', () => {
@@ -156,7 +164,8 @@ describe('DataAccessInterface', () => {
     });
     it('should subscribe to pool events', () => {
       expect(myPool.addEventListener).to.be.calledOnce;
-      expect(myPool.addEventListener).to.be.calledWith(ResourcePool.Events.POOL_DESTROYED, sinon.match.func);
+      expect(myPool.addEventListener)
+      .to.be.calledWith(ResourcePool.Events.POOL_DESTROYED, sinon.match.func);
     });
   });
   describe('When created with poolRegistry and pool', () => {
@@ -183,7 +192,8 @@ describe('DataAccessInterface', () => {
     });
     it('should subscribe to pool events', () => {
       expect(myPool.addEventListener).to.be.calledOnce;
-      expect(myPool.addEventListener).to.be.calledWith(ResourcePool.Events.POOL_DESTROYED, sinon.match.func);
+      expect(myPool.addEventListener)
+      .to.be.calledWith(ResourcePool.Events.POOL_DESTROYED, sinon.match.func);
     });
 
     describe('When pool destroyed', () => {
@@ -194,14 +204,16 @@ describe('DataAccessInterface', () => {
       });
       it('should removeEventListener from destroyed pool', () => {
         expect(myPool.removeEventListener).to.be.calledOnce;
-        expect(myPool.removeEventListener).to.be.calledWith(ResourcePool.Events.POOL_DESTROYED, handler);
+        expect(myPool.removeEventListener)
+        .to.be.calledWith(ResourcePool.Events.POOL_DESTROYED, handler);
       });
       it('should create new pool', () => {
         expect(registry.createPool).to.be.calledOnce;
       });
       it('should subscribe to new pool', () => {
         expect(pool.addEventListener).to.be.calledOnce;
-        expect(pool.addEventListener).to.be.calledWith(ResourcePool.Events.POOL_DESTROYED, handler);
+        expect(pool.addEventListener)
+        .to.be.calledWith(ResourcePool.Events.POOL_DESTROYED, handler);
       });
       it('should have members exposed to public', () => {
         expect(instance.pool).to.be.equal(pool);

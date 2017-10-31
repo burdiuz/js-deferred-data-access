@@ -2,7 +2,7 @@
  * Created by Oleg Galaburda on 29.03.16.
  */
 
-import { ProxyCommands, ProxyCommandFields, ProxyCommandNames } from '../commands';
+import { ProxyCommandFields } from '../commands';
 import RequestFactory from './RequestFactory';
 import RequestProxyFactory from './RequestProxyFactory';
 
@@ -118,7 +118,11 @@ describe('RequestProxyFactory', () => {
       });
       it('should request base factory', () => {
         expect(baseFactory.createCached).to.be.calledOnce;
-        expect(baseFactory.createCached).to.be.calledWith(sinon.match.instanceOf(Promise), 'property', pack);
+        expect(baseFactory.createCached).to.be.calledWith(
+          sinon.match.instanceOf(Promise),
+          'property',
+          pack,
+        );
       });
     });
 
@@ -132,7 +136,11 @@ describe('RequestProxyFactory', () => {
       });
       it('should request base factory', () => {
         expect(baseFactory.createCached).to.be.calledOnce;
-        expect(baseFactory.createCached).to.be.calledWith(sinon.match.instanceOf(Promise), 'property', pack);
+        expect(baseFactory.createCached).to.be.calledWith(
+          sinon.match.instanceOf(Promise),
+          'property',
+          pack,
+        );
       });
     });
   });

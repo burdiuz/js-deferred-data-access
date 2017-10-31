@@ -3,7 +3,7 @@
  */
 
 import { Deferred, createDeferred, TargetStatus, TARGET_DATA } from '../utils';
-import { RequestTargetCommands } from '../commands';
+import { RequestTargetCommands, RequestTargetCommandFields } from '../commands';
 import RequestTargetInternals from './RequestTargetInternals';
 import {
   __createRequestTarget,
@@ -188,9 +188,12 @@ describe('RequestTargetInternals', () => {
         expect(target.hadChildPromises).to.be.true;
       });
 
-      // this is ambiguous, but I'll add this explicitly, so promise never should be resolved with promise-alike object,
-      // because in this case original promise will not be resolved, instead it will try to subscribe to resolution
-      // and wait for it.
+      /*
+      this is ambiguous, but I'll add this explicitly, so promise never
+      should be resolved with promise-alike object, because in this case
+      original promise will not be resolved, instead it will try to subscribe
+      to resolution and wait for it.
+      */
       it('should resolve with <not a promise> object', () => {
         const result = subscriber.getCall(0).args[0];
         expect(result).to.not.have.property('then');
@@ -221,7 +224,7 @@ describe('RequestTargetInternals', () => {
 
       it('should handle request immediately', () => {
         expect(handlers.handle).to.be.calledOnce;
-        const args = handlers.handle.getCall(0).args;
+        const { args } = handlers.handle.getCall(0);
         expect(args[0]).to.be.equal(requestTarget);
         expect(args[1]).to.be.equal('name');
         expect(args[2]).to.be.eql({
@@ -242,8 +245,10 @@ describe('RequestTargetInternals', () => {
 
       it('should send "destroy" request', () => {
         expect(target.sendRequest).to.be.calledOnce;
-        expect(target.sendRequest.getCall(0).args[0]).to.be.equal(RequestTargetCommands.fields.DESTROY);
-        expect(target.sendRequest.getCall(0).args[1].type).to.be.equal(RequestTargetCommands.DESTROY);
+        expect(target.sendRequest.getCall(0).args[0])
+          .to.be.equal(RequestTargetCommandFields.DESTROY);
+        expect(target.sendRequest.getCall(0).args[1].type)
+          .to.be.equal(RequestTargetCommands.DESTROY);
       });
     });
 
@@ -266,8 +271,10 @@ describe('RequestTargetInternals', () => {
 
     it('should send "destroy" request', () => {
       expect(target.sendRequest).to.be.calledOnce;
-      expect(target.sendRequest.getCall(0).args[0]).to.be.equal(RequestTargetCommands.fields.DESTROY);
-      expect(target.sendRequest.getCall(0).args[1].type).to.be.equal(RequestTargetCommands.DESTROY);
+      expect(target.sendRequest.getCall(0).args[0])
+        .to.be.equal(RequestTargetCommandFields.DESTROY);
+      expect(target.sendRequest.getCall(0).args[1].type)
+        .to.be.equal(RequestTargetCommands.DESTROY);
     });
   });
 
@@ -297,7 +304,7 @@ describe('RequestTargetInternals', () => {
     });
   });
 
-  describe('When fulfilled with not-a-Resource value', () => {
+  describe('When fulfilled with not-a-Resource value', (done) => {
     let promise;
     beforeEach(() => {
       promise = target.sendRequest('1', { type: 'one' });
@@ -518,12 +525,15 @@ describe('RequestTargetInternals', () => {
       });
 
       describe('When passing child request', () => {
+        let child;
+
         beforeEach(() => {
           child = __createRequestTarget();
           hasHandler = true;
           sinon.spy(target, 'registerChild');
           target.sendRequest('any', {}, null, child);
         });
+
         it('should register child', () => {
           expect(target.registerChild).to.be.calledOnce;
           expect(target.registerChild).to.be.calledWith(child);

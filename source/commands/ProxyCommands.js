@@ -1,4 +1,4 @@
-import { descriptorGeneratorFactory } from './CommandDescriptor';
+import CommandDescriptor, { descriptorGeneratorFactory } from './CommandDescriptor';
 
 export const ProxyCommandNames = Object.freeze({
   GET: 'get',

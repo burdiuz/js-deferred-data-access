@@ -1,8 +1,4 @@
 import RequestTarget, {
-  isActive,
-  canBeDestroyed,
-  destroy,
-  toJSON,
   isTemporary,
   setTemporary,
   getStatus,
@@ -11,15 +7,16 @@ import RequestTarget, {
   getQueueCommands,
   hadChildPromises,
   getRawPromise,
-  getRequestChildren,
   getChildren,
   getLastChild,
   getChildrenCount,
-  sendRequest,
   createRequestTarget,
 } from './RequestTarget';
 import RequestTargetInternals from './RequestTargetInternals';
-import { Deferred, TARGET_INTERNALS } from '../utils';
+import { Deferred, TARGET_INTERNALS, TargetStatus } from '../utils';
+import {
+  __createRequestTargetData,
+} from '../../tests/stubs';
 
 describe('RequestTarget', () => {
   let sandbox;
@@ -40,10 +37,11 @@ describe('RequestTarget', () => {
   });
 
   describe('When created', () => {
-    let deferred,
-      promise,
-      request,
-      handlers;
+    let deferred;
+    let promise;
+    let request;
+    let handlers;
+
     beforeEach(() => {
       deferred = new Deferred();
       promise = deferred.promise;
@@ -51,25 +49,30 @@ describe('RequestTarget', () => {
       RequestTargetInternals.reset();
       request = new RequestTarget(promise, handlers);
     });
+
     it('should create *Internals', () => {
       assert(RequestTargetInternals.calledWithNew(), 'internals was created');
       expect(RequestTargetInternals).to.be.calledWith(request, promise, handlers);
     });
+
     it('should store *Internals', () => {
       expect(request[TARGET_INTERNALS]).to.be.an.instanceof(RequestTargetInternals);
     });
+
     describe('When subscribe', () => {
       it('then() should call internal method', () => {
         request.then(() => {
         });
         expect(request[TARGET_INTERNALS].then).to.be.calledOnce;
       });
+
       it('catch() should call internal method', () => {
         request.catch(() => {
         });
         expect(request[TARGET_INTERNALS].catch).to.be.calledOnce;
       });
     });
+
     describe('When resolved as resource', () => {
       beforeEach((done) => {
         deferred.resolve(__createRequestTargetData());
@@ -77,10 +80,12 @@ describe('RequestTarget', () => {
           done();
         });
       });
+
       it('should keep internals', () => {
         expect(request[TARGET_INTERNALS]).to.be.an.instanceof(RequestTargetInternals);
       });
     });
+
     describe('When resolved as not a resource', () => {
       beforeEach((done) => {
         deferred.resolve('-data3');
@@ -88,9 +93,11 @@ describe('RequestTarget', () => {
           done();
         });
       });
+
       it('should delete internals', () => {
         expect(request[TARGET_INTERNALS]).to.not.be.ok;
       });
+
       it('calling then() should subscribe to original promise', (done) => {
         request.then((data) => {
           expect(data).to.be.equal('-data3');
@@ -98,6 +105,7 @@ describe('RequestTarget', () => {
         });
       });
     });
+
     describe('When rejected', () => {
       beforeEach((done) => {
         deferred.reject('error data');
@@ -105,9 +113,11 @@ describe('RequestTarget', () => {
           done();
         });
       });
+
       it('should delete internals', () => {
         expect(request[TARGET_INTERNALS]).to.not.be.ok;
       });
+
       it('calling catch() should subscribe to original promise', (done) => {
         request.catch((data) => {
           expect(data).to.be.equal('error data');
@@ -118,9 +128,10 @@ describe('RequestTarget', () => {
   });
 
   describe('isActive()', () => {
-    let target,
-      isActive,
-      result;
+    let target;
+    let isActive;
+    let result;
+
     beforeEach(() => {
       target = {};
       isActive = sandbox.stub().returns(false);
@@ -129,20 +140,25 @@ describe('RequestTarget', () => {
       };
       result = isActive(target);
     });
+
     it('should call internal function', () => {
       expect(isActive).to.be.calledOnce;
     });
+
     it('should return call result', () => {
       expect(result).to.be.false;
     });
+
     it('should be false for non-Resource target', () => {
       expect(isActive({})).to.be.false;
     });
   });
+
   describe('canBeDestroyed()', () => {
-    let target,
-      canBeDestroyed,
-      result;
+    let target;
+    let canBeDestroyed;
+    let result;
+
     beforeEach(() => {
       target = {};
       canBeDestroyed = sandbox.stub().returns(true);
@@ -151,20 +167,25 @@ describe('RequestTarget', () => {
       };
       result = canBeDestroyed(target);
     });
+
     it('should call internal function', () => {
       expect(canBeDestroyed).to.be.calledOnce;
     });
+
     it('should return call result', () => {
       expect(result).to.be.true;
     });
+
     it('should be false for non-Resource target', () => {
       expect(canBeDestroyed({})).to.be.false;
     });
   });
+
   describe('destroy()', () => {
-    let target,
-      destroy,
-      result;
+    let target;
+    let destroy;
+    let result;
+
     beforeEach(() => {
       target = {};
       destroy = sandbox.stub().returns({});
@@ -173,20 +194,25 @@ describe('RequestTarget', () => {
       };
       result = destroy(target);
     });
+
     it('should call internal function', () => {
       expect(destroy).to.be.calledOnce;
     });
+
     it('should return call result', () => {
       expect(result).to.be.an('object');
     });
+
     it('should return null for non-Resource target', () => {
       expect(destroy({})).to.be.null;
     });
   });
+
   describe('toJSON()', () => {
-    let target,
-      toJSON,
-      result;
+    let target;
+    let toJSON;
+    let result;
+
     beforeEach(() => {
       target = {};
       toJSON = sandbox.stub().returns({});
@@ -195,19 +221,24 @@ describe('RequestTarget', () => {
       };
       result = toJSON(target);
     });
+
     it('should call internal function', () => {
       expect(toJSON).to.be.calledOnce;
     });
+
     it('should return call result', () => {
       expect(result).to.be.an('object');
     });
+
     it('should return null for non-Resource target', () => {
       expect(toJSON({})).to.be.null;
     });
   });
+
   describe('isPending()', () => {
-    let target,
-      result;
+    let target;
+    let result;
+
     beforeEach(() => {
       target = {};
       target[TARGET_INTERNALS] = {
@@ -215,16 +246,20 @@ describe('RequestTarget', () => {
       };
       result = isPending(target);
     });
+
     it('should result with TRUE if status is "pending"', () => {
       expect(result).to.be.true;
     });
+
     it('should be false for non-Resource target', () => {
       expect(isPending({})).to.be.false;
     });
   });
+
   describe('isTemporary()', () => {
-    let target,
-      result;
+    let target;
+    let result;
+
     beforeEach(() => {
       target = {};
       target[TARGET_INTERNALS] = {
@@ -232,15 +267,19 @@ describe('RequestTarget', () => {
       };
       result = isTemporary(target);
     });
+
     it('should result with TRUE if target is temporary', () => {
       expect(result).to.be.true;
     });
+
     it('should be undefined for non-Resource target', () => {
       expect(isTemporary({})).to.be.undefined;
     });
   });
+
   describe('setTemporary()', () => {
     let target;
+
     beforeEach(() => {
       target = {};
       target[TARGET_INTERNALS] = {
@@ -248,18 +287,22 @@ describe('RequestTarget', () => {
       };
       setTemporary(target, true);
     });
+
     it('should update "temporary" value', () => {
       expect(target[TARGET_INTERNALS].temporary).to.be.true;
     });
+
     it('should silently skip for non-Resource', () => {
       const target = {};
       setTemporary(target, true);
       expect(target).to.not.have.property('temporary');
     });
   });
+
   describe('getStatus()', () => {
-    let target,
-      result;
+    let target;
+    let result;
+
     beforeEach(() => {
       target = {};
       target[TARGET_INTERNALS] = {
@@ -267,16 +310,20 @@ describe('RequestTarget', () => {
       };
       result = getStatus(target);
     });
+
     it('should result with target status', () => {
       expect(result).to.be.equal(TargetStatus.DESTROYED);
     });
+
     it('should return null for non-Resource target', () => {
       expect(getStatus({})).to.be.null;
     });
   });
+
   describe('getQueueLength()', () => {
-    let target,
-      result;
+    let target;
+    let result;
+
     beforeEach(() => {
       target = {};
       target[TARGET_INTERNALS] = {
@@ -284,34 +331,49 @@ describe('RequestTarget', () => {
       };
       result = getQueueLength(target);
     });
+
     it('should result with queue length', () => {
       expect(result).to.be.equal(4);
     });
+
     it('should return 0 for non-Resource target', () => {
       expect(getQueueLength({})).to.be.equal(0);
     });
   });
+
   describe('getQueueCommands()', () => {
-    let target,
-      result;
+    let target;
+    let result;
+
     beforeEach(() => {
       target = {};
       target[TARGET_INTERNALS] = {
-        // queue has format [ [command, deferred], [command, deferred], [command, deferred], ...  ]
+        /* queue has format
+            [
+              [command, deferred],
+              [command, deferred],
+              [command, deferred],
+               ...
+            ]
+         */
         queue: [[{ type: 'abc' }], [{ type: 'def' }], [{ type: 'ghi' }], [{ type: 'jkl' }]],
       };
       result = getQueueCommands(target);
     });
+
     it('should result with command types from queue', () => {
       expect(result).to.be.eql(['abc', 'def', 'ghi', 'jkl']);
     });
+
     it('should return empty list for non-Resource target', () => {
       expect(getQueueCommands({})).to.be.empty;
     });
   });
+
   describe('hadChildPromises()', () => {
-    let target,
-      result;
+    let target;
+    let result;
+
     beforeEach(() => {
       target = {};
       target[TARGET_INTERNALS] = {
@@ -319,16 +381,20 @@ describe('RequestTarget', () => {
       };
       result = hadChildPromises(target);
     });
+
     it('should result with internal hadChildPromises value', () => {
       expect(result).to.be.false;
     });
+
     it('should be undefined for non-Resource target', () => {
       expect(hadChildPromises({})).to.be.false;
     });
   });
+
   describe('getRawPromise()', () => {
-    let target,
-      result;
+    let target;
+    let result;
+
     beforeEach(() => {
       target = {};
       target[TARGET_INTERNALS] = {
@@ -336,16 +402,20 @@ describe('RequestTarget', () => {
       };
       result = getRawPromise(target);
     });
+
     it('should result with targets promise', () => {
       expect(result).to.be.equal(target[TARGET_INTERNALS].promise);
     });
+
     it('should be null for non-Resource target', () => {
       expect(getRawPromise({})).to.be.null;
     });
   });
+
   describe('getChildren()', () => {
-    let target,
-      result;
+    let target;
+    let result;
+
     beforeEach(() => {
       target = {};
       target[TARGET_INTERNALS] = {
@@ -353,16 +423,20 @@ describe('RequestTarget', () => {
       };
       result = getChildren(target);
     });
+
     it('should result with list of children requests', () => {
       expect(result).to.have.length(3);
     });
+
     it('should be empty list for non-Resource target', () => {
       expect(getChildren({})).to.be.empty;
     });
   });
+
   describe('getLastChild()', () => {
-    let target,
-      result;
+    let target;
+    let result;
+
     beforeEach(() => {
       target = {};
       target[TARGET_INTERNALS] = {
@@ -370,13 +444,16 @@ describe('RequestTarget', () => {
       };
       result = getLastChild(target);
     });
+
     it('should result with last item from children', () => {
       expect(result).to.be.equal(target[TARGET_INTERNALS].children.pop());
     });
   });
+
   describe('getChildrenCount()', () => {
-    let target,
-      result;
+    let target;
+    let result;
+
     beforeEach(() => {
       target = {};
       target[TARGET_INTERNALS] = {
@@ -384,13 +461,16 @@ describe('RequestTarget', () => {
       };
       result = getChildrenCount(target);
     });
+
     it('should result with children count', () => {
       expect(result).to.be.equal(3);
     });
+
     it('should be 0 for non-Resource target', () => {
       expect(getChildrenCount({})).to.be.equal(0);
     });
   });
+
   describe('createRequestTarget()', () => {
     it('should create instance of RequestTarget', () => {
       expect(createRequestTarget(Promise.reject(), {})).to.be.an.instanceof(RequestTarget);

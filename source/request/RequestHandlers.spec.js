@@ -1,13 +1,13 @@
 import {
-  ProxyCommands,
   CommandDescriptor,
+  createCommandDescriptor,
   createDescriptors,
 } from '../commands';
-import RequestHandlers from './RequestHandlers';
+import RequestHandlers, { areProxyHandlersAvailable } from './RequestHandlers';
 
 describe('RequestHandlers', () => {
-  let handlers,
-    sandbox;
+  let handlers;
+  let sandbox;
 
   function __createProxyCommandHandlers(data, sandbox) {
     data = data || {};
@@ -36,16 +36,19 @@ describe('RequestHandlers', () => {
     beforeEach(() => {
       sandbox.spy(RequestHandlers, 'areProxyHandlersAvailable');
     });
+
     it('should set proxyEnabled to false', () => {
       expect(handlers.proxyEnabled).to.be.false;
     });
+
     it('should be unavailable', () => {
       expect(handlers.available).to.be.false;
     });
 
     describe('setHandlers()', () => {
-      let hndlr,
-        hndlrII;
+      let hndlr;
+      let hndlrII;
+
       beforeEach(() => {
         hndlr = () => {
         };
@@ -58,6 +61,7 @@ describe('RequestHandlers', () => {
           fakeHandlerII: {},
         });
       });
+
       it('should throw an Error for handler of type named with reserved word', () => {
         expect(() => {
           handlers.setHandlers({
@@ -71,31 +75,39 @@ describe('RequestHandlers', () => {
           });
         }).to.not.throw(Error);
       });
+
       it('should become available', () => {
         expect(handlers.available).to.be.true;
       });
+
       it('should not check handlers for compatibility with proxies', () => {
-        expect(RequestHandlers.areProxyHandlersAvailable).to.not.be.called;
+        expect(areProxyHandlersAvailable).to.not.be.called;
       });
+
       it('should accept passed handlers', () => {
         expect(handlers.hasHandler('hndlr')).to.be.true;
       });
+
       it('should return false for non-existent handlers', () => {
         expect(handlers.hasHandler('abcdEFG')).to.be.false;
       });
+
       it('should return null when accessing non-existent handlers', () => {
         expect(handlers.getHandler('hijKLNM')).to.be.null;
       });
+
       it('handlers should be available', () => {
         expect(handlers.getHandler('hndlr')).to.be.an.instanceof(CommandDescriptor);
         const allHandlers = handlers.getHandlers();
         expect(allHandlers.hndlr).to.be.an.instanceof(CommandDescriptor);
         expect(allHandlers.hndlrII).to.be.an.instanceof(CommandDescriptor);
       });
+
       it('handlers names should be listed', () => {
         expect(handlers.getHandlerNames()).to.contain('hndlr');
         expect(handlers.getHandlerNames()).to.contain('hndlrII');
       });
+
       it('should filter functions only', () => {
         expect(handlers.hasHandler('fakeHandler')).to.be.false;
         expect(handlers.hasHandler('fakeHandlerII')).to.be.false;
@@ -104,8 +116,8 @@ describe('RequestHandlers', () => {
   });
 
   describe('Iterator', () => {
-
     let handlers;
+
     beforeEach(() => {
       handlers = RequestHandlers.create();
       handlers.setHandlers({
@@ -114,25 +126,35 @@ describe('RequestHandlers', () => {
         hndl2: () => {
         },
         // adding virtual descriptor should not change iterator sequesnce, since it ignores virtual
-        virtualProperty: CommandDescriptor.create('command', () => null, 'property', null, false, true),
+        virtualProperty: createCommandDescriptor(
+          'command',
+          () => null,
+          'property',
+          null,
+          false,
+          true,
+        ),
       });
     });
+
     it('should be able to generate Iterators', () => {
       const iterator = handlers[Symbol.iterator]();
       expect(iterator).to.be.an('object');
       expect(iterator.next).to.be.a('function');
     });
+
     it('Iterator should go through all handlers', () => {
       const iterator = handlers[Symbol.iterator]();
       let item = iterator.next();
       expect(item.value).to.be.an.instanceof(CommandDescriptor);
       expect(item.done).to.be.false;
-      let item = iterator.next();
+      item = iterator.next();
       expect(item.value).to.be.an.instanceof(CommandDescriptor);
       expect(item.done).to.be.false;
-      let item = iterator.next();
+      item = iterator.next();
       expect(item.done).to.be.true;
     });
+
     it('should be iterator for itself', () => {
       const iterator = handlers[Symbol.iterator]();
       expect(iterator[Symbol.iterator]()).to.be.equal(iterator);
@@ -165,6 +187,7 @@ describe('RequestHandlers', () => {
 
   describe('When list of descriptors used', () => {
     let list;
+
     beforeEach(() => {
       list = [
         CommandDescriptor.create('command1', () => {
@@ -174,18 +197,22 @@ describe('RequestHandlers', () => {
       ];
       handlers.setHandlers(list);
     });
+
     it('should add both descriptors', () => {
       expect(handlers.hasHandler('property1')).to.be.true;
       expect(handlers.hasHandler('property2')).to.be.true;
     });
+
     it('getHandlerNames() should return all descriptors', () => {
       expect(handlers.getHandlerNames()).to.contain('property1');
       expect(handlers.getHandlerNames()).to.contain('property2');
     });
+
     it('getHandlers() should contain all descriptors', () => {
       expect(handlers.getHandlers().property1).to.be.an.instanceof(CommandDescriptor);
       expect(handlers.getHandlers().property2).to.be.an.instanceof(CommandDescriptor);
     });
+
     it('getPropertyNames() should return non-virtual descriptors', () => {
       expect(handlers.getPropertyNames()).to.contain('property1');
       expect(handlers.getPropertyNames()).to.not.contain('property2');

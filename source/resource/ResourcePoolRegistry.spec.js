@@ -3,33 +3,36 @@ import ResourcePoolRegistry from './ResourcePoolRegistry';
 
 describe('ResourcePoolRegistry', () => {
   let registry;
-  /**
-   * @type {ResourcePool}
-   */
   let pool;
+
   beforeEach(() => {
     registry = new ResourcePoolRegistry();
     pool = registry.createPool();
   });
 
   describe('createPool()', () => {
-    let pool1,
-      listener;
+    let pool1;
+    let listener;
+
     beforeEach(() => {
       listener = sinon.spy();
       registry.addEventListener(ResourcePoolRegistry.Events.RESOURCE_POOL_CREATED, listener);
       pool1 = registry.createPool();
     });
+
     it('should return new ResourcePool instance', () => {
       expect(pool1).to.be.an.instanceof(ResourcePool);
       expect(pool1).to.not.be.equal(pool);
     });
+
     it(`should fire "${ResourcePoolRegistry.Events.RESOURCE_POOL_CREATED}" event`, () => {
       expect(listener).to.be.calledOnce;
     });
+
     it('should fire event with pool stored as data', () => {
       expect(listener.getCall(0).args[0].data).to.be.equal(pool1);
     });
+
     it('should register new ResourcePool', () => {
       expect(registry.isRegistered(pool)).to.be.true;
       expect(registry.isRegistered(pool1)).to.be.true;
@@ -37,21 +40,25 @@ describe('ResourcePoolRegistry', () => {
   });
 
   describe('When registering pool', () => {
-    let pool1,
-      listener;
+    let pool1;
+    let listener;
+
     beforeEach(() => {
       listener = sinon.spy();
       pool1 = ResourcePool.create();
       registry.addEventListener(ResourcePoolRegistry.Events.RESOURCE_POOL_REGISTERED, listener);
       registry.register(pool1);
     });
+
     it('ResourcePool should be available from registry', () => {
       expect(registry.isRegistered(pool1)).to.be.true;
       expect(registry.get(pool1.id)).to.be.equal(pool1);
     });
+
     it(`should fire "${ResourcePoolRegistry.Events.RESOURCE_POOL_REGISTERED}" event`, () => {
       expect(listener).to.be.calledOnce;
     });
+
     it('should fire event with pool stored as data', () => {
       expect(listener.getCall(0).args[0].data).to.be.equal(pool1);
     });
@@ -60,9 +67,11 @@ describe('ResourcePoolRegistry', () => {
       beforeEach(() => {
         registry.register(pool1);
       });
+
       it('ResourcePool registration should remain', () => {
         expect(registry.isRegistered(pool1)).to.be.true;
       });
+
       it('should not fire event second time', () => {
         expect(listener).to.be.calledOnce;
       });
@@ -87,9 +96,11 @@ describe('ResourcePoolRegistry', () => {
     it('should be available by ID', () => {
       expect(registry.isRegistered(pool.id)).to.be.true;
     });
+
     it('should be available by instance', () => {
       expect(registry.isRegistered(pool)).to.be.true;
     });
+
     it('should be false for non-existent pool', () => {
       expect(registry.isRegistered('1010101')).to.be.false;
     });
@@ -99,14 +110,16 @@ describe('ResourcePoolRegistry', () => {
     beforeEach(() => {
       pool.destroy();
     });
+
     it('should listen to destroy event and remove pool from registry', () => {
       expect(registry.isRegistered(pool)).to.be.false;
     });
   });
 
   describe('When removing pool', () => {
-    let pool1,
-      listener;
+    let pool1;
+    let listener;
+
     beforeEach(() => {
       listener = sinon.spy();
       pool1 = registry.createPool();
@@ -117,13 +130,16 @@ describe('ResourcePoolRegistry', () => {
       beforeEach(() => {
         registry.remove(pool1);
       });
+
       it('Removed ResourcePool should not be available from registry', () => {
         expect(registry.isRegistered(pool1)).to.be.false;
         expect(registry.get(pool1)).to.be.null;
       });
+
       it(`should fire "${ResourcePoolRegistry.Events.RESOURCE_POOL_REMOVED}" event`, () => {
         expect(listener).to.be.calledOnce;
       });
+
       it('should fire event with pool stored as data', () => {
         expect(listener.getCall(0).args[0].data).to.be.equal(pool1);
       });
@@ -133,13 +149,16 @@ describe('ResourcePoolRegistry', () => {
       beforeEach(() => {
         registry.remove(pool1.id);
       });
+
       it('Removed ResourcePool should not be available from registry', () => {
         expect(registry.isRegistered(pool1)).to.be.false;
         expect(registry.get(pool1)).to.be.null;
       });
+
       it(`should fire "${ResourcePoolRegistry.Events.RESOURCE_POOL_REMOVED}" event`, () => {
         expect(listener).to.be.calledOnce;
       });
+
       it('should fire event with pool stored as data', () => {
         expect(listener.getCall(0).args[0].data).to.be.equal(pool1);
       });
@@ -156,6 +175,7 @@ describe('ResourcePoolRegistry', () => {
     it('should be an instance of ResourcePool', () => {
       expect(ResourcePoolRegistry.defaultResourcePool).to.be.an.instanceof(ResourcePool);
     });
+
     it('should throw error of destroy() attempt', () => {
       expect(() => {
         ResourcePoolRegistry.defaultResourcePool.destroy();

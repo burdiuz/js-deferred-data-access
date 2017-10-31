@@ -2,11 +2,11 @@ import { TARGET_DATA } from '../utils';
 import TargetResource from './TargetResource';
 
 describe('TargetResource', () => {
-  let resource,
-    pool,
-    target,
-    targetType,
-    id;
+  let resource;
+  let pool;
+  let target;
+  let targetType;
+  let resourceId;
   beforeEach(() => {
     pool = {
       id: 'le pool',
@@ -14,13 +14,13 @@ describe('TargetResource', () => {
     };
     target = {};
     targetType = 'target-type';
-    id = 'das ID';
-    resource = new TargetResource(pool, target, targetType, id);
+    resourceId = 'das ID';
+    resource = new TargetResource(pool, target, targetType, resourceId);
   });
 
   describe('When created', () => {
     it('should have ID string', () => {
-      expect(resource.id).to.be.equal(id);
+      expect(resource.id).to.be.equal(resourceId);
     });
     it('should have pool ID', () => {
       expect(resource.poolId).to.be.equal(pool.id);
@@ -37,7 +37,7 @@ describe('TargetResource', () => {
 
     describe('When resource type not specified', () => {
       beforeEach(() => {
-        resource = new TargetResource(pool, target, null, id);
+        resource = new TargetResource(pool, target, null, resourceId);
       });
       it('should have "type" to be target type', () => {
         expect(resource.type).to.be.equal(typeof (target));
@@ -114,7 +114,7 @@ describe('TargetResource', () => {
       expect(resource.id).to.be.equal('11111');
     });
     it('should generate ID if not passed', () => {
-      const id = TargetResource.create(pool, target).id;
+      const { id } = TargetResource.create(pool, target);
       expect(id).to.be.a('string');
       expect(id).to.not.be.empty;
     });

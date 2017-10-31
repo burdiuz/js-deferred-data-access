@@ -108,7 +108,8 @@ export const getRawPromise = (target) => (
 );
 
 const getRequestChildren = (target) => (
-  target && target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].children : null
+  target
+  && target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].children : null
 );
 
 export const getChildren = (target) => {

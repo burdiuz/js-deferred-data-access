@@ -16,7 +16,9 @@ class RequestTargetDecorator {
   apply(request) {
     let result;
 
-    if (!this.handlers.available) return;
+    if (!this.handlers.available) {
+      return request;
+    }
     /* FIXME revert change when ES6 will be supported widely
      for (var descriptor of this.handlers) {
      request[descriptor.name] = this.getMember(descriptor.name, descriptor.type);
@@ -28,6 +30,7 @@ class RequestTargetDecorator {
       const descriptor = result.value;
       request[descriptor.name] = this.members.get(descriptor);
     }
+
     return request;
   }
 
