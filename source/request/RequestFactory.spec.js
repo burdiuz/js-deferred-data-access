@@ -1,13 +1,15 @@
-import RequestFactory, { createRequestFactory } from './RequestFactory';
-import RequestTargetDecorator, { createRequestTargetDecorator } from './RequestTargetDecorator';
-import RequestTarget, { createRequestTarget } from './RequestTarget';
+const requestFactoryInjector = require('inject-loader!./RequestFactory');
 
 describe('RequestFactory', () => {
-  let sandbox,
-    resource,
-    factory,
-    decorator,
-    handlers;
+  let sandbox;
+  let resource;
+  let factory;
+  let decorator;
+  let handlers;
+  let module;
+  let requestTargetModule;
+  let requestTargetDecoratorModule;
+
   beforeEach(() => {
     handlers = {
       available: true,
@@ -17,34 +19,51 @@ describe('RequestFactory', () => {
       apply: sinon.spy(),
     };
     resource = {};
-    sandbox.stub(RequestTarget, 'create').returns(resource);
-    sandbox.stub(RequestTargetDecorator, 'create').returns(decorator);
   });
+
+  // inject module with mocks
+  beforeEach(() => {
+    requestTargetModule = {
+      createRequestTarget: sandbox.spy(() => resource),
+    };
+
+    requestTargetDecoratorModule = {
+      createRequestTargetDecorator: sandbox.spy(() => decorator),
+    };
+
+    module = requestFactoryInjector({
+      './RequestTarget': requestTargetModule,
+      './RequestTargetDecorator': requestTargetDecoratorModule,
+    });
+  });
+
   afterEach(() => {
     sandbox.restore();
   });
 
   describe('When no cache implementation provided', () => {
     beforeEach(() => {
-      factory = createRequestFactory(handlers);
+      factory = module.createRequestFactory(handlers);
     });
+
     it('cache should be null', () => {
       expect(factory.cache).to.be.null;
     });
 
     describe('create()', () => {
       let result;
+
       beforeEach(() => {
         result = factory.create(Promise.reject());
       });
 
       it('should create RequestTarget', () => {
-        expect(RequestTarget.create).to.be.calledOnce;
+        expect(requestTargetModule.createRequestTarget).to.be.calledOnce;
         expect(result).to.be.equal(resource);
       });
 
       it('should pass promise and handlers to request', () => {
-        const args = RequestTarget.create.getCall(0).args;
+        const { args } = requestTargetModule.createRequestTarget.getCall(0);
         expect(args[0]).to.be.an.instanceof(Promise);
         expect(args[1]).to.be.equal(handlers);
       });
@@ -79,39 +98,45 @@ describe('RequestFactory', () => {
         target: '1111',
       };
       cache = {
-        get: sinon.spy(() => cachedResource),
-        set: sinon.spy(() => cachedResource),
+        get: sandbox.spy(() => cachedResource),
+        set: sandbox.spy(() => cachedResource),
       };
-      factory = createRequestFactory(handlers, cache);
+      factory = module.createRequestFactory(handlers, cache);
     });
     describe('getCached()', () => {
       beforeEach(() => {
         result = factory.getCached('property', pack);
       });
+
       it('should request cached instance', () => {
         expect(cache.get).to.be.calledOnce;
         expect(cache.get).to.be.calledWith('property', pack);
       });
+
       it('should return cached instance', () => {
         expect(result).to.be.equal(cachedResource);
       });
     });
     describe('createCached()', () => {
       let resource;
+
       beforeEach(() => {
         resource = {};
-        sinon.stub(factory, 'create').returns(resource);
+        sandbox.stub(factory, 'create').returns(resource);
         result = factory.createCached(Promise.reject(), 'property', pack);
       });
+
       it('should create new resource', () => {
         expect(factory.create).to.be.calledOnce;
         expect(factory.create).to.be.calledWith(sinon.match.instanceOf(Promise));
         expect(factory.create).to.be.calledBefore(cache.set);
       });
+
       it('should cache created resource', () => {
         expect(cache.set).to.be.calledOnce;
         expect(cache.set).to.be.calledWith('property', pack, resource);
       });
+
       it('should return cached instance', () => {
         expect(result).to.be.equal(resource);
       });

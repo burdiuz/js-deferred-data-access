@@ -1,12 +1,10 @@
 import EventDispatcher from 'event-dispatcher';
-import {
-  getResourcePoolId,
-  getResourceId,
-  isResource,
-  isResourceConvertible,
-  getRawResource,
-} from './utils';
-import { isPending } from '../request/RequestTarget';
+import getResourcePoolId from '../utils/getResourcePoolId';
+import getResourceId from '../utils/getResourceId';
+import isResource from '../utils/isResource';
+import isResourceConvertible from '../utils/isResourceConvertible';
+import getRawResource from '../utils/getRawResource';
+import { isPending, toJSON } from '../request/RequestTarget';
 
 export const ResourceConverterEvents = Object.freeze({
   RESOURCE_CREATED: 'resourceCreated',
@@ -129,7 +127,7 @@ class ResourceConverter extends EventDispatcher {
   lookupObject(data, linkConvertHandler) {
     const result = {};
     for (const name in data) {
-      if (Object.property.hasOwnProperty.call(data, name)) {
+      if (Object.prototype.hasOwnProperty.call(data, name)) {
         result[name] = linkConvertHandler.call(this, data[name]);
       }
     }

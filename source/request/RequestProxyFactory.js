@@ -1,4 +1,8 @@
-import RequestFactory, { FACTORY_DECORATOR_FIELD, FACTORY_HANDLERS_FIELD } from './RequestFactory';
+import RequestFactory, {
+  createRequestFactory,
+  FACTORY_DECORATOR_FIELD,
+  FACTORY_HANDLERS_FIELD,
+} from './RequestFactory';
 import { ProxyCommandFields } from '../commands/ProxyCommands';
 
 const FACTORY_FIELD = Symbol('request.proxy.factory::factory');
@@ -95,7 +99,7 @@ class RequestProxyFactory extends RequestFactory {
     super(null, null, true);
 
     this[FACTORY_HANDLERS_FIELD] = handlers;
-    this[FACTORY_FIELD] = RequestFactory.create(handlers, cacheImpl);
+    this[FACTORY_FIELD] = createRequestFactory(handlers, cacheImpl);
     this[FACTORY_FIELD][FACTORY_DECORATOR_FIELD].setFactory(this);
   }
 

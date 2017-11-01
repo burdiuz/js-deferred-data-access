@@ -2,7 +2,8 @@
  * Created by Oleg Galaburda on 29.03.16.
  */
 
-import { Deferred, TARGET_INTERNALS } from '../utils';
+import Deferred from '../utils/Deferred';
+import TARGET_INTERNALS from '../utils/TARGET_INTERNALS';
 import CommandHandlerFactory from './CommandHandlerFactory';
 
 describe('CommandHandlerFactory', () => {
@@ -109,11 +110,10 @@ describe('CommandHandlerFactory', () => {
         child = resource.method('command', 'value');
       });
 
-      it('should result in rejected promise', (done) => {
-        child.catch((data) => {
-          expect(data).to.be.an.instanceof(Error);
-          done();
-        });
+      it('should result in rejected promise', () => {
+        return child
+          .then(() => assert(false, 'should be rejected'))
+          .catch((data) => expect(data).to.be.an.instanceof(Error));
       });
 
       it('should create new resource for promise', () => {
@@ -172,8 +172,8 @@ describe('CommandHandlerFactory', () => {
         expect(child).to.be.equal(createResult);
       });
 
-      it('should call isTemporary when fulfilled', (done) => {
-        resource[TARGET_INTERNALS].sendRequest.getCall(0).returnValue.then(() => {
+      it('should call isTemporary when fulfilled', () => {
+        return resource[TARGET_INTERNALS].sendRequest.getCall(0).returnValue.then(() => {
           expect(descriptor.isTemporary).to.be.calledOnce;
           expect(descriptor.isTemporary).to.be.calledWith(
             resource,
@@ -186,15 +186,12 @@ describe('CommandHandlerFactory', () => {
             }),
             requestData,
           );
-
-          done();
         });
       });
 
-      it('should subscribe to request resolution', (done) => {
-        resource[TARGET_INTERNALS].sendRequest.getCall(0).returnValue.then(() => {
+      it('should subscribe to request resolution', () => {
+        return resource[TARGET_INTERNALS].sendRequest.getCall(0).returnValue.then(() => {
           expect(child[TARGET_INTERNALS].temporary).to.be.equal(isTemporaryResult);
-          done();
         });
       });
     };
@@ -263,11 +260,10 @@ describe('CommandHandlerFactory', () => {
         expect(resourceFactory.create.getCall(1).args[0]).to.be.an.instanceof(Promise);
       });
 
-      it('should result into rejected promise', (done) => {
-        child.catch((data) => {
-          expect(data).to.be.an.instanceof(Error);
-          done();
-        });
+      it('should result into rejected promise', () => {
+        return child
+          .then(() => assert(false, 'should be rejected'))
+          .catch((data) => expect(data).to.be.an.instanceof(Error));
       });
     });
   });

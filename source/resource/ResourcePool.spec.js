@@ -1,10 +1,11 @@
-import { TARGET_DATA } from '../utils';
+import TARGET_DATA from '../utils/TARGET_DATA';
 import ResourcePool, {
   ResourcePoolEvents,
   setValidTargets,
   getDefaultValidTargets,
   isValidTarget,
   createResourcePool,
+  defaultResourcePool,
 } from './ResourcePool';
 import TargetResource from './TargetResource';
 import {
@@ -64,7 +65,7 @@ describe('ResourcePool', () => {
       });
 
       it('should fire event with resource target data', () => {
-        const data = listener.getCall(0).args[0].data;
+        const { data } = listener.getCall(0).args[0];
         expect(data).to.be.equal(result);
       });
 
@@ -182,7 +183,7 @@ describe('ResourcePool', () => {
     });
 
     it('should fire event with resource as event data', () => {
-      const data = listener.getCall(0).args[0].data;
+      const { data } = listener.getCall(0).args[0];
       expect(data).to.be.equal(resource1);
     });
 
@@ -350,9 +351,21 @@ describe('ResourcePool', () => {
     });
   });
 
-  describe('create()', () => {
+  describe('createResourcePool()', () => {
     it('should return an instance of ResourcePool', () => {
       expect(createResourcePool()).to.be.an.instanceof(ResourcePool);
+    });
+  });
+
+  describe('defaultResourcePool', () => {
+    it('should be an instance of ResourcePool', () => {
+      expect(defaultResourcePool).to.be.an.instanceof(ResourcePool);
+    });
+
+    it('should throw error of destroy() attempt', () => {
+      expect(() => {
+        defaultResourcePool.destroy();
+      }).to.throw(Error);
     });
   });
 });

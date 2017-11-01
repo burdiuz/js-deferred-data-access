@@ -1,5 +1,6 @@
 import EventDispatcher from 'event-dispatcher';
-import { getId, isResource } from '../utils';
+import getId from '../utils/getId';
+import isResource from '../utils/isResource';
 import { createTargetResource } from './TargetResource';
 
 export const ResourcePoolEvents = Object.freeze({
@@ -111,6 +112,15 @@ class ResourcePool extends EventDispatcher {
     }
   }
 }
+
+class DefaultResourcePool extends ResourcePool {
+  // INFO default ResourcePool should not be destroyable;
+  destroy() {
+    throw new Error('Default ResourcePool cannot be destroyed.');
+  }
+}
+
+export const defaultResourcePool = new DefaultResourcePool();
 
 export const createResourcePool = () => new ResourcePool();
 

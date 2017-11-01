@@ -1,5 +1,8 @@
-import ResourcePool from './ResourcePool';
-import ResourcePoolRegistry from './ResourcePoolRegistry';
+import ResourcePool, { createResourcePool } from './ResourcePool';
+import ResourcePoolRegistry, {
+  createResourcePoolRegistry,
+  ResourcePoolRegistryEvents,
+} from './ResourcePoolRegistry';
 
 describe('ResourcePoolRegistry', () => {
   let registry;
@@ -16,7 +19,7 @@ describe('ResourcePoolRegistry', () => {
 
     beforeEach(() => {
       listener = sinon.spy();
-      registry.addEventListener(ResourcePoolRegistry.Events.RESOURCE_POOL_CREATED, listener);
+      registry.addEventListener(ResourcePoolRegistryEvents.RESOURCE_POOL_CREATED, listener);
       pool1 = registry.createPool();
     });
 
@@ -25,7 +28,7 @@ describe('ResourcePoolRegistry', () => {
       expect(pool1).to.not.be.equal(pool);
     });
 
-    it(`should fire "${ResourcePoolRegistry.Events.RESOURCE_POOL_CREATED}" event`, () => {
+    it(`should fire "${ResourcePoolRegistryEvents.RESOURCE_POOL_CREATED}" event`, () => {
       expect(listener).to.be.calledOnce;
     });
 
@@ -45,8 +48,8 @@ describe('ResourcePoolRegistry', () => {
 
     beforeEach(() => {
       listener = sinon.spy();
-      pool1 = ResourcePool.create();
-      registry.addEventListener(ResourcePoolRegistry.Events.RESOURCE_POOL_REGISTERED, listener);
+      pool1 = createResourcePool();
+      registry.addEventListener(ResourcePoolRegistryEvents.RESOURCE_POOL_REGISTERED, listener);
       registry.register(pool1);
     });
 
@@ -55,7 +58,7 @@ describe('ResourcePoolRegistry', () => {
       expect(registry.get(pool1.id)).to.be.equal(pool1);
     });
 
-    it(`should fire "${ResourcePoolRegistry.Events.RESOURCE_POOL_REGISTERED}" event`, () => {
+    it(`should fire "${ResourcePoolRegistryEvents.RESOURCE_POOL_REGISTERED}" event`, () => {
       expect(listener).to.be.calledOnce;
     });
 
@@ -123,7 +126,7 @@ describe('ResourcePoolRegistry', () => {
     beforeEach(() => {
       listener = sinon.spy();
       pool1 = registry.createPool();
-      registry.addEventListener(ResourcePoolRegistry.Events.RESOURCE_POOL_REMOVED, listener);
+      registry.addEventListener(ResourcePoolRegistryEvents.RESOURCE_POOL_REMOVED, listener);
     });
 
     describe('When removing pool by instance', () => {
@@ -136,7 +139,7 @@ describe('ResourcePoolRegistry', () => {
         expect(registry.get(pool1)).to.be.null;
       });
 
-      it(`should fire "${ResourcePoolRegistry.Events.RESOURCE_POOL_REMOVED}" event`, () => {
+      it(`should fire "${ResourcePoolRegistryEvents.RESOURCE_POOL_REMOVED}" event`, () => {
         expect(listener).to.be.calledOnce;
       });
 
@@ -155,7 +158,7 @@ describe('ResourcePoolRegistry', () => {
         expect(registry.get(pool1)).to.be.null;
       });
 
-      it(`should fire "${ResourcePoolRegistry.Events.RESOURCE_POOL_REMOVED}" event`, () => {
+      it(`should fire "${ResourcePoolRegistryEvents.RESOURCE_POOL_REMOVED}" event`, () => {
         expect(listener).to.be.calledOnce;
       });
 
@@ -165,22 +168,9 @@ describe('ResourcePoolRegistry', () => {
     });
   });
 
-  describe('create()', () => {
+  describe('createResourcePoolRegistry()', () => {
     it('should return new instance of ResourcePoolRegistry', () => {
-      expect(ResourcePoolRegistry.create()).to.be.an.instanceof(ResourcePoolRegistry);
+      expect(createResourcePoolRegistry()).to.be.an.instanceof(ResourcePoolRegistry);
     });
   });
-
-  describe('ResourcePoolRegistry.defaultResourcePool', () => {
-    it('should be an instance of ResourcePool', () => {
-      expect(ResourcePoolRegistry.defaultResourcePool).to.be.an.instanceof(ResourcePool);
-    });
-
-    it('should throw error of destroy() attempt', () => {
-      expect(() => {
-        ResourcePoolRegistry.defaultResourcePool.destroy();
-      }).to.throw(Error);
-    });
-  });
-
 });

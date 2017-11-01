@@ -1,5 +1,6 @@
-import { createDeferred, TARGET_INTERNALS } from '../utils';
-import { createRequestPackage } from '../request';
+import TARGET_INTERNALS from '../utils/TARGET_INTERNALS';
+import { createDeferred } from '../utils/Deferred';
+import createRequestPackage from '../utils/createRequestPackage';
 import { setTemporary } from '../request/RequestTarget';
 
 const createCommandHandlerFor = (

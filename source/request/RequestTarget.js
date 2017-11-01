@@ -1,13 +1,11 @@
-import { TargetStatus, TARGET_INTERNALS } from '../utils';
-import { isResource } from '../resource';
+import TARGET_INTERNALS from '../utils/TARGET_INTERNALS';
+import TargetStatus from '../utils/TargetStatus';
+import isResource from '../utils/isResource';
 import RequestTargetInternals from './RequestTargetInternals';
 
 const PROMISE_FIELD = Symbol('request.target::promise');
 
-const getRequestPromise = (request) => (
-  request[TARGET_INTERNALS]
-  || request[PROMISE_FIELD]
-);
+const getRequestPromise = (request) => (request[TARGET_INTERNALS] || request[PROMISE_FIELD]);
 
 /**
  * The object that will be available on other side
@@ -73,7 +71,7 @@ export const setTemporary = (target, value) => {
 
 export const getStatus = (target) => (
   target &&
-  target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].status : ''
+  target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].status : null
 );
 
 export const isPending = (value) => (

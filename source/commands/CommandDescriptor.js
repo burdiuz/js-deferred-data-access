@@ -8,6 +8,11 @@ class CommandDescriptor {
     this.virtual = false;
     this.resourceType = null;
   }
+
+  toString() {
+    return `[CommandDescriptor(name="${String(this.name)}", ` +
+      `type="${String(this.type)}", virtual="${this.virtual}")]`;
+  }
 }
 
 export const createCommandDescriptor = (command, handler, name) => {

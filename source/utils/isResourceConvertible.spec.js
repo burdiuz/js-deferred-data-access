@@ -1,17 +1,12 @@
-import IConvertible, { isResourceConvertible } from './IConvertible';
+import IConvertible from './IConvertible';
+import isResourceConvertible from './isResourceConvertible';
 import {
   __createDataResolvedPromise,
   __createTargetResource,
   __createRequestTarget,
   __createRequestTargetData,
   __createRequestTargetProxy,
-} from '../../../tests/stubs';
-
-describe('IConvertible()', () => {
-  it('should be instantiable', () => {
-    expect(new IConvertible()).to.be.an('object');
-  });
-});
+} from '../../tests/stubs';
 
 describe('isResourceConvertible()', () => {
   it('should return true for TargetResource', () => {

@@ -1,4 +1,4 @@
-const createRequestPackage = (type, args, targetId) => {
+export default (type, args, targetId) => {
   const result = {
     type,
     cmd: args[0], // cmd,
@@ -6,12 +6,10 @@ const createRequestPackage = (type, args, targetId) => {
     target: targetId,
   };
 
-  // FIXME why?
+  // FIXME why? mprobably to make it not enumerable?.. fuck, dunno
   Object.defineProperty(result, 'args', {
     value: args,
   });
 
   return result;
 };
-
-export default createRequestPackage;

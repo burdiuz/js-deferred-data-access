@@ -1,4 +1,6 @@
-import { Reserved, createCommandDescriptor, CommandDescriptor } from '../../commands';
+import CommandDescriptor, { createCommandDescriptor } from '../commands/CommandDescriptor';
+import Reserved from '../commands/Reserved';
+
 
 /**
  * Checks for CommandDescriptor uniqueness and reserved words usage.
@@ -67,12 +69,10 @@ const filterHash = (handlers, descriptors, properties) => {
  * @param {Object.<string, DataAccessInterface.CommandDescriptor>} descriptors
  * @param {Array.<number, DataAccessInterface.CommandDescriptor>} properties
  */
-const filterRequestHandlers = (handlers, descriptors, properties) => {
+export default (handlers, descriptors, properties) => {
   if (handlers instanceof Array) {
     filterArray(handlers, descriptors, properties);
   } else {
     filterHash(handlers, descriptors, properties);
   }
 };
-
-export default filterRequestHandlers;

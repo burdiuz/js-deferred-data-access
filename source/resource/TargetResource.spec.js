@@ -1,5 +1,5 @@
-import { TARGET_DATA } from '../utils';
-import TargetResource from './TargetResource';
+import TARGET_DATA from '../utils/TARGET_DATA';
+import TargetResource, { createTargetResource } from './TargetResource';
 
 describe('TargetResource', () => {
   let resource;
@@ -109,12 +109,12 @@ describe('TargetResource', () => {
 
   describe('create()', () => {
     it('should create new instance of TargetResource', () => {
-      const resource = TargetResource.create(pool, target, null, '11111');
+      const resource = createTargetResource(pool, target, null, '11111');
       expect(resource).to.be.an.instanceof(TargetResource);
       expect(resource.id).to.be.equal('11111');
     });
     it('should generate ID if not passed', () => {
-      const { id } = TargetResource.create(pool, target);
+      const { id } = createTargetResource(pool, target);
       expect(id).to.be.a('string');
       expect(id).to.not.be.empty;
     });

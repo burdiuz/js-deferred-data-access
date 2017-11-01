@@ -14,7 +14,7 @@ export const ProxyCommandFields = Object.freeze({
   deleteProperty: Symbol('proxy.commands::deleteProperty'),
 });
 
-class ProxyCommands {
+class ProxyCommandsClass {
   createGETDescriptor = descriptorGeneratorFactory(
     ProxyCommandNames.GET,
     ProxyCommandFields.get,
@@ -43,17 +43,24 @@ class ProxyCommands {
 
   get required() {
     return [
-      ProxyCommandFields.GET,
-      ProxyCommandFields.SET,
-      ProxyCommandFields.APPLY,
+      ProxyCommandNames.GET,
+      ProxyCommandNames.SET,
+      ProxyCommandNames.APPLY,
     ];
   }
 }
 
-export const createDescriptors = (handlers, target, isTemporary, resourceType, cacheable) => {
+const ProxyCommands = new ProxyCommandsClass();
+
+export const createDescriptors = (
+  handlers,
+  target = {},
+  isTemporary = false,
+  resourceType = null,
+  cacheable = false,
+) => {
   const { list } = ProxyCommands;
   const { length } = list;
-  target = target || {};
   for (let index = 0; index < length; index++) {
     const name = list[index];
     const handler = handlers[name];
@@ -76,4 +83,4 @@ export const createDescriptors = (handlers, target, isTemporary, resourceType, c
   return target;
 };
 
-export default new ProxyCommands();
+export default ProxyCommands;

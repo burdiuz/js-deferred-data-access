@@ -2,23 +2,16 @@
  * @exports DataAccessInterface
  */
 
-import { areProxiesAvailable } from './utils';
-import {
-  createRequestHandlers,
-  createRequestProxyFactory,
-  createRequestFactory,
-} from './request';
-import {
-  createResourceConverter,
-  createResourcePoolRegistry,
-  ResourcePoolEvents,
-} from './resource';
-import {
-  defaultResourcePool,
-  isResource,
-  getResourcePoolId,
-  getResourceId,
-} from './resource/utils';
+import areProxiesAvailable from './utils/areProxiesAvailable';
+import isResource from './utils/isResource';
+import getResourcePoolId from './utils/getResourcePoolId';
+import getResourceId from './utils/getResourceId';
+import { createRequestHandlers } from './request/RequestHandlers';
+import { createRequestProxyFactory } from './request/RequestProxyFactory';
+import { createRequestFactory } from './request/RequestFactory';
+import { defaultResourcePool, ResourcePoolEvents } from './resource/ResourcePool';
+import { createResourceConverter } from './resource/ResourceConverter';
+import { createResourcePoolRegistry } from './resource/ResourcePoolRegistry';
 
 class DataAccessInterface {
 

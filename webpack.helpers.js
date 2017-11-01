@@ -16,6 +16,7 @@ const getBabelLoader = (plugins = []) => ({
           browsers: ['last 2 versions'],
           node: '8.4.0',
         },
+        modules: false,
       }],
     ],
     plugins: [

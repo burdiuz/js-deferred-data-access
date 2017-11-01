@@ -1,4 +1,6 @@
-import { TARGET_DATA, TARGET_INTERNALS, getId } from '../utils';
+import TARGET_DATA from '../utils/TARGET_DATA';
+import TARGET_INTERNALS from '../utils/TARGET_INTERNALS';
+import getId from '../utils/getId';
 
 const getPoolId = (pool) => (pool ? pool.id : null);
 
@@ -54,8 +56,8 @@ class TargetResource {
   });
 
   destroy() {
-    const { id, pool } = this;
     const internals = this[TARGET_INTERNALS];
+    const { id, pool } = internals;
 
     if (!internals.active) {
       return;

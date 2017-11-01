@@ -2,8 +2,13 @@
  * Created by Oleg Galaburda on 21.03.16.
  */
 
-import { Deferred, createDeferred, TargetStatus, TARGET_DATA } from '../utils';
-import { RequestTargetCommands, RequestTargetCommandFields } from '../commands';
+import Deferred, { createDeferred } from '../utils/Deferred';
+import TargetStatus from '../utils/TargetStatus';
+import TARGET_DATA from '../utils/TARGET_DATA';
+
+import RequestTargetCommands, {
+  RequestTargetCommandFields,
+} from '../commands/RequestTargetCommands';
 import RequestTargetInternals from './RequestTargetInternals';
 import {
   __createRequestTarget,
@@ -78,11 +83,10 @@ describe('RequestTargetInternals', () => {
       expect(target.canBeDestroyed()).to.be.false;
     });
 
-    it('should reject destruction with error', (done) => {
-      target.destroy().catch((result) => {
-        assert(result instanceof Error, 'result should be Error');
-        done();
-      });
+    it('should reject destruction with error', () => {
+      return target.destroy()
+        .then(() => assert(false, 'should not resolve'))
+        .catch((result) => assert(result instanceof Error, 'result should be Error'));
     });
 
     describe('When making child request', () => { // add to queue
@@ -116,11 +120,10 @@ describe('RequestTargetInternals', () => {
         });
 
         // they are all pending since parent is not resolved
-        it('should reject destruction with error', (done) => {
-          promise.catch((data) => {
-            expect(data).to.be.an.instanceof(Error);
-            done();
-          });
+        it('should reject destruction with error', () => {
+          return promise
+            .then(() => assert(false, 'should not resolve'))
+            .catch((data) => expect(data).to.be.an.instanceof(Error));
         });
       });
 
@@ -140,12 +143,10 @@ describe('RequestTargetInternals', () => {
   });
 
   describe('When fulfilled', () => {
-    beforeEach((done) => {
+    beforeEach(() => {
       linkData = __createRequestTargetData();
       deferred.resolve(linkData);
-      deferred.promise.then(() => {
-        done();
-      });
+      return deferred.promise;
 
     });
 
@@ -173,11 +174,9 @@ describe('RequestTargetInternals', () => {
 
     describe('When subscribing to the promise', () => {
       let subscriber;
-      beforeEach((done) => {
-        subscriber = sinon.spy(() => {
-          done();
-        });
-        target.then(subscriber);
+      beforeEach(() => {
+        subscriber = sinon.spy();
+        return target.then(subscriber);
       });
 
       it('should resolve promises', () => {
@@ -255,14 +254,12 @@ describe('RequestTargetInternals', () => {
   });
 
   describe('When fulfilled as temporary', () => {
-    beforeEach((done) => {
+    beforeEach(() => {
       linkData = __createRequestTargetData();
       deferred.resolve(linkData);
       target.temporary = true;
       sinon.spy(target, 'sendRequest');
-      deferred.promise.then(() => {
-        done();
-      });
+      return deferred.promise;
     });
 
     it('should have "destroyed" status', () => {
@@ -279,14 +276,12 @@ describe('RequestTargetInternals', () => {
   });
 
   describe('When fulfilled with pending queue', () => {
-    beforeEach((done) => {
+    beforeEach(() => {
       target.sendRequest('name', { type: 'type', cmd: 'command', value: 'way-lue' });
       target.sendRequest('no-name', { type: 'no-type', cmd: 'no-command', value: 'no-way-lue' });
       linkData = __createRequestTargetData();
       deferred.resolve(linkData);
-      deferred.promise.then(() => {
-        done();
-      });
+      return deferred.promise;
     });
 
     it('should change state to resolved', () => {
@@ -304,38 +299,35 @@ describe('RequestTargetInternals', () => {
     });
   });
 
-  describe('When fulfilled with not-a-Resource value', (done) => {
+  describe('When fulfilled with not-a-Resource value', () => {
     let promise;
     beforeEach(() => {
       promise = target.sendRequest('1', { type: 'one' });
       deferred.resolve(1983);
-      deferred.promise.then(() => {
-        done();
-      });
+      return deferred.promise;
     });
 
-    it('should reject queued requests', (done) => {
-      promise.catch((data) => {
-        expect(data).to.be.an.instanceof(Error);
-        done();
-      });
+    it('should reject queued requests', () => {
+      return promise
+        .then(() => assert(false, 'should be rejected'))
+        .catch((data) => expect(data).to.be.an.instanceof(Error));
     });
 
   });
 
   describe('When rejected', () => {
     let child;
-    beforeEach((done) => {
 
+    beforeEach(() => {
       child = target.sendRequest('1', 'one');
-
       linkData = {
         message: 'you screwed!',
       };
       deferred.reject(linkData);
-      deferred.promise.catch(() => {
-        done();
-      });
+
+      return deferred.promise
+        .then(() => assert(false, 'should be rejected'))
+        .catch(() => null);
     });
 
     it('should set status to rejected', () => {
@@ -350,11 +342,10 @@ describe('RequestTargetInternals', () => {
       expect(target.canBeDestroyed()).to.be.true;
     });
 
-    it('should reject queue', (done) => {
-      child.catch((data) => {
-        expect(data).to.be.an.instanceof(Error);
-        done();
-      });
+    it('should reject queue', () => {
+      return child
+        .then(() => assert(false, 'should be rejected'))
+        .catch((data) => expect(data).to.be.an.instanceof(Error));
     });
 
     describe('When making child request', () => { // reject immediately
@@ -367,11 +358,12 @@ describe('RequestTargetInternals', () => {
         });
       });
 
-      it('promise should be rejected', (done) => {
-        result.catch((data) => {
-          assert(data instanceof Error, 'promise result must be an error instance');
-          done();
-        });
+      it('promise should be rejected', () => {
+        return result
+          .then(() => assert(false, 'should be rejected'))
+          .catch((data) => {
+            assert(data instanceof Error, 'promise result must be an error instance');
+          });
       });
       it('should handle request internally', () => {
         expect(handlers.handle).to.not.be.called;
@@ -380,11 +372,12 @@ describe('RequestTargetInternals', () => {
 
     describe('When subscribing to the promise', () => {
       let subscriber;
-      beforeEach((done) => {
-        subscriber = sinon.spy(() => {
-          done();
-        });
-        target.catch(subscriber);
+      beforeEach(() => {
+        subscriber = sinon.spy();
+
+        return target
+          .then(() => assert(false, 'should be rejected'))
+          .catch(subscriber);
       });
 
       it('should count subscriber', () => {
@@ -407,24 +400,18 @@ describe('RequestTargetInternals', () => {
         result = target.destroy();
       });
 
-      it('should resolve destruction', (done) => {
-        result.then((result) => {
-          assert(!result, 'result should be empty');
-          done();
-        });
+      it('should resolve destruction', () => {
+        return result.then((result) => assert(!result, 'result should be empty'));
       });
     });
 
   });
 
   describe('When destroyed', () => {
-    beforeEach((done) => {
+    beforeEach(() => {
       linkData = __createRequestTargetData();
       deferred.resolve(linkData);
-      deferred.promise.then(() => {
-        target.destroy();
-        done();
-      });
+      return deferred.promise.then(() => target.destroy());
     });
 
     it('should not be active', () => {
@@ -442,10 +429,9 @@ describe('RequestTargetInternals', () => {
         });
       });
 
-      it('promise should be rejected', (done) => {
-        result.catch((data) => {
+      it('promise should be rejected', () => {
+        return result.catch((data) => {
           assert(data instanceof Error, 'promise result must be an error instance');
-          done();
         });
       });
 
@@ -458,13 +444,12 @@ describe('RequestTargetInternals', () => {
   describe('When registering children', () => {
     let child;
     describe('When registered child is fulfilled', () => {
-      beforeEach((done) => {
+      beforeEach(() => {
         linkData = __createRequestTargetData();
         deferred.resolve(linkData);
-        deferred.promise.then(() => {
+        return deferred.promise.then(() => {
           child = __createRequestTarget();
           target.registerChild(child);
-          done();
         });
       });
 
@@ -473,23 +458,19 @@ describe('RequestTargetInternals', () => {
         expect(target.children).to.contain(child);
       });
 
-      it('should remove child from the list when its resolved', (done) => {
-        child.then(() => {
-          expect(target.children).to.not.contain(child);
-          done();
-        });
+      it('should remove child from the list when its resolved', () => {
+        return child.then(() => expect(target.children).to.not.contain(child));
       });
     });
 
     describe('When registered child is rejected', () => {
-      beforeEach((done) => {
+      beforeEach(() => {
         linkData = __createRequestTargetData();
         deferred.resolve(linkData);
-        deferred.promise.then(() => {
+        return deferred.promise.then(() => {
           const promise = Promise.reject('bad child');
           child = __createRequestTarget(promise);
           target.registerChild(child);
-          done();
         });
       });
 
@@ -498,23 +479,21 @@ describe('RequestTargetInternals', () => {
         expect(target.children).to.contain(child);
       });
 
-      it('should remove child from the list when its rejected', (done) => {
-        child.catch(() => {
-          expect(target.children).to.not.contain(child);
-          done();
-        });
+      it('should remove child from the list when its rejected', () => {
+        return child
+          .then(() => assert(false, 'should be rejected'))
+          .catch(() => expect(target.children).to.not.contain(child));
       });
     });
   });
 
   describe('When sending request', () => {
     describe('When target was fulfilled', () => {
-      beforeEach((done) => {
+      beforeEach(() => {
         linkData = __createRequestTargetData();
         deferred.resolve(linkData);
-        deferred.promise.then(() => {
+        return deferred.promise.then(() => {
           hasHandler = false;
-          done();
         });
       });
 

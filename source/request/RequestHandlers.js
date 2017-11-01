@@ -1,6 +1,7 @@
-import { CommandDescriptor, ProxyCommands, ProxyCommandFields } from '../commands';
-import { filterRequestHandlers } from './utils';
-import { getResourceType } from '../resource/utils';
+import CommandDescriptor from '../commands/CommandDescriptor';
+import ProxyCommands, { ProxyCommandFields } from '../commands/ProxyCommands';
+import filterRequestHandlers from '../utils/filterRequestHandlers';
+import getResourceType from '../utils/getResourceType';
 
 /**
  * Key for default type for handlers that will be applied to any
@@ -36,7 +37,7 @@ class RequestHandlers {
    * @param {boolean} proxyEnabled
    * @private
    */
-  constructor(proxyEnabled) {
+  constructor(proxyEnabled = false) {
     // named collection of CommandDescriptor lists that may be applied
     this.properties = {};
     this.descriptors = {};
@@ -64,7 +65,7 @@ class RequestHandlers {
     });
 
     if (this.proxyEnabled) {
-      areProxyHandlersAvailable(this.descriptors, true);
+      areProxyHandlersAvailable(this.descriptors[DEFAULT_KEY], true);
     }
   }
 
@@ -84,9 +85,9 @@ class RequestHandlers {
    */
   hasHandler(name, type) {
     return (
-      this.descriptors[type]
+        this.descriptors[type]
         && Object.prototype.hasOwnProperty.call(this.descriptors[type], name)
-    )
+      )
       || (
         this.descriptors[DEFAULT_KEY]
         && Object.prototype.hasOwnProperty.call(this.descriptors[DEFAULT_KEY], name)
@@ -118,9 +119,9 @@ class RequestHandlers {
    */
   getHandler(name, type) {
     const handler = (
-      this.descriptors[type]
+        this.descriptors[type]
         && this.descriptors[type][name]
-    )
+      )
       || (
         this.descriptors[DEFAULT_KEY]
         && this.descriptors[DEFAULT_KEY][name]

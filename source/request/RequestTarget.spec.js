@@ -1,3 +1,4 @@
+/*
 import RequestTarget, {
   isTemporary,
   setTemporary,
@@ -13,40 +14,56 @@ import RequestTarget, {
   createRequestTarget,
 } from './RequestTarget';
 import RequestTargetInternals from './RequestTargetInternals';
-import { Deferred, TARGET_INTERNALS, TargetStatus } from '../utils';
+*/
+import Deferred from '../utils/Deferred';
+import TARGET_INTERNALS from '../utils/TARGET_INTERNALS';
+import TargetStatus from '../utils/TargetStatus';
 import {
   __createRequestTargetData,
 } from '../../tests/stubs';
 
-describe('RequestTarget', () => {
-  let sandbox;
-  let _RequestTargetInternals;
+const requestTargetInjector = require('inject-loader!./RequestTarget');
 
-  before(() => {
-    _RequestTargetInternals = RequestTargetInternals;
-    sandbox = sinon.sandbox.create();
-    RequestTargetInternals = sandbox.spy(() => {
-      this.then = sandbox.spy();
-      this.catch = sandbox.spy();
+describe('RequestTarget', () => {
+  let requestTargetInternalsModule = {
+    default: function () {
+      this.then = () => null;
+      this.catch = () => null;
+    },
+    __esModule: true,
+  };
+
+  let sandbox;
+  let module;
+  let RequestTarget;
+
+  beforeEach(() => {
+    module = requestTargetInjector({
+      './RequestTargetInternals': requestTargetInternalsModule,
     });
+    RequestTarget = module.default;
   });
 
-  after(() => {
-    RequestTargetInternals = _RequestTargetInternals;
+  beforeEach(() => {
+    sandbox = sinon.sandbox.create();
+  });
+
+  afterEach(() => {
     sandbox.restore();
   });
 
   describe('When created', () => {
+    let RequestTargetInternals;
     let deferred;
     let promise;
     let request;
     let handlers;
 
     beforeEach(() => {
+      RequestTargetInternals = sandbox.spy(requestTargetInternalsModule, 'default');
       deferred = new Deferred();
       promise = deferred.promise;
       handlers = {};
-      RequestTargetInternals.reset();
       request = new RequestTarget(promise, handlers);
     });
 
@@ -60,6 +77,11 @@ describe('RequestTarget', () => {
     });
 
     describe('When subscribe', () => {
+      beforeEach(() => {
+        sandbox.spy(request[TARGET_INTERNALS], 'then');
+        sandbox.spy(request[TARGET_INTERNALS], 'catch');
+      });
+
       it('then() should call internal method', () => {
         request.then(() => {
         });
@@ -74,11 +96,9 @@ describe('RequestTarget', () => {
     });
 
     describe('When resolved as resource', () => {
-      beforeEach((done) => {
+      beforeEach(() => {
         deferred.resolve(__createRequestTargetData());
-        deferred.promise.then(() => {
-          done();
-        });
+        return deferred.promise;
       });
 
       it('should keep internals', () => {
@@ -87,42 +107,38 @@ describe('RequestTarget', () => {
     });
 
     describe('When resolved as not a resource', () => {
-      beforeEach((done) => {
+      beforeEach(() => {
         deferred.resolve('-data3');
-        deferred.promise.then(() => {
-          done();
-        });
+        return deferred.promise;
       });
 
       it('should delete internals', () => {
         expect(request[TARGET_INTERNALS]).to.not.be.ok;
       });
 
-      it('calling then() should subscribe to original promise', (done) => {
-        request.then((data) => {
+      it('calling then() should subscribe to original promise', () => {
+        return request.then((data) => {
           expect(data).to.be.equal('-data3');
-          done();
         });
       });
     });
 
     describe('When rejected', () => {
-      beforeEach((done) => {
+      beforeEach(() => {
         deferred.reject('error data');
-        deferred.promise.catch(() => {
-          done();
-        });
+        return deferred.promise
+          .then(() => assert(false, 'should be rejected'))
+          .catch(() => null);
       });
 
       it('should delete internals', () => {
         expect(request[TARGET_INTERNALS]).to.not.be.ok;
       });
 
-      it('calling catch() should subscribe to original promise', (done) => {
-        request.catch((data) => {
-          expect(data).to.be.equal('error data');
-          done();
-        });
+      it('calling catch() should subscribe to original promise', () => {
+        return request
+          .then(() => assert(false, 'should not resolve'))
+          .catch((data) => expect(data).to.be.equal('error data'));
       });
     });
   });
@@ -138,7 +154,7 @@ describe('RequestTarget', () => {
       target[TARGET_INTERNALS] = {
         isActive,
       };
-      result = isActive(target);
+      result = module.isActive(target);
     });
 
     it('should call internal function', () => {
@@ -150,7 +166,7 @@ describe('RequestTarget', () => {
     });
 
     it('should be false for non-Resource target', () => {
-      expect(isActive({})).to.be.false;
+      expect(module.isActive({})).to.be.false;
     });
   });
 
@@ -165,7 +181,7 @@ describe('RequestTarget', () => {
       target[TARGET_INTERNALS] = {
         canBeDestroyed,
       };
-      result = canBeDestroyed(target);
+      result = module.canBeDestroyed(target);
     });
 
     it('should call internal function', () => {
@@ -177,7 +193,7 @@ describe('RequestTarget', () => {
     });
 
     it('should be false for non-Resource target', () => {
-      expect(canBeDestroyed({})).to.be.false;
+      expect(module.canBeDestroyed({})).to.be.false;
     });
   });
 
@@ -192,7 +208,7 @@ describe('RequestTarget', () => {
       target[TARGET_INTERNALS] = {
         destroy,
       };
-      result = destroy(target);
+      result = module.destroy(target);
     });
 
     it('should call internal function', () => {
@@ -204,7 +220,7 @@ describe('RequestTarget', () => {
     });
 
     it('should return null for non-Resource target', () => {
-      expect(destroy({})).to.be.null;
+      expect(module.destroy({})).to.be.null;
     });
   });
 
@@ -219,7 +235,7 @@ describe('RequestTarget', () => {
       target[TARGET_INTERNALS] = {
         toJSON,
       };
-      result = toJSON(target);
+      result = module.toJSON(target);
     });
 
     it('should call internal function', () => {
@@ -231,7 +247,7 @@ describe('RequestTarget', () => {
     });
 
     it('should return null for non-Resource target', () => {
-      expect(toJSON({})).to.be.null;
+      expect(module.toJSON({})).to.be.null;
     });
   });
 
@@ -244,7 +260,7 @@ describe('RequestTarget', () => {
       target[TARGET_INTERNALS] = {
         status: TargetStatus.PENDING,
       };
-      result = isPending(target);
+      result = module.isPending(target);
     });
 
     it('should result with TRUE if status is "pending"', () => {
@@ -252,7 +268,7 @@ describe('RequestTarget', () => {
     });
 
     it('should be false for non-Resource target', () => {
-      expect(isPending({})).to.be.false;
+      expect(module.isPending({})).to.be.false;
     });
   });
 
@@ -265,7 +281,7 @@ describe('RequestTarget', () => {
       target[TARGET_INTERNALS] = {
         temporary: true,
       };
-      result = isTemporary(target);
+      result = module.isTemporary(target);
     });
 
     it('should result with TRUE if target is temporary', () => {
@@ -273,7 +289,7 @@ describe('RequestTarget', () => {
     });
 
     it('should be undefined for non-Resource target', () => {
-      expect(isTemporary({})).to.be.undefined;
+      expect(module.isTemporary({})).to.be.undefined;
     });
   });
 
@@ -285,7 +301,7 @@ describe('RequestTarget', () => {
       target[TARGET_INTERNALS] = {
         temporary: false,
       };
-      setTemporary(target, true);
+      module.setTemporary(target, true);
     });
 
     it('should update "temporary" value', () => {
@@ -294,7 +310,7 @@ describe('RequestTarget', () => {
 
     it('should silently skip for non-Resource', () => {
       const target = {};
-      setTemporary(target, true);
+      module.setTemporary(target, true);
       expect(target).to.not.have.property('temporary');
     });
   });
@@ -308,7 +324,7 @@ describe('RequestTarget', () => {
       target[TARGET_INTERNALS] = {
         status: TargetStatus.DESTROYED,
       };
-      result = getStatus(target);
+      result = module.getStatus(target);
     });
 
     it('should result with target status', () => {
@@ -316,7 +332,7 @@ describe('RequestTarget', () => {
     });
 
     it('should return null for non-Resource target', () => {
-      expect(getStatus({})).to.be.null;
+      expect(module.getStatus({})).to.be.null;
     });
   });
 
@@ -329,7 +345,7 @@ describe('RequestTarget', () => {
       target[TARGET_INTERNALS] = {
         queue: [{}, {}, {}, {}],
       };
-      result = getQueueLength(target);
+      result = module.getQueueLength(target);
     });
 
     it('should result with queue length', () => {
@@ -337,7 +353,7 @@ describe('RequestTarget', () => {
     });
 
     it('should return 0 for non-Resource target', () => {
-      expect(getQueueLength({})).to.be.equal(0);
+      expect(module.getQueueLength({})).to.be.equal(0);
     });
   });
 
@@ -358,7 +374,7 @@ describe('RequestTarget', () => {
          */
         queue: [[{ type: 'abc' }], [{ type: 'def' }], [{ type: 'ghi' }], [{ type: 'jkl' }]],
       };
-      result = getQueueCommands(target);
+      result = module.getQueueCommands(target);
     });
 
     it('should result with command types from queue', () => {
@@ -366,7 +382,7 @@ describe('RequestTarget', () => {
     });
 
     it('should return empty list for non-Resource target', () => {
-      expect(getQueueCommands({})).to.be.empty;
+      expect(module.getQueueCommands({})).to.be.empty;
     });
   });
 
@@ -379,7 +395,7 @@ describe('RequestTarget', () => {
       target[TARGET_INTERNALS] = {
         hadChildPromises: false,
       };
-      result = hadChildPromises(target);
+      result = module.hadChildPromises(target);
     });
 
     it('should result with internal hadChildPromises value', () => {
@@ -387,7 +403,7 @@ describe('RequestTarget', () => {
     });
 
     it('should be undefined for non-Resource target', () => {
-      expect(hadChildPromises({})).to.be.false;
+      expect(module.hadChildPromises({})).to.be.false;
     });
   });
 
@@ -398,9 +414,9 @@ describe('RequestTarget', () => {
     beforeEach(() => {
       target = {};
       target[TARGET_INTERNALS] = {
-        promise: {},
+        promise: Promise.resolve(),
       };
-      result = getRawPromise(target);
+      result = module.getRawPromise(target);
     });
 
     it('should result with targets promise', () => {
@@ -408,7 +424,7 @@ describe('RequestTarget', () => {
     });
 
     it('should be null for non-Resource target', () => {
-      expect(getRawPromise({})).to.be.null;
+      expect(module.getRawPromise({})).to.be.null;
     });
   });
 
@@ -421,7 +437,7 @@ describe('RequestTarget', () => {
       target[TARGET_INTERNALS] = {
         children: [{}, {}, {}],
       };
-      result = getChildren(target);
+      result = module.getChildren(target);
     });
 
     it('should result with list of children requests', () => {
@@ -429,7 +445,7 @@ describe('RequestTarget', () => {
     });
 
     it('should be empty list for non-Resource target', () => {
-      expect(getChildren({})).to.be.empty;
+      expect(module.getChildren({})).to.be.empty;
     });
   });
 
@@ -442,7 +458,7 @@ describe('RequestTarget', () => {
       target[TARGET_INTERNALS] = {
         children: [{}, {}, {}],
       };
-      result = getLastChild(target);
+      result = module.getLastChild(target);
     });
 
     it('should result with last item from children', () => {
@@ -459,7 +475,7 @@ describe('RequestTarget', () => {
       target[TARGET_INTERNALS] = {
         children: [{}, {}, {}],
       };
-      result = getChildrenCount(target);
+      result = module.getChildrenCount(target);
     });
 
     it('should result with children count', () => {
@@ -467,13 +483,13 @@ describe('RequestTarget', () => {
     });
 
     it('should be 0 for non-Resource target', () => {
-      expect(getChildrenCount({})).to.be.equal(0);
+      expect(module.getChildrenCount({})).to.be.equal(0);
     });
   });
 
   describe('createRequestTarget()', () => {
     it('should create instance of RequestTarget', () => {
-      expect(createRequestTarget(Promise.reject(), {})).to.be.an.instanceof(RequestTarget);
+      expect(module.createRequestTarget(Promise.reject(), {})).to.be.an.instanceof(RequestTarget);
     });
   });
 });

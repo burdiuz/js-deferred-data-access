@@ -1,5 +1,5 @@
 import CommandHandlerFactory from '../commands/CommandHandlerFactory';
-import { getResourceType } from '../resource';
+import getResourceType from '../utils/getResourceType';
 
 class RequestTargetDecorator {
 

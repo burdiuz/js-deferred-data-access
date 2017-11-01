@@ -1,8 +1,8 @@
 import EventDispatcher from 'event-dispatcher';
-import defaultResourcePool from './utils';
 import ResourcePool, {
   createResourcePool,
   ResourcePoolEvents,
+  defaultResourcePool,
 } from './ResourcePool';
 
 export const ResourcePoolRegistryEvents = Object.freeze({
@@ -27,7 +27,7 @@ class ResourcePoolRegistry extends EventDispatcher {
     this.register(defaultResourcePool);
   }
 
-  handlePoolDestroyed(event) {
+  handlePoolDestroyed = (event) => {
     this.remove(event.data);
   }
 
@@ -87,7 +87,7 @@ class ResourcePoolRegistry extends EventDispatcher {
     let result = false;
     pool = pool instanceof ResourcePool ? pool : this.get(pool);
     if (pool) {
-      pool.removeEventListener(ResourcePool.Events.POOL_DESTROYED, this.handlePoolDestroyed);
+      pool.removeEventListener(ResourcePoolEvents.POOL_DESTROYED, this.handlePoolDestroyed);
       result = delete this[POOLS_FIELD][pool.id];
     }
     if (this.hasEventListener(ResourcePoolRegistryEvents.RESOURCE_POOL_REMOVED)) {

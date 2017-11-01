@@ -20,10 +20,12 @@ module.exports = {
         include: [
           p('source'),
           p('tests'),
+          p('node_modules/event-dispatcher'),
         ],
         use: getBabelLoader(),
       },
     ],
+    strictExportPresence: true,
   },
   devtool: 'source-map',
 };

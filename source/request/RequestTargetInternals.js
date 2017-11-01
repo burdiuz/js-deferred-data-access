@@ -1,6 +1,9 @@
-import { TargetStatus, createDeferred, TARGET_DATA } from '../utils';
-import { createRequestPackage } from './utils';
-import { isResource, getResourceData } from '../resource/utils';
+import TargetStatus from '../utils/TargetStatus';
+import { createDeferred } from '../utils/Deferred';
+import TARGET_DATA from '../utils/TARGET_DATA';
+import createRequestPackage from '../utils/createRequestPackage';
+import isResource from '../utils/isResource';
+import getResourceData from '../utils/getResourceData';
 import { getRawPromise } from './RequestTarget';
 import {
   RequestTargetCommandFields,
@@ -31,11 +34,10 @@ class RequestTargetInternals {
     this.queue = [];
     this.children = [];
     this.deferred = createDeferred();
-    this.promise = this.deferred.promise
-      .then(
-        this.handlePromiseResolve,
-        this.handlePromiseReject,
-      );
+    this.promise = this.deferred.promise;
+    promise
+      .then(this.handlePromiseResolve)
+      .catch(this.handlePromiseReject);
   }
 
   handlePromiseResolve = (value) => {
@@ -97,8 +99,8 @@ class RequestTargetInternals {
       /**
        * @type {Array.<string, CommandDataPack, DataAccessInterface.Deferred>}
        */
-      // FIXME [string, {type:string, cmd:string, value:*, target:string}, Deferred]
-      // how to describe this in JSDoc?
+        // FIXME [string, {type:string, cmd:string, value:*, target:string}, Deferred]
+        // how to describe this in JSDoc?
       const [, , deferred] = this.queue.shift();
       deferred.reject(error);
     }

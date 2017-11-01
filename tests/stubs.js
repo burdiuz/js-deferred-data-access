@@ -1,6 +1,7 @@
-import { TARGET_DATA } from '../source/utils';
-import { createRequestTarget, applyProxyWithDefaultHandlers } from '../source/request';
-import { createTargetResource } from '../source/resource';
+import TARGET_DATA from '../source/utils/TARGET_DATA';
+import { createRequestTarget } from '../source/request/RequestTarget';
+import { applyProxyWithDefaultHandlers } from '../source/request/RequestProxyFactory';
+import { createTargetResource } from '../source/resource/TargetResource';
 
 export const __createRequestTargetData = () => ({
   [TARGET_DATA]: {

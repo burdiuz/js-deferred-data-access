@@ -1,7 +1,7 @@
 /**
  * Reserved words
  */
-const Reserved = Object.freeze({
+export default Object.freeze({
   /**
    * Contains property names that cannot be used for CommandDescriptor's
    */
@@ -12,5 +12,3 @@ const Reserved = Object.freeze({
     catch: true,
   }),
 });
-
-export default Reserved;
