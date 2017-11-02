@@ -1,11 +1,10 @@
 import CommandDescriptor, { createCommandDescriptor } from '../commands/CommandDescriptor';
-import { createDescriptors, ProxyCommandFields } from '../commands/ProxyCommands';
+import { createDescriptors } from '../commands/ProxyCommands';
 import { createDeferred } from '../utils/Deferred';
 import filterRequestHandlers from '../utils/filterRequestHandlers';
-import RequestHandlers, * as utils from './RequestHandlers';
+import RequestHandlers, { createRequestHandlers } from './RequestHandlers';
 
-//const requestHandlersInjector = require('inject-loader!./RequestHandlers');
-const { createRequestHandlers } = utils;
+// const requestHandlersInjector = require('inject-loader!./RequestHandlers');
 
 describe('RequestHandlers', () => {
   let handlers;

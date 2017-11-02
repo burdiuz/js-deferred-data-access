@@ -23,9 +23,7 @@ const createFunctionWrapper = (target) => {
   return requestTargetProxy;
 };
 
-const wrapWithProxy = (target, handlers) => {
-  return new Proxy(createFunctionWrapper(target), handlers);
-};
+const wrapWithProxy = (target, handlers) => new Proxy(createFunctionWrapper(target), handlers);
 
 const proxyGet = (wrapper, name) => {
   const { target } = wrapper;

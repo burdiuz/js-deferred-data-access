@@ -44,7 +44,7 @@ describe('ResourcePool', () => {
   });
 
   describe('When adding target', () => {
-    let target = {};
+    const target = {};
     let result;
 
     describe('When adding new', () => {

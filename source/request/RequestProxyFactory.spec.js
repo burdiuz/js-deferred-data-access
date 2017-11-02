@@ -3,8 +3,8 @@
  */
 
 import { ProxyCommandFields } from '../commands/ProxyCommands';
-//import RequestFactory, { createRequestFactory } from './RequestFactory';
-//import RequestProxyFactory, { createRequestProxyFactory } from './RequestProxyFactory';
+// import RequestFactory, { createRequestFactory } from './RequestFactory';
+// import RequestProxyFactory, { createRequestProxyFactory } from './RequestProxyFactory';
 
 const requestProxyFactoryInjector = require('inject-loader!./RequestProxyFactory');
 

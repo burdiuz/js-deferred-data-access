@@ -1,3 +1,7 @@
+import isResource from './isResource';
+import getResourceId from './getResourceId';
+import getResourcePoolId from './getResourcePoolId';
+
 export default (resource1, resource2) => (
   isResource(resource1)
   && isResource(resource2)

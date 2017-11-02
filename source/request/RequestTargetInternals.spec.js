@@ -84,11 +84,9 @@ describe('RequestTargetInternals', () => {
       expect(target.canBeDestroyed()).to.be.false;
     });
 
-    it('should reject destruction with error', () => {
-      return target.destroy()
-        .then(() => assert(false, 'should not resolve'))
-        .catch((result) => assert(result instanceof Error, 'result should be Error'));
-    });
+    it('should reject destruction with error', () => target.destroy()
+      .then(() => assert(false, 'should not resolve'))
+      .catch((result) => assert(result instanceof Error, 'result should be Error')));
 
     describe('When making child request', () => { // add to queue
       let result;
@@ -121,11 +119,9 @@ describe('RequestTargetInternals', () => {
         });
 
         // they are all pending since parent is not resolved
-        it('should reject destruction with error', () => {
-          return promise
-            .then(() => assert(false, 'should not resolve'))
-            .catch((data) => expect(data).to.be.an.instanceof(Error));
-        });
+        it('should reject destruction with error', () => promise
+          .then(() => assert(false, 'should not resolve'))
+          .catch((data) => expect(data).to.be.an.instanceof(Error)));
       });
 
     });
@@ -308,11 +304,9 @@ describe('RequestTargetInternals', () => {
       return deferred.promise;
     });
 
-    it('should reject queued requests', () => {
-      return promise
-        .then(() => assert(false, 'should be rejected'))
-        .catch((data) => expect(data).to.be.an.instanceof(Error));
-    });
+    it('should reject queued requests', () => promise
+      .then(() => assert(false, 'should be rejected'))
+      .catch((data) => expect(data).to.be.an.instanceof(Error)));
 
   });
 
@@ -343,11 +337,9 @@ describe('RequestTargetInternals', () => {
       expect(target.canBeDestroyed()).to.be.true;
     });
 
-    it('should reject queue', () => {
-      return child
-        .then(() => assert(false, 'should be rejected'))
-        .catch((data) => expect(data).to.be.an.instanceof(Error));
-    });
+    it('should reject queue', () => child
+      .then(() => assert(false, 'should be rejected'))
+      .catch((data) => expect(data).to.be.an.instanceof(Error)));
 
     describe('When making child request', () => { // reject immediately
       let result;
@@ -359,13 +351,11 @@ describe('RequestTargetInternals', () => {
         });
       });
 
-      it('promise should be rejected', () => {
-        return result
-          .then(() => assert(false, 'should be rejected'))
-          .catch((data) => {
-            assert(data instanceof Error, 'promise result must be an error instance');
-          });
-      });
+      it('promise should be rejected', () => result
+        .then(() => assert(false, 'should be rejected'))
+        .catch((data) => {
+          assert(data instanceof Error, 'promise result must be an error instance');
+        }));
       it('should handle request internally', () => {
         expect(handlers.handle).to.not.be.called;
       });
@@ -401,9 +391,7 @@ describe('RequestTargetInternals', () => {
         result = target.destroy();
       });
 
-      it('should resolve destruction', () => {
-        return result.then((result) => assert(!result, 'result should be empty'));
-      });
+      it('should resolve destruction', () => result.then((result) => assert(!result, 'result should be empty')));
     });
 
   });
@@ -430,11 +418,9 @@ describe('RequestTargetInternals', () => {
         });
       });
 
-      it('promise should be rejected', () => {
-        return result.catch((data) => {
-          assert(data instanceof Error, 'promise result must be an error instance');
-        });
-      });
+      it('promise should be rejected', () => result.catch((data) => {
+        assert(data instanceof Error, 'promise result must be an error instance');
+      }));
 
       it('should handle request internally', () => {
         expect(handlers.handle).to.not.be.called;
@@ -459,9 +445,7 @@ describe('RequestTargetInternals', () => {
         expect(target.children).to.contain(child);
       });
 
-      it('should remove child from the list when its resolved', () => {
-        return child.then(() => expect(target.children).to.not.contain(child));
-      });
+      it('should remove child from the list when its resolved', () => child.then(() => expect(target.children).to.not.contain(child)));
     });
 
     describe('When registered child is rejected', () => {
@@ -480,11 +464,9 @@ describe('RequestTargetInternals', () => {
         expect(target.children).to.contain(child);
       });
 
-      it('should remove child from the list when its rejected', () => {
-        return child
-          .then(() => assert(false, 'should be rejected'))
-          .catch(() => expect(target.children).to.not.contain(child));
-      });
+      it('should remove child from the list when its rejected', () => child
+        .then(() => assert(false, 'should be rejected'))
+        .catch(() => expect(target.children).to.not.contain(child)));
     });
   });
 

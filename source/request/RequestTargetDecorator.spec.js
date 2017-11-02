@@ -30,7 +30,7 @@ describe('RequestTargetDecorator', () => {
       '../commands/CommandHandlerFactory': {
         default: CommandHandlerFactorySpy,
         __esModule: true,
-      }
+      },
     });
   });
 

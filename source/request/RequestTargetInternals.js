@@ -99,8 +99,8 @@ class RequestTargetInternals {
       /**
        * @type {Array.<string, CommandDataPack, DataAccessInterface.Deferred>}
        */
-        // FIXME [string, {type:string, cmd:string, value:*, target:string}, Deferred]
-        // how to describe this in JSDoc?
+      // FIXME [string, {type:string, cmd:string, value:*, target:string}, Deferred]
+      // how to describe this in JSDoc?
       const [, , deferred] = this.queue.shift();
       deferred.reject(error);
     }

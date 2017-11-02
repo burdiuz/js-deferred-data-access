@@ -88,9 +88,9 @@ class RequestHandlers {
    */
   hasHandler(name, type) {
     return (
-        this.descriptors[type]
+      this.descriptors[type]
         && Object.prototype.hasOwnProperty.call(this.descriptors[type], name)
-      )
+    )
       || (
         this.descriptors[DEFAULT_KEY]
         && Object.prototype.hasOwnProperty.call(this.descriptors[DEFAULT_KEY], name)
@@ -130,9 +130,9 @@ class RequestHandlers {
    */
   getHandler(name, type) {
     const handler = (
-        this.descriptors[type]
+      this.descriptors[type]
         && this.descriptors[type][name]
-      )
+    )
       || (
         this.descriptors[DEFAULT_KEY]
         && this.descriptors[DEFAULT_KEY][name]

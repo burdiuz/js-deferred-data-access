@@ -22,7 +22,7 @@ describe('createDeferred()', () => {
     });
 
     describe('When deferred resolved', () => {
-      beforeEach(() => {
+      beforeEach(() =>
         /**
          * 1. if promise never resolved this wil cause test fail because `done()`
          * callback never called
@@ -30,18 +30,14 @@ describe('createDeferred()', () => {
          * 3. if promise resolved with REJECTion, then we call `done()` with error text
          * stubs not needed
          */
-        return deferred.promise;
-        deferred.resolve('le data');
-      });
+        deferred.promise);
     });
 
     describe('When deferred failed', () => {
-      beforeEach(() => {
+      beforeEach(() =>
         // promises resolved asynchronously
-        return deferred.promise
-          .then(() => assert(false, 'should be rejected'));
-        deferred.reject('le error');
-      });
+        deferred.promise
+          .then(() => assert(false, 'should be rejected')));
     });
 
   });

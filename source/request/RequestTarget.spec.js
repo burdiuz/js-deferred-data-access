@@ -25,8 +25,8 @@ import {
 const requestTargetInjector = require('inject-loader!./RequestTarget');
 
 describe('RequestTarget', () => {
-  let requestTargetInternalsModule = {
-    default: function () {
+  const requestTargetInternalsModule = {
+    default() {
       this.then = () => null;
       this.catch = () => null;
     },
@@ -116,11 +116,9 @@ describe('RequestTarget', () => {
         expect(request[TARGET_INTERNALS]).to.not.be.ok;
       });
 
-      it('calling then() should subscribe to original promise', () => {
-        return request.then((data) => {
-          expect(data).to.be.equal('-data3');
-        });
-      });
+      it('calling then() should subscribe to original promise', () => request.then((data) => {
+        expect(data).to.be.equal('-data3');
+      }));
     });
 
     describe('When rejected', () => {
@@ -135,11 +133,9 @@ describe('RequestTarget', () => {
         expect(request[TARGET_INTERNALS]).to.not.be.ok;
       });
 
-      it('calling catch() should subscribe to original promise', () => {
-        return request
-          .then(() => assert(false, 'should not resolve'))
-          .catch((data) => expect(data).to.be.equal('error data'));
-      });
+      it('calling catch() should subscribe to original promise', () => request
+        .then(() => assert(false, 'should not resolve'))
+        .catch((data) => expect(data).to.be.equal('error data')));
     });
   });
 
