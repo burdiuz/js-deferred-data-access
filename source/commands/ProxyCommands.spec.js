@@ -54,7 +54,7 @@ describe('ProxyCommands', () => {
     });
 
     it('should contain isTemporary function', () => {
-      expect(descriptor.isTemporary).to.be.null;
+      expect(descriptor.isTemporary).to.be.equal(isTemporary);
     });
 
     it('should be cacheable', () => {
@@ -99,15 +99,15 @@ describe('ProxyCommands', () => {
       };
       isTemporary = () => {
       };
-      descriptor = ProxyCommands.createGETDescriptor(handler, null, isTemporary);
+      descriptor = ProxyCommands.createSETDescriptor(handler, null, isTemporary);
     });
 
     it('should contain Proxy SET property name', () => {
-      expect(descriptor.name).to.be.equal(ProxyCommandFields.get);
+      expect(descriptor.name).to.be.equal(ProxyCommandFields.set);
     });
 
     it('should contain Proxy SET command type', () => {
-      expect(descriptor.type).to.be.equal(ProxyCommandNames.GET);
+      expect(descriptor.type).to.be.equal(ProxyCommandNames.SET);
     });
 
     it('should contain handler function', () => {
@@ -115,7 +115,7 @@ describe('ProxyCommands', () => {
     });
 
     it('should contain isTemporary function', () => {
-      expect(descriptor.isTemporary).to.be.null;
+      expect(descriptor.isTemporary).to.be.equal(isTemporary);
     });
 
     it('should not be virtual', () => {
@@ -133,13 +133,13 @@ describe('ProxyCommands', () => {
       };
       isTemporary = () => {
       };
-      descriptor = ProxyCommands.createGETDescriptor(handler, isTemporary);
+      descriptor = ProxyCommands.createAPPLYDescriptor(handler, null, isTemporary);
     });
     it('should contain Proxy APPLY property name', () => {
-      expect(descriptor.name).to.be.equal(ProxyCommandFields.get);
+      expect(descriptor.name).to.be.equal(ProxyCommandFields.apply);
     });
     it('should contain Proxy APPLY command type', () => {
-      expect(descriptor.type).to.be.equal(ProxyCommandNames.GET);
+      expect(descriptor.type).to.be.equal(ProxyCommandNames.APPLY);
     });
     it('should contain handler function', () => {
       expect(descriptor.handler).to.be.equal(handler);
@@ -180,7 +180,7 @@ describe('createDescriptors()', () => {
         get: getHandler,
         set: setHandler,
         apply: applyHandler,
-      }, null, isTemporary, cacheable);
+      }, undefined, isTemporary, cacheable);
     });
 
     it('should create target object', () => {
@@ -194,9 +194,9 @@ describe('createDescriptors()', () => {
     });
 
     it('should assign handlers', () => {
-      expect(target[ProxyCommandFields.get].handle).to.be.equal(getHandler);
-      expect(target[ProxyCommandFields.set].handle).to.be.equal(setHandler);
-      expect(target[ProxyCommandFields.apply].handle).to.be.equal(applyHandler);
+      expect(target[ProxyCommandFields.get].handler).to.be.equal(getHandler);
+      expect(target[ProxyCommandFields.set].handler).to.be.equal(setHandler);
+      expect(target[ProxyCommandFields.apply].handler).to.be.equal(applyHandler);
     });
 
     it('should assign isTemporary to all descriptors', () => {

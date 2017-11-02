@@ -1,11 +1,5 @@
-import RequestFactory, {
-  createRequestFactory,
-  FACTORY_DECORATOR_FIELD,
-  FACTORY_HANDLERS_FIELD,
-} from './RequestFactory';
+import RequestFactory, { createRequestFactory } from './RequestFactory';
 import { ProxyCommandFields } from '../commands/ProxyCommands';
-
-const FACTORY_FIELD = Symbol('request.proxy.factory::factory');
 
 const EXCLUSIONS = {
   /*
@@ -16,13 +10,21 @@ const EXCLUSIONS = {
   prototype: true,
 };
 
-const wrapWithProxy = (target, handlers) => {
+const toString = () => `[RequestTargetProxy ${String(this.target)}]`;
+
+const createFunctionWrapper = (target) => {
   // INFO Target must be a function so I could use Proxy.call() interceptor.
   function requestTargetProxy() {
   }
 
   requestTargetProxy.target = target;
-  return new Proxy(requestTargetProxy, handlers);
+  requestTargetProxy.toString = toString;
+
+  return requestTargetProxy;
+};
+
+const wrapWithProxy = (target, handlers) => {
+  return new Proxy(createFunctionWrapper(target), handlers);
 };
 
 const proxyGet = (wrapper, name) => {
@@ -47,7 +49,12 @@ const proxySet = (wrapper, name, value) => {
     return value;
   }
 
-  return target[ProxyCommandFields.set](name, value);
+  if (ProxyCommandFields.set in target) {
+    target[ProxyCommandFields.set](name, value);
+    return true;
+  }
+
+  return false;
 };
 
 const proxyHas = (wrapper, name) => (
@@ -56,7 +63,6 @@ const proxyHas = (wrapper, name) => (
 
 const proxyDeleteProperty = (wrapper, name) => {
   const { target } = wrapper;
-
   if (ProxyCommandFields.deleteProperty in target) {
     target[ProxyCommandFields.deleteProperty](name);
     return true;
@@ -65,9 +71,18 @@ const proxyDeleteProperty = (wrapper, name) => {
   return false;
 };
 
-const proxyOwnKeys = () => Object.getOwnPropertyNames(EXCLUSIONS);
+const proxyOwnKeys = (wrapper) => {
+  const { target } = wrapper;
+  return [...Object.getOwnPropertyNames(target), ...Object.getOwnPropertyNames(EXCLUSIONS)];
+};
 
-const proxyEnumerate = () => Object.getOwnPropertyNames(EXCLUSIONS)[Symbol.iterator]();
+const proxyEnumerate = (wrapper) => {
+  const { target } = wrapper;
+  return [
+    ...Object.getOwnPropertyNames(target),
+    ...Object.getOwnPropertyNames(EXCLUSIONS),
+  ][Symbol.iterator]();
+};
 
 const proxyGetOwnPropertyDescriptor = (wrapper, name) => {
   if (Object.prototype.hasOwnProperty.call(EXCLUSIONS, name)) {
@@ -98,15 +113,15 @@ class RequestProxyFactory extends RequestFactory {
   constructor(handlers, cacheImpl) {
     super(null, null, true);
 
-    this[FACTORY_HANDLERS_FIELD] = handlers;
-    this[FACTORY_FIELD] = createRequestFactory(handlers, cacheImpl);
-    this[FACTORY_FIELD][FACTORY_DECORATOR_FIELD].setFactory(this);
+    this.handlers = handlers;
+    this.factory = createRequestFactory(handlers, cacheImpl);
+    this.factory.decorator.setFactory(this);
   }
 
   create(promise) {
-    const instance = this[FACTORY_FIELD].create(promise);
+    const instance = this.factory.create(promise);
 
-    if (this[FACTORY_HANDLERS_FIELD].available) {
+    if (this.handlers.available) {
       return wrapWithProxy(instance, PROXY_HANDLERS);
     }
 
@@ -114,13 +129,13 @@ class RequestProxyFactory extends RequestFactory {
   }
 
   getCached(name, pack) {
-    return this[FACTORY_FIELD].getCached(name, pack);
+    return this.factory.getCached(name, pack);
   }
 
   createCached(promise, name, pack) {
-    const instance = this[FACTORY_FIELD].createCached(promise, name, pack);
+    const instance = this.factory.createCached(promise, name, pack);
 
-    if (this[FACTORY_HANDLERS_FIELD].available) {
+    if (this.handlers.available) {
       return wrapWithProxy(instance, PROXY_HANDLERS);
     }
 
@@ -134,3 +149,5 @@ export const applyProxyWithDefaultHandlers = (target) => wrapWithProxy(target, P
 export const createRequestProxyFactory = (handlers, cacheImpl) => (
   new RequestProxyFactory(handlers, cacheImpl)
 );
+
+export default RequestProxyFactory;

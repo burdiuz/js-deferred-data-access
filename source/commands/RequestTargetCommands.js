@@ -25,6 +25,7 @@ class RequestTargetCommands {
       handler,
       RequestTargetCommandFields.DESTROY,
     );
+    descriptor.cacheable = false;
     descriptor.virtual = true;
     addDescriptorTo(descriptor, target);
     return Object.freeze(descriptor);

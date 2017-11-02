@@ -14,8 +14,6 @@ class RequestTargetDecorator {
   }
 
   apply(request) {
-    let result;
-
     if (!this.handlers.available) {
       return request;
     }
@@ -24,10 +22,18 @@ class RequestTargetDecorator {
      request[descriptor.name] = this.getMember(descriptor.name, descriptor.type);
      }
      */
-
+    /* FIXME Why no more iterators :(
     const iterator = this.handlers.getHandlers(getResourceType(request));
+    let result;
     while (!(result = iterator.next()).done) {
       const descriptor = result.value;
+      request[descriptor.name] = this.members.get(descriptor);
+    }
+    */
+    const descriptors = this.handlers.getPropertyHandlers(getResourceType(request));
+    const { length } = descriptors;
+    for (let index = 0; index < length; index++) {
+      const descriptor = descriptors[index];
       request[descriptor.name] = this.members.get(descriptor);
     }
 
@@ -46,4 +52,3 @@ export const createRequestTargetDecorator = (factory, handlers) => (
 );
 
 export default RequestTargetDecorator;
-

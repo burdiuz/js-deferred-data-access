@@ -7,6 +7,7 @@ import TargetStatus from '../utils/TargetStatus';
 import TARGET_DATA from '../utils/TARGET_DATA';
 
 import RequestTargetCommands, {
+  RequestTargetCommandNames,
   RequestTargetCommandFields,
 } from '../commands/RequestTargetCommands';
 import RequestTargetInternals from './RequestTargetInternals';
@@ -247,7 +248,7 @@ describe('RequestTargetInternals', () => {
         expect(target.sendRequest.getCall(0).args[0])
           .to.be.equal(RequestTargetCommandFields.DESTROY);
         expect(target.sendRequest.getCall(0).args[1].type)
-          .to.be.equal(RequestTargetCommands.DESTROY);
+          .to.be.equal(RequestTargetCommandNames.DESTROY);
       });
     });
 
@@ -271,7 +272,7 @@ describe('RequestTargetInternals', () => {
       expect(target.sendRequest.getCall(0).args[0])
         .to.be.equal(RequestTargetCommandFields.DESTROY);
       expect(target.sendRequest.getCall(0).args[1].type)
-        .to.be.equal(RequestTargetCommands.DESTROY);
+        .to.be.equal(RequestTargetCommandNames.DESTROY);
     });
   });
 

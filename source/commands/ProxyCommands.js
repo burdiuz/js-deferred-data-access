@@ -1,4 +1,7 @@
-import CommandDescriptor, { descriptorGeneratorFactory } from './CommandDescriptor';
+import {
+  createCommandDescriptor,
+  descriptorGeneratorFactory,
+} from './CommandDescriptor';
 
 export const ProxyCommandNames = Object.freeze({
   GET: 'get',
@@ -55,22 +58,21 @@ const ProxyCommands = new ProxyCommandsClass();
 export const createDescriptors = (
   handlers,
   target = {},
-  isTemporary = false,
+  isTemporary = undefined,
   resourceType = null,
-  cacheable = false,
+  cacheable = true,
+  virtual = false,
 ) => {
   const { list } = ProxyCommands;
   const { length } = list;
+  const args = [isTemporary, resourceType, cacheable, virtual];
   for (let index = 0; index < length; index++) {
     const name = list[index];
     const handler = handlers[name];
     const field = ProxyCommandFields[name];
 
     if (handler instanceof Function) {
-      let descriptor = new CommandDescriptor(name, handler, field);
-      descriptor.isTemporary = isTemporary;
-      descriptor.resourceType = resourceType;
-      descriptor.cacheable = cacheable;
+      let descriptor = createCommandDescriptor(name, handler, field, ...args);
       descriptor = Object.freeze(descriptor);
 
       if (target instanceof Array) {

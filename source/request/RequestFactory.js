@@ -1,9 +1,6 @@
 import { createRequestTargetDecorator } from './RequestTargetDecorator';
 import { createRequestTarget } from './RequestTarget';
 
-export const FACTORY_DECORATOR_FIELD = Symbol('request.factory::decorator');
-export const FACTORY_HANDLERS_FIELD = Symbol('request.factory::handlers');
-
 class RequestFactory {
   /*
    function DummyCacheImpl() {
@@ -21,14 +18,14 @@ class RequestFactory {
     }
 
     this.cache = cacheImpl;
-    this[FACTORY_HANDLERS_FIELD] = handlers;
-    this[FACTORY_DECORATOR_FIELD] = createRequestTargetDecorator(this, handlers);
+    this.handlers = handlers;
+    this.decorator = createRequestTargetDecorator(this, handlers);
   }
 
   create(promise) {
-    const request = createRequestTarget(promise, this[FACTORY_HANDLERS_FIELD]);
-    if (this[FACTORY_HANDLERS_FIELD].available) {
-      this[FACTORY_DECORATOR_FIELD].apply(request);
+    const request = createRequestTarget(promise, this.handlers);
+    if (this.handlers.available) {
+      this.decorator.apply(request);
     }
     return request;
   }

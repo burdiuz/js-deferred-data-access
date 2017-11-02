@@ -46,8 +46,11 @@ class RequestHandlers {
   }
 
   get available() {
-    const nonEmptyList = Object.keys(this.properties).find((item) => Boolean(item && item.length));
-    return Boolean(nonEmptyList);
+    const nonEmptyListIndex = Object.getOwnPropertyNames(this.properties).findIndex((name) => {
+      const list = this.properties[name];
+      return Boolean(list && list.length);
+    });
+    return nonEmptyListIndex >= 0;
   }
 
   setConverter(converter) {
@@ -94,15 +97,23 @@ class RequestHandlers {
       );
   }
 
-  /**
-   * IMPORTANT: Returns original list of CommandDescriptors, changing it may cause
-   * unexpected result with newly decorated resources.
-   * @param {String} [type]
-   * @returns {CommandDescriptor[]|null}
-   * @private
-   */
+  getPropertyHandlers(type) {
+    let list = this.properties[type];
+    if (!list) {
+      type = DEFAULT_KEY;
+      list = this.properties[type];
+    }
+
+    return list ? [...list] : [];
+  }
+
+  getPropertyNames(type) {
+    return this.getPropertyNames(type)
+      .map((descriptor) => descriptor.name);
+  }
+
   getHandlers(type) {
-    let descrs = this.descriptors[type || DEFAULT_KEY];
+    let descrs = this.descriptors[type];
     if (!descrs) {
       descrs = this.descriptors[DEFAULT_KEY];
     }

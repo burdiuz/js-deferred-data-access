@@ -21,7 +21,8 @@
     "url": "https://github.com/burdiuz/js-deferred-data-access.git"
   },
   "dependencies": {
-    "event-dispatcher": "github:burdiuz/js-event-dispatcher#1.1.12"
+    "event-dispatcher": "github:burdiuz/js-event-dispatcher#1.1.12",
+    "karma-chrome-launcher": "^2.2.0"
   },
   "devDependencies": {
     "babel-core": "^6.26.0",

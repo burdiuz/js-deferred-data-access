@@ -1,59 +1,62 @@
 import CommandDescriptor, { createCommandDescriptor } from '../commands/CommandDescriptor';
 import CommandHandlerFactory from '../commands/CommandHandlerFactory';
-import RequestHandlers, { createRequestHandlers } from './RequestHandlers';
-import RequestTargetDecorator, { createRequestTargetDecorator } from './RequestTargetDecorator';
+import { createRequestHandlers } from './RequestHandlers';
+
+const requestTargetDecoratorInjector = require('inject-loader!./RequestTargetDecorator');
 
 describe('RequestTargetDecorator', () => {
+  let module;
   let decorator;
   let resource;
   let factory;
   let handlers;
-  let requestData;
   let resolveRequest;
   let sandbox;
-  let _CommandHandlerFactory;
+  let CommandHandlerFactorySpy;
   let commandHFInstance;
   let commandHandlerResult;
 
-  before(() => {
-    const { constructor } = CommandHandlerFactory.prototype;
+  beforeEach(() => {
     sandbox = sinon.sandbox.create();
-    commandHandlerResult = () => {
-    };
-
-    // FIXME use inject-loader
-
-    _CommandHandlerFactory = sandbox.stub(CommandHandlerFactory.prototype, 'constructor').callsFake((...args) => {
-      commandHFInstance = this;
-      constructor.apply(this, args);
-    });
-    sandbox.stub(CommandHandlerFactory.prototype, 'get').callsFake(() => commandHandlerResult);
-    sandbox.stub(CommandHandlerFactory.prototype, 'setFactory');
   });
 
-  after(() => {
+  beforeEach(() => {
+    commandHandlerResult = () => null;
+    sandbox.stub(CommandHandlerFactory.prototype, 'setFactory');
+    sandbox.stub(CommandHandlerFactory.prototype, 'get').callsFake(() => commandHandlerResult);
+    CommandHandlerFactorySpy = sandbox.spy(CommandHandlerFactory);
+
+    module = requestTargetDecoratorInjector({
+      '../commands/CommandHandlerFactory': {
+        default: CommandHandlerFactorySpy,
+        __esModule: true,
+      }
+    });
+  });
+
+  afterEach(() => {
     sandbox.restore();
   });
 
   beforeEach(() => {
     factory = {};
+    resource = {};
+    resolveRequest = true;
     handlers = createRequestHandlers();
     handlers.setHandlers({
       action: sandbox.spy(),
       type: sandbox.spy(),
-      property: createCommandDescriptor('command', () => null, 'property', null, false, true),
+      property: createCommandDescriptor('command', () => null, 'property', null, null, false, true),
     });
 
-    resolveRequest = true;
-
-    resource = {};
-    _CommandHandlerFactory.reset();
-    decorator = createRequestTargetDecorator(factory, handlers);
+    decorator = module.createRequestTargetDecorator(factory, handlers);
+    commandHFInstance = CommandHandlerFactorySpy.getCall(0).thisValue;
   });
 
   describe('When created', () => {
+
     it('should instantiate CommandHandlerFactory', () => {
-      assert(_CommandHandlerFactory.calledWithNew(), 'create factory');
+      assert(CommandHandlerFactorySpy.calledWithNew(), 'create factory');
     });
     it('should pass factory to CommandHandlerFactory', () => {
       expect(commandHFInstance.setFactory).to.be.calledOnce;

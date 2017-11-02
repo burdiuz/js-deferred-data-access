@@ -19,8 +19,8 @@ describe('CommandDescriptor', () => {
         expect(descriptor.name).to.be.equal('name');
         expect(descriptor.type).to.be.equal('command');
         expect(descriptor.handler).to.be.equal(handler);
-        expect(descriptor.isTemporary).to.be.null;
-        expect(descriptor.cacheable).to.be.false;
+        expect(descriptor.isTemporary).to.be.a('function');
+        expect(descriptor.cacheable).to.be.true;
         expect(descriptor.virtual).to.be.false;
       });
     });

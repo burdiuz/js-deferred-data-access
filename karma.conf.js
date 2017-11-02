@@ -9,18 +9,17 @@ module.exports = (config) => {
       'source/**/*.spec.js',
     ],
     exclude: [],
-
     preprocessors: {
       'source/**/*.js': ['webpack', 'sourcemap'],
     },
     reporters: ['coverage', 'progress', 'coveralls'],
     coverageReporter: {
       type: 'lcov',
-      dir: 'coverage/'
+      dir: 'coverage/',
     },
     webpack: {
       resolve: {
-        extensions: ['.js']
+        extensions: ['.js'],
       },
       module: {
         rules: [
@@ -41,9 +40,9 @@ module.exports = (config) => {
       noInfo: true,
       stats: {
         chunks: false,
-        colors: true
+        colors: true,
       },
-      stats: 'errors-only'
+      stats: 'errors-only',
     },
     plugins: [
       require('karma-webpack'),
@@ -59,12 +58,10 @@ module.exports = (config) => {
     // level of logging
     // possible values: config.LOG_DISABLE || config.LOG_ERROR || config.LOG_WARN || config.LOG_INFO || config.LOG_DEBUG
     logLevel: config.LOG_INFO,
-    // enable / disable watching file and executing tests whenever any file changes
-    autoWatch: true,
-    browsers: ['Firefox'],
+    browsers: ['Firefox', 'Chrome'],
     //browsers: ['Chrome', 'IE', 'Firefox'],
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
-    singleRun: true
+    singleRun: true,
   });
 };

@@ -3,10 +3,15 @@
  */
 
 import { ProxyCommandFields } from '../commands/ProxyCommands';
-import RequestFactory, { createRequestFactory } from './RequestFactory';
-import RequestProxyFactory, { createRequestProxyFactory } from './RequestProxyFactory';
+//import RequestFactory, { createRequestFactory } from './RequestFactory';
+//import RequestProxyFactory, { createRequestProxyFactory } from './RequestProxyFactory';
+
+const requestProxyFactoryInjector = require('inject-loader!./RequestProxyFactory');
 
 describe('RequestProxyFactory', () => {
+  let RequestFactory;
+  let createRequestFactory;
+  let module;
   let sandbox;
   let resource;
   let baseFactory;
@@ -19,10 +24,6 @@ describe('RequestProxyFactory', () => {
     sandbox = sinon.sandbox.create();
   });
 
-  afterEach(() => {
-    sandbox.restore();
-  });
-
   beforeEach(() => {
     resource = {
       then: sandbox.spy(),
@@ -32,9 +33,6 @@ describe('RequestProxyFactory', () => {
     resource[ProxyCommandFields.set] = sandbox.spy();
     resource[ProxyCommandFields.apply] = sandbox.spy();
     resource[ProxyCommandFields.deleteProperty] = sandbox.spy();
-    handlers = {
-      available: true,
-    };
     baseFactory = {
       getCached: sandbox.spy(() => resource),
       createCached: sandbox.spy(() => resource),
@@ -43,14 +41,33 @@ describe('RequestProxyFactory', () => {
     decorator = {
       setFactory: sandbox.spy(),
     };
-    baseFactory[FACTORY_DECORATOR_FIELD] = decorator;
-    sandbox.stub(RequestFactory, 'create').returns(baseFactory);
-    factory = new RequestProxyFactory(handlers, cache);
+    baseFactory.decorator = decorator;
+    RequestFactory = sandbox.spy(() => {});
+    createRequestFactory = sandbox.spy(() => baseFactory);
+
+    module = requestProxyFactoryInjector({
+      './RequestFactory': {
+        createRequestFactory,
+        default: RequestFactory,
+        __esModule: true,
+      },
+    });
+  });
+
+  afterEach(() => {
+    sandbox.restore();
+  });
+
+  beforeEach(() => {
+    handlers = {
+      available: true,
+    };
+    factory = new module.default(handlers, cache);
   });
 
   it('should create factory', () => {
-    expect(RequestFactory.create).to.be.calledOnce;
-    expect(RequestFactory.create).to.be.calledWith(handlers, cache);
+    expect(createRequestFactory).to.be.calledOnce;
+    expect(createRequestFactory).to.be.calledWith(handlers, cache);
   });
 
   it('should reset decorator factory link', () => {
@@ -300,11 +317,12 @@ describe('RequestProxyFactory', () => {
 
         beforeEach(() => {
           delete resource[ProxyCommandFields.deleteProperty];
-          value = delete result.property;
         });
 
         it('should result with false', () => {
-          expect(value).to.be.false;
+          expect(() => {
+            value = delete result.property;
+          }).to.throw();
         });
       });
     });
@@ -338,10 +356,9 @@ describe('RequestProxyFactory', () => {
         }
       });
 
-      it('should enumerate only wrapper function properties', () => {
-        expect(list).to.contain('arguments');
-        expect(list).to.contain('caller');
-        expect(list).to.contain('prototype');
+      it('should enumerate properties', () => {
+        expect(list).to.contain('then');
+        expect(list).to.contain('catch');
       });
     });
 
@@ -360,13 +377,13 @@ describe('RequestProxyFactory', () => {
     });
   });
 
-  describe('RequestProxyFactory.create()', () => {
+  describe('createRequestProxyFactory()', () => {
     let factory;
 
     beforeEach(() => {
-      RequestFactory.create.reset();
+      createRequestFactory.reset();
       decorator.setFactory.reset();
-      factory = createRequestProxyFactory(handlers, cache);
+      factory = module.createRequestProxyFactory(handlers, cache);
     });
 
     it('should create factory', () => {
