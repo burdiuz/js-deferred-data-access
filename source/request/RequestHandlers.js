@@ -12,17 +12,15 @@ const DEFAULT_KEY = '';
 
 export const areProxyHandlersAvailable = (handlers, throwError) => {
   let result = true;
-  const list = ProxyCommands.required;
-  const { length } = list;
-  for (let index = 0; index < length; index++) {
-    const name = list[index];
+  ProxyCommands.required.forEach((name) => {
     if (!(ProxyCommandFields[name] in handlers)) {
       result = false;
       if (throwError) {
         throw new Error(`For Proxy interface, handler "${name}" should be set.`);
       }
     }
-  }
+  });
+
   return result;
 };
 
@@ -113,12 +111,16 @@ class RequestHandlers {
   }
 
   getHandlers(type) {
-    let descrs = this.descriptors[type];
-    if (!descrs) {
-      descrs = this.descriptors[DEFAULT_KEY];
+    if (this.descriptors[type]) {
+      return {
+        ...this.descriptors[type],
+        ...this.descriptors[DEFAULT_KEY],
+      };
     }
 
-    return descrs || null;
+    return {
+      ...this.descriptors[DEFAULT_KEY],
+    };
   }
 
   /**

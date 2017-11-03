@@ -63,11 +63,8 @@ export const createDescriptors = (
   cacheable = true,
   virtual = false,
 ) => {
-  const { list } = ProxyCommands;
-  const { length } = list;
   const args = [isTemporary, resourceType, cacheable, virtual];
-  for (let index = 0; index < length; index++) {
-    const name = list[index];
+  ProxyCommands.list.forEach((name) => {
     const handler = handlers[name];
     const field = ProxyCommandFields[name];
 
@@ -81,7 +78,8 @@ export const createDescriptors = (
         target[field] = descriptor;
       }
     }
-  }
+  });
+
   return target;
 };
 

@@ -141,6 +141,8 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__utils_TargetStatus__ = __webpack_require__(15);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__utils_isResource__ = __webpack_require__(0);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__RequestTargetInternals__ = __webpack_require__(28);
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
@@ -240,17 +242,17 @@ var getQueueLength = function getQueueLength(target) {
 };
 
 var getQueueCommands = function getQueueCommands(target) {
-  var result = [];
   var queue = target && target[__WEBPACK_IMPORTED_MODULE_0__utils_TARGET_INTERNALS__["a" /* default */]] ? target[__WEBPACK_IMPORTED_MODULE_0__utils_TARGET_INTERNALS__["a" /* default */]].queue : null;
   if (queue) {
-    var length = queue.length;
-    // FIXME use Array.map()
+    return queue.map(function (_ref) {
+      var _ref2 = _slicedToArray(_ref, 1),
+          name = _ref2[0];
 
-    for (var index = 0; index < length; index++) {
-      result.push(queue[index][0].type);
-    }
+      return name;
+    });
+    // return queue.map(([name, pack]) => pack.type);
   }
-  return result;
+  return [];
 };
 
 var hadChildPromises = function hadChildPromises(target) {
@@ -297,12 +299,17 @@ var createRequestTarget = function createRequestTarget(promise, requestHandlers)
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
+/* unused harmony export DEFAULT_IS_TEMPORARY */
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "b", function() { return createCommandDescriptor; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return addDescriptorTo; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "d", function() { return descriptorGeneratorFactory; });
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var DEFAULT_IS_TEMPORARY = function DEFAULT_IS_TEMPORARY() {
+  return false;
+};
 
 var CommandDescriptor = function () {
   function CommandDescriptor(type, handler, name) {
@@ -311,8 +318,11 @@ var CommandDescriptor = function () {
     this.name = name !== undefined ? name : type;
     this.type = type;
     this.handler = handler;
-    this.isTemporary = null;
-    this.cacheable = false;
+    /**
+     * @type {function(): boolean}
+     */
+    this.isTemporary = DEFAULT_IS_TEMPORARY;
+    this.cacheable = true;
     this.virtual = false;
     this.resourceType = null;
   }
@@ -328,7 +338,18 @@ var CommandDescriptor = function () {
 }();
 
 var createCommandDescriptor = function createCommandDescriptor(command, handler, name) {
+  var isTemporary = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : undefined;
+  var resourceType = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : null;
+  var cacheable = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : true;
+  var virtual = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : false;
+
   var descriptor = new CommandDescriptor(command, handler, name);
+  descriptor.resourceType = resourceType;
+  descriptor.cacheable = cacheable;
+  descriptor.virtual = virtual;
+  if (isTemporary) {
+    descriptor.isTemporary = isTemporary;
+  }
   // We can use Object.freeze(), it keeps class/constructor information
   return Object.freeze(descriptor);
 };
@@ -342,11 +363,13 @@ var addDescriptorTo = function addDescriptorTo(descriptor, target) {
 };
 
 var descriptorGeneratorFactory = function descriptorGeneratorFactory(command, name) {
-  return function (handler, target, isTemporary, resourceType, cacheable) {
-    var descriptor = new CommandDescriptor(command, handler, name);
-    descriptor.isTemporary = isTemporary;
-    descriptor.resourceType = resourceType;
-    descriptor.cacheable = cacheable;
+  return function (handler, target) {
+    var isTemporary = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : DEFAULT_IS_TEMPORARY;
+    var resourceType = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
+    var cacheable = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : true;
+    var virtual = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : false;
+
+    var descriptor = createCommandDescriptor(command, handler, name, isTemporary, resourceType, cacheable, virtual);
     addDescriptorTo(descriptor, target);
     return Object.freeze(descriptor);
   };
@@ -1332,22 +1355,18 @@ var ProxyCommands = new ProxyCommandsClass();
 
 var createDescriptors = function createDescriptors(handlers) {
   var target = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-  var isTemporary = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+  var isTemporary = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : undefined;
   var resourceType = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
-  var cacheable = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : false;
-  var list = ProxyCommands.list;
-  var length = list.length;
+  var cacheable = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : true;
+  var virtual = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : false;
 
-  for (var index = 0; index < length; index++) {
-    var name = list[index];
+  var args = [isTemporary, resourceType, cacheable, virtual];
+  ProxyCommands.list.forEach(function (name) {
     var handler = handlers[name];
     var field = ProxyCommandFields[name];
 
     if (handler instanceof Function) {
-      var descriptor = new __WEBPACK_IMPORTED_MODULE_0__CommandDescriptor__["c" /* default */](name, handler, field);
-      descriptor.isTemporary = isTemporary;
-      descriptor.resourceType = resourceType;
-      descriptor.cacheable = cacheable;
+      var descriptor = __WEBPACK_IMPORTED_MODULE_0__CommandDescriptor__["b" /* createCommandDescriptor */].apply(undefined, [name, handler, field].concat(args));
       descriptor = Object.freeze(descriptor);
 
       if (target instanceof Array) {
@@ -1356,7 +1375,8 @@ var createDescriptors = function createDescriptors(handlers) {
         target[field] = descriptor;
       }
     }
-  }
+  });
+
   return target;
 };
 
@@ -1479,6 +1499,7 @@ var RequestTargetCommands = function RequestTargetCommands() {
 
   this.createDESTROYDescriptor = function (handler, target) {
     var descriptor = new __WEBPACK_IMPORTED_MODULE_0__CommandDescriptor__["c" /* default */](RequestTargetCommandNames.DESTROY, handler, RequestTargetCommandFields.DESTROY);
+    descriptor.cacheable = false;
     descriptor.virtual = true;
     Object(__WEBPACK_IMPORTED_MODULE_0__CommandDescriptor__["a" /* addDescriptorTo */])(descriptor, target);
     return Object.freeze(descriptor);
@@ -1514,9 +1535,7 @@ var RequestTargetCommands = function RequestTargetCommands() {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return FACTORY_DECORATOR_FIELD; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "b", function() { return FACTORY_HANDLERS_FIELD; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "c", function() { return createRequestFactory; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return createRequestFactory; });
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__RequestTargetDecorator__ = __webpack_require__(33);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__RequestTarget__ = __webpack_require__(3);
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -1525,9 +1544,6 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 
 
-
-var FACTORY_DECORATOR_FIELD = Symbol('request.factory::decorator');
-var FACTORY_HANDLERS_FIELD = Symbol('request.factory::handlers');
 
 var RequestFactory = function () {
   /*
@@ -1549,16 +1565,16 @@ var RequestFactory = function () {
     }
 
     this.cache = cacheImpl;
-    this[FACTORY_HANDLERS_FIELD] = handlers;
-    this[FACTORY_DECORATOR_FIELD] = Object(__WEBPACK_IMPORTED_MODULE_0__RequestTargetDecorator__["a" /* createRequestTargetDecorator */])(this, handlers);
+    this.handlers = handlers;
+    this.decorator = Object(__WEBPACK_IMPORTED_MODULE_0__RequestTargetDecorator__["a" /* createRequestTargetDecorator */])(this, handlers);
   }
 
   _createClass(RequestFactory, [{
     key: 'create',
     value: function create(promise) {
-      var request = Object(__WEBPACK_IMPORTED_MODULE_1__RequestTarget__["a" /* createRequestTarget */])(promise, this[FACTORY_HANDLERS_FIELD]);
-      if (this[FACTORY_HANDLERS_FIELD].available) {
-        this[FACTORY_DECORATOR_FIELD].apply(request);
+      var request = Object(__WEBPACK_IMPORTED_MODULE_1__RequestTarget__["a" /* createRequestTarget */])(promise, this.handlers);
+      if (this.handlers.available) {
+        this.decorator.apply(request);
       }
       return request;
     }
@@ -1586,7 +1602,7 @@ var createRequestFactory = function createRequestFactory(handlers, cacheImpl) {
   return new RequestFactory(handlers, cacheImpl);
 };
 
-/* harmony default export */ __webpack_exports__["d"] = (RequestFactory);
+/* harmony default export */ __webpack_exports__["b"] = (RequestFactory);
 
 /***/ }),
 /* 22 */
@@ -1741,14 +1757,11 @@ var ResourceConverter = function (_EventDispatcher) {
   }, {
     key: 'lookupArray',
     value: function lookupArray(list, linkConvertHandler) {
-      var result = [];
-      var length = list.length;
+      var _this2 = this;
 
-      for (var index = 0; index < length; index++) {
-        // FIXME Array.map()
-        result[index] = linkConvertHandler.call(this, list[index]);
-      }
-      return result;
+      return list.map(function (item) {
+        return linkConvertHandler.call(_this2, item);
+      });
     }
 
     /**
@@ -1762,12 +1775,14 @@ var ResourceConverter = function (_EventDispatcher) {
   }, {
     key: 'lookupObject',
     value: function lookupObject(data, linkConvertHandler) {
-      var result = {};
-      for (var name in data) {
+      var _this3 = this;
+
+      return Object.getOwnPropertyNames(data).reduce(function (result, name) {
         if (Object.prototype.hasOwnProperty.call(data, name)) {
-          result[name] = linkConvertHandler.call(this, data[name]);
+          result[name] = linkConvertHandler.call(_this3, data[name]);
         }
-      }
+      }, {});
+      for (var name in data) {}
       return result;
     }
 
@@ -2175,7 +2190,7 @@ var DataAccessInterface = function () {
       if (proxyEnabled) {
         this.factory = Object(__WEBPACK_IMPORTED_MODULE_5__request_RequestProxyFactory__["a" /* createRequestProxyFactory */])(this.handlers, this.cache);
       } else {
-        this.factory = Object(__WEBPACK_IMPORTED_MODULE_6__request_RequestFactory__["c" /* createRequestFactory */])(this.handlers, this.cache);
+        this.factory = Object(__WEBPACK_IMPORTED_MODULE_6__request_RequestFactory__["a" /* createRequestFactory */])(this.handlers, this.cache);
       }
 
       if (!this.poolRegistry) {
@@ -2563,6 +2578,8 @@ module.exports = function(module) {
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__utils_getResourceType__ = __webpack_require__(14);
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 
@@ -2579,18 +2596,15 @@ var DEFAULT_KEY = '';
 
 var areProxyHandlersAvailable = function areProxyHandlersAvailable(handlers, throwError) {
   var result = true;
-  var list = __WEBPACK_IMPORTED_MODULE_1__commands_ProxyCommands__["b" /* default */].required;
-  var length = list.length;
-
-  for (var index = 0; index < length; index++) {
-    var name = list[index];
+  __WEBPACK_IMPORTED_MODULE_1__commands_ProxyCommands__["b" /* default */].required.forEach(function (name) {
     if (!(__WEBPACK_IMPORTED_MODULE_1__commands_ProxyCommands__["a" /* ProxyCommandFields */][name] in handlers)) {
       result = false;
       if (throwError) {
         throw new Error('For Proxy interface, handler "' + name + '" should be set.');
       }
     }
-  }
+  });
+
   return result;
 };
 
@@ -2662,24 +2676,32 @@ var RequestHandlers = function () {
     value: function hasHandler(name, type) {
       return this.descriptors[type] && Object.prototype.hasOwnProperty.call(this.descriptors[type], name) || this.descriptors[DEFAULT_KEY] && Object.prototype.hasOwnProperty.call(this.descriptors[DEFAULT_KEY], name);
     }
+  }, {
+    key: 'getPropertyHandlers',
+    value: function getPropertyHandlers(type) {
+      var list = this.properties[type];
+      if (!list) {
+        type = DEFAULT_KEY;
+        list = this.properties[type];
+      }
 
-    /**
-     * IMPORTANT: Returns original list of CommandDescriptors, changing it may cause
-     * unexpected result with newly decorated resources.
-     * @param {String} [type]
-     * @returns {CommandDescriptor[]|null}
-     * @private
-     */
-
+      return list ? [].concat(_toConsumableArray(list)) : [];
+    }
+  }, {
+    key: 'getPropertyNames',
+    value: function getPropertyNames(type) {
+      return this.getPropertyNames(type).map(function (descriptor) {
+        return descriptor.name;
+      });
+    }
   }, {
     key: 'getHandlers',
     value: function getHandlers(type) {
-      var descrs = this.descriptors[type || DEFAULT_KEY];
-      if (!descrs) {
-        descrs = this.descriptors[DEFAULT_KEY];
+      if (this.descriptors[type]) {
+        return Object.assign({}, this.descriptors[type], this.descriptors[DEFAULT_KEY]);
       }
 
-      return descrs || null;
+      return Object.assign({}, this.descriptors[DEFAULT_KEY]);
     }
 
     /**
@@ -2752,10 +2774,13 @@ var RequestHandlers = function () {
   }, {
     key: 'available',
     get: function get() {
-      var nonEmptyList = Object.keys(this.properties).find(function (item) {
-        return Boolean(item && item.length);
+      var _this3 = this;
+
+      var nonEmptyListIndex = Object.getOwnPropertyNames(this.properties).findIndex(function (name) {
+        var list = _this3.properties[name];
+        return Boolean(list && list.length);
       });
-      return Boolean(nonEmptyList);
+      return nonEmptyListIndex >= 0;
     }
   }]);
 
@@ -2874,16 +2899,18 @@ var _createClass = function () { function defineProperties(target, props) { for 
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
+var _this = this;
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
 
 
-var FACTORY_FIELD = Symbol('request.proxy.factory::factory');
 
 var EXCLUSIONS = {
   /*
@@ -2894,12 +2921,22 @@ var EXCLUSIONS = {
   prototype: true
 };
 
-var wrapWithProxy = function wrapWithProxy(target, handlers) {
+var toString = function toString() {
+  return '[RequestTargetProxy ' + String(_this.target) + ']';
+};
+
+var createFunctionWrapper = function createFunctionWrapper(target) {
   // INFO Target must be a function so I could use Proxy.call() interceptor.
   function requestTargetProxy() {}
 
   requestTargetProxy.target = target;
-  return new Proxy(requestTargetProxy, handlers);
+  requestTargetProxy.toString = toString;
+
+  return requestTargetProxy;
+};
+
+var wrapWithProxy = function wrapWithProxy(target, handlers) {
+  return new Proxy(createFunctionWrapper(target), handlers);
 };
 
 var proxyGet = function proxyGet(wrapper, name) {
@@ -2926,7 +2963,12 @@ var proxySet = function proxySet(wrapper, name, value) {
     return value;
   }
 
-  return target[__WEBPACK_IMPORTED_MODULE_1__commands_ProxyCommands__["a" /* ProxyCommandFields */].set](name, value);
+  if (__WEBPACK_IMPORTED_MODULE_1__commands_ProxyCommands__["a" /* ProxyCommandFields */].set in target) {
+    target[__WEBPACK_IMPORTED_MODULE_1__commands_ProxyCommands__["a" /* ProxyCommandFields */].set](name, value);
+    return true;
+  }
+
+  return false;
 };
 
 var proxyHas = function proxyHas(wrapper, name) {
@@ -2936,7 +2978,6 @@ var proxyHas = function proxyHas(wrapper, name) {
 var proxyDeleteProperty = function proxyDeleteProperty(wrapper, name) {
   var target = wrapper.target;
 
-
   if (__WEBPACK_IMPORTED_MODULE_1__commands_ProxyCommands__["a" /* ProxyCommandFields */].deleteProperty in target) {
     target[__WEBPACK_IMPORTED_MODULE_1__commands_ProxyCommands__["a" /* ProxyCommandFields */].deleteProperty](name);
     return true;
@@ -2945,12 +2986,16 @@ var proxyDeleteProperty = function proxyDeleteProperty(wrapper, name) {
   return false;
 };
 
-var proxyOwnKeys = function proxyOwnKeys() {
-  return Object.getOwnPropertyNames(EXCLUSIONS);
+var proxyOwnKeys = function proxyOwnKeys(wrapper) {
+  var target = wrapper.target;
+
+  return [].concat(_toConsumableArray(Object.getOwnPropertyNames(target)), _toConsumableArray(Object.getOwnPropertyNames(EXCLUSIONS)));
 };
 
-var proxyEnumerate = function proxyEnumerate() {
-  return Object.getOwnPropertyNames(EXCLUSIONS)[Symbol.iterator]();
+var proxyEnumerate = function proxyEnumerate(wrapper) {
+  var target = wrapper.target;
+
+  return [].concat(_toConsumableArray(Object.getOwnPropertyNames(target)), _toConsumableArray(Object.getOwnPropertyNames(EXCLUSIONS)))[Symbol.iterator]();
 };
 
 var proxyGetOwnPropertyDescriptor = function proxyGetOwnPropertyDescriptor(wrapper, name) {
@@ -2986,20 +3031,20 @@ var RequestProxyFactory = function (_RequestFactory) {
   function RequestProxyFactory(handlers, cacheImpl) {
     _classCallCheck(this, RequestProxyFactory);
 
-    var _this = _possibleConstructorReturn(this, (RequestProxyFactory.__proto__ || Object.getPrototypeOf(RequestProxyFactory)).call(this, null, null, true));
+    var _this2 = _possibleConstructorReturn(this, (RequestProxyFactory.__proto__ || Object.getPrototypeOf(RequestProxyFactory)).call(this, null, null, true));
 
-    _this[__WEBPACK_IMPORTED_MODULE_0__RequestFactory__["b" /* FACTORY_HANDLERS_FIELD */]] = handlers;
-    _this[FACTORY_FIELD] = Object(__WEBPACK_IMPORTED_MODULE_0__RequestFactory__["c" /* createRequestFactory */])(handlers, cacheImpl);
-    _this[FACTORY_FIELD][__WEBPACK_IMPORTED_MODULE_0__RequestFactory__["a" /* FACTORY_DECORATOR_FIELD */]].setFactory(_this);
-    return _this;
+    _this2.handlers = handlers;
+    _this2.factory = Object(__WEBPACK_IMPORTED_MODULE_0__RequestFactory__["a" /* createRequestFactory */])(handlers, cacheImpl);
+    _this2.factory.decorator.setFactory(_this2);
+    return _this2;
   }
 
   _createClass(RequestProxyFactory, [{
     key: 'create',
     value: function create(promise) {
-      var instance = this[FACTORY_FIELD].create(promise);
+      var instance = this.factory.create(promise);
 
-      if (this[__WEBPACK_IMPORTED_MODULE_0__RequestFactory__["b" /* FACTORY_HANDLERS_FIELD */]].available) {
+      if (this.handlers.available) {
         return wrapWithProxy(instance, PROXY_HANDLERS);
       }
 
@@ -3008,14 +3053,14 @@ var RequestProxyFactory = function (_RequestFactory) {
   }, {
     key: 'getCached',
     value: function getCached(name, pack) {
-      return this[FACTORY_FIELD].getCached(name, pack);
+      return this.factory.getCached(name, pack);
     }
   }, {
     key: 'createCached',
     value: function createCached(promise, name, pack) {
-      var instance = this[FACTORY_FIELD].createCached(promise, name, pack);
+      var instance = this.factory.createCached(promise, name, pack);
 
-      if (this[__WEBPACK_IMPORTED_MODULE_0__RequestFactory__["b" /* FACTORY_HANDLERS_FIELD */]].available) {
+      if (this.handlers.available) {
         return wrapWithProxy(instance, PROXY_HANDLERS);
       }
 
@@ -3024,7 +3069,7 @@ var RequestProxyFactory = function (_RequestFactory) {
   }]);
 
   return RequestProxyFactory;
-}(__WEBPACK_IMPORTED_MODULE_0__RequestFactory__["d" /* default */]);
+}(__WEBPACK_IMPORTED_MODULE_0__RequestFactory__["b" /* default */]);
 
 var applyProxyWithDefaultHandlers = function applyProxyWithDefaultHandlers(target) {
   return wrapWithProxy(target, PROXY_HANDLERS);
@@ -3033,6 +3078,8 @@ var applyProxyWithDefaultHandlers = function applyProxyWithDefaultHandlers(targe
 var createRequestProxyFactory = function createRequestProxyFactory(handlers, cacheImpl) {
   return new RequestProxyFactory(handlers, cacheImpl);
 };
+
+/* unused harmony default export */ var _unused_webpack_default_export = (RequestProxyFactory);
 
 /***/ }),
 /* 33 */
@@ -3066,22 +3113,17 @@ var RequestTargetDecorator = function () {
   _createClass(RequestTargetDecorator, [{
     key: 'apply',
     value: function apply(request) {
-      var result = void 0;
+      var _this = this;
 
       if (!this.handlers.available) {
         return request;
       }
-      /* FIXME revert change when ES6 will be supported widely
-       for (var descriptor of this.handlers) {
-       request[descriptor.name] = this.getMember(descriptor.name, descriptor.type);
-       }
-       */
 
-      var iterator = this.handlers.getHandlers(Object(__WEBPACK_IMPORTED_MODULE_1__utils_getResourceType__["a" /* default */])(request));
-      while (!(result = iterator.next()).done) {
-        var descriptor = result.value;
-        request[descriptor.name] = this.members.get(descriptor);
-      }
+      var descriptors = this.handlers.getPropertyHandlers(Object(__WEBPACK_IMPORTED_MODULE_1__utils_getResourceType__["a" /* default */])(request));
+      descriptors.reduce(function (request, descriptor) {
+        request[descriptor.name] = _this.members.get(descriptor);
+        return request;
+      }, request);
 
       return request;
     }

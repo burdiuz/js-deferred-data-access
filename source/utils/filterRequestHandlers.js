@@ -32,13 +32,11 @@ const applyDescriptor = (descriptor, descriptors, properties) => {
  * @private
  */
 const filterArray = (handlers, descriptors, properties) => {
-  const { length } = handlers;
-  for (let index = 0; index < length; index++) {
-    const value = handlers[index];
+  handlers.forEach((value) => {
     if (value instanceof CommandDescriptor) {
       applyDescriptor(value, descriptors, properties);
     }
-  }
+  });
 };
 
 /**
@@ -49,10 +47,10 @@ const filterArray = (handlers, descriptors, properties) => {
  */
 const filterHash = (handlers, descriptors, properties) => {
   if (!handlers) return;
-  const keys = Object.getOwnPropertyNames(handlers).concat(Object.getOwnPropertySymbols(handlers));
-  const { length } = keys;
-  for (let index = 0; index < length; index++) {
-    const name = keys[index];
+  ([
+    ...Object.getOwnPropertyNames(handlers),
+    ...Object.getOwnPropertySymbols(handlers),
+  ]).forEach((name) => {
     let value = handlers[name];
     if (typeof value === 'function') {
       value = createCommandDescriptor(name, value);
@@ -60,7 +58,7 @@ const filterHash = (handlers, descriptors, properties) => {
     if (value instanceof CommandDescriptor) {
       applyDescriptor(value, descriptors, properties);
     }
-  }
+  });
 };
 
 /**

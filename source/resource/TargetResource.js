@@ -66,9 +66,7 @@ class TargetResource {
     internals.active = false;
     pool.remove(id);
 
-    for (const name in internals) {
-      delete internals[name];
-    }
+    Object.keys(internals).map((name) => delete internals[name]);
   }
 }
 

@@ -108,13 +108,7 @@ class ResourceConverter extends EventDispatcher {
    * @private
    */
   lookupArray(list, linkConvertHandler) {
-    const result = [];
-    const { length } = list;
-    for (let index = 0; index < length; index++) {
-      // FIXME Array.map()
-      result[index] = linkConvertHandler.call(this, list[index]);
-    }
-    return result;
+    return list.map((item) => linkConvertHandler.call(this, item));
   }
 
   /**
@@ -125,13 +119,14 @@ class ResourceConverter extends EventDispatcher {
    * @private
    */
   lookupObject(data, linkConvertHandler) {
-    const result = {};
-    for (const name in data) {
-      if (Object.prototype.hasOwnProperty.call(data, name)) {
-        result[name] = linkConvertHandler.call(this, data[name]);
-      }
-    }
-    return result;
+    return Object.getOwnPropertyNames(data)
+      .reduce((result, name) => {
+        if (Object.prototype.hasOwnProperty.call(data, name)) {
+          result[name] = linkConvertHandler.call(this, data[name]);
+        }
+
+        return result;
+      }, {});
   }
 
   /**

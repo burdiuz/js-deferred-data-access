@@ -17,27 +17,13 @@ class RequestTargetDecorator {
     if (!this.handlers.available) {
       return request;
     }
-    /* FIXME revert change when ES6 will be supported widely
-     for (var descriptor of this.handlers) {
-     request[descriptor.name] = this.getMember(descriptor.name, descriptor.type);
-     }
-     */
-    /* FIXME Why no more iterators :(
-    const iterator = this.handlers.getHandlers(getResourceType(request));
-    let result;
-    while (!(result = iterator.next()).done) {
-      const descriptor = result.value;
-      request[descriptor.name] = this.members.get(descriptor);
-    }
-    */
-    const descriptors = this.handlers.getPropertyHandlers(getResourceType(request));
-    const { length } = descriptors;
-    for (let index = 0; index < length; index++) {
-      const descriptor = descriptors[index];
-      request[descriptor.name] = this.members.get(descriptor);
-    }
 
-    return request;
+    const descriptors = this.handlers.getPropertyHandlers(getResourceType(request));
+    return descriptors.reduce((request, descriptor) => {
+      request[descriptor.name] = this.members.get(descriptor);
+
+      return request;
+    }, request);
   }
 
   setFactory(factory) {

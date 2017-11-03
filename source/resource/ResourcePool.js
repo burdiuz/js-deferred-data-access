@@ -21,11 +21,11 @@ export const isValidTarget = (target) => (
 );
 
 export const setValidTargets = (list) => {
-  validTargets = {};
-  const { length } = list;
-  for (let index = 0; index < length; index++) {
-    validTargets[list[index]] = true;
-  }
+  validTargets = list.reduce((validTargets, target) => {
+    validTargets[target] = true;
+
+    return validTargets;
+  }, {});
 };
 
 export const getDefaultValidTargets = () => ['object', 'function'];

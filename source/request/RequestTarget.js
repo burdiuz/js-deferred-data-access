@@ -84,16 +84,12 @@ export const getQueueLength = (target) => {
 };
 
 export const getQueueCommands = (target) => {
-  const result = [];
   const queue = target && target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].queue : null;
   if (queue) {
-    const { length } = queue;
-    // FIXME use Array.map()
-    for (let index = 0; index < length; index++) {
-      result.push(queue[index][0].type);
-    }
+    return queue.map(([name]) => name);
+    // return queue.map(([name, pack]) => pack.type);
   }
-  return result;
+  return [];
 };
 
 export const hadChildPromises = (target) => Boolean(target

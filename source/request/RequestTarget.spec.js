@@ -362,19 +362,24 @@ describe('RequestTarget', () => {
       target[TARGET_INTERNALS] = {
         /* queue has format
             [
-              [command, deferred],
-              [command, deferred],
-              [command, deferred],
+              [name, command, deferred],
+              [name, command, deferred],
+              [name, command, deferred],
                ...
             ]
          */
-        queue: [[{ type: 'abc' }], [{ type: 'def' }], [{ type: 'ghi' }], [{ type: 'jkl' }]],
+        queue: [
+          ['command1', { type: 'abc' }],
+          ['command2', { type: 'def' }],
+          ['command3', { type: 'ghi' }],
+          ['command4', { type: 'jkl' }],
+        ],
       };
       result = module.getQueueCommands(target);
     });
 
     it('should result with command types from queue', () => {
-      expect(result).to.be.eql(['abc', 'def', 'ghi', 'jkl']);
+      expect(result).to.be.eql(['command1', 'command2', 'command3', 'command4']);
     });
 
     it('should return empty list for non-Resource target', () => {
