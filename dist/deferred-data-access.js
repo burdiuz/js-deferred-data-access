@@ -80,8 +80,8 @@ return /******/ (function(modules) { // webpackBootstrap
 "use strict";
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__TARGET_INTERNALS__ = __webpack_require__(1);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__TARGET_DATA__ = __webpack_require__(2);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__request_RequestTarget__ = __webpack_require__(3);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__resource_TargetResource__ = __webpack_require__(10);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__request_Target__ = __webpack_require__(3);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__resource_Resource__ = __webpack_require__(10);
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
 
@@ -90,8 +90,8 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 
 /* harmony default export */ __webpack_exports__["a"] = (function (object) {
-  return object instanceof __WEBPACK_IMPORTED_MODULE_3__resource_TargetResource__["b" /* default */] || object instanceof __WEBPACK_IMPORTED_MODULE_2__request_RequestTarget__["b" /* default */] || object && (
-  // this case for RequestTargets and TargetResources which contain
+  return object instanceof __WEBPACK_IMPORTED_MODULE_3__resource_Resource__["b" /* default */] || object instanceof __WEBPACK_IMPORTED_MODULE_2__request_Target__["b" /* default */] || object && (
+  // this case for Targets and Resources which contain
   // data in TARGET_INTERNALS Symbol
   // We check for their types above but in cases when Proxies are enabled
   // their type will be Function and verification will come to this case
@@ -140,7 +140,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__utils_TARGET_INTERNALS__ = __webpack_require__(1);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__utils_TargetStatus__ = __webpack_require__(15);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__utils_isResource__ = __webpack_require__(0);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__RequestTargetInternals__ = __webpack_require__(28);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__target_Internals__ = __webpack_require__(28);
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -164,16 +164,16 @@ var getRequestPromise = function getRequestPromise(request) {
  * The object that will be available on other side
  * @class DataAccessInterface.RequestTarget
  * @param _promise {Promise}
- * @param _requestHandlers {RequestHandlers}
+ * @param _requestHandlers {Handlers}
  */
 
-var RequestTarget = function () {
-  function RequestTarget(promise, requestHandlers) {
+var Target = function () {
+  function Target(promise, requestHandlers) {
     var _this = this;
 
-    _classCallCheck(this, RequestTarget);
+    _classCallCheck(this, Target);
 
-    this[__WEBPACK_IMPORTED_MODULE_0__utils_TARGET_INTERNALS__["a" /* default */]] = new __WEBPACK_IMPORTED_MODULE_3__RequestTargetInternals__["a" /* default */](this, promise, requestHandlers);
+    this[__WEBPACK_IMPORTED_MODULE_0__utils_TARGET_INTERNALS__["a" /* default */]] = new __WEBPACK_IMPORTED_MODULE_3__target_Internals__["a" /* default */](this, promise, requestHandlers);
 
     var handlePromise = function handlePromise(data) {
       if (!Object(__WEBPACK_IMPORTED_MODULE_2__utils_isResource__["a" /* default */])(data)) {
@@ -185,7 +185,7 @@ var RequestTarget = function () {
     promise.then(handlePromise, handlePromise);
   }
 
-  _createClass(RequestTarget, [{
+  _createClass(Target, [{
     key: 'then',
     value: function then() {
       var target = getRequestPromise(this);
@@ -199,7 +199,7 @@ var RequestTarget = function () {
     }
   }]);
 
-  return RequestTarget;
+  return Target;
 }();
 
 var isActive = function isActive(target) {
@@ -289,10 +289,10 @@ var sendRequest = function sendRequest(target) {
 };
 
 var createRequestTarget = function createRequestTarget(promise, requestHandlers) {
-  return new RequestTarget(promise, requestHandlers);
+  return new Target(promise, requestHandlers);
 };
 
-/* harmony default export */ __webpack_exports__["b"] = (RequestTarget);
+/* harmony default export */ __webpack_exports__["b"] = (Target);
 
 /***/ }),
 /* 4 */
@@ -300,7 +300,7 @@ var createRequestTarget = function createRequestTarget(promise, requestHandlers)
 
 "use strict";
 /* unused harmony export DEFAULT_IS_TEMPORARY */
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "b", function() { return createCommandDescriptor; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "b", function() { return createDescriptor; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return addDescriptorTo; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "d", function() { return descriptorGeneratorFactory; });
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -311,9 +311,9 @@ var DEFAULT_IS_TEMPORARY = function DEFAULT_IS_TEMPORARY() {
   return false;
 };
 
-var CommandDescriptor = function () {
-  function CommandDescriptor(type, handler, name) {
-    _classCallCheck(this, CommandDescriptor);
+var Descriptor = function () {
+  function Descriptor(type, handler, name) {
+    _classCallCheck(this, Descriptor);
 
     this.name = name !== undefined ? name : type;
     this.type = type;
@@ -327,23 +327,23 @@ var CommandDescriptor = function () {
     this.resourceType = null;
   }
 
-  _createClass(CommandDescriptor, [{
+  _createClass(Descriptor, [{
     key: "toString",
     value: function toString() {
-      return "[CommandDescriptor(name=\"" + String(this.name) + "\", " + ("type=\"" + String(this.type) + "\", virtual=\"" + this.virtual + "\")]");
+      return "[Command Descriptor(name=\"" + String(this.name) + "\", " + ("type=\"" + String(this.type) + "\", virtual=\"" + this.virtual + "\")]");
     }
   }]);
 
-  return CommandDescriptor;
+  return Descriptor;
 }();
 
-var createCommandDescriptor = function createCommandDescriptor(command, handler, name) {
+var createDescriptor = function createDescriptor(command, handler, name) {
   var isTemporary = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : undefined;
   var resourceType = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : null;
   var cacheable = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : true;
   var virtual = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : false;
 
-  var descriptor = new CommandDescriptor(command, handler, name);
+  var descriptor = new Descriptor(command, handler, name);
   descriptor.resourceType = resourceType;
   descriptor.cacheable = cacheable;
   descriptor.virtual = virtual;
@@ -369,13 +369,13 @@ var descriptorGeneratorFactory = function descriptorGeneratorFactory(command, na
     var cacheable = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : true;
     var virtual = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : false;
 
-    var descriptor = createCommandDescriptor(command, handler, name, isTemporary, resourceType, cacheable, virtual);
+    var descriptor = createDescriptor(command, handler, name, isTemporary, resourceType, cacheable, virtual);
     addDescriptorTo(descriptor, target);
     return Object.freeze(descriptor);
   };
 };
 
-/* harmony default export */ __webpack_exports__["c"] = (CommandDescriptor);
+/* harmony default export */ __webpack_exports__["c"] = (Descriptor);
 
 /***/ }),
 /* 5 */
@@ -383,6 +383,7 @@ var descriptorGeneratorFactory = function descriptorGeneratorFactory(command, na
 
 "use strict";
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return ResourcePoolEvents; });
+/* unused harmony export MAP_FIELD */
 /* unused harmony export isValidTarget */
 /* unused harmony export setValidTargets */
 /* unused harmony export getDefaultValidTargets */
@@ -392,7 +393,9 @@ var descriptorGeneratorFactory = function descriptorGeneratorFactory(command, na
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_event_dispatcher___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_event_dispatcher__);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__utils_getId__ = __webpack_require__(18);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__utils_isResource__ = __webpack_require__(0);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__TargetResource__ = __webpack_require__(10);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__Resource__ = __webpack_require__(10);
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
@@ -425,12 +428,11 @@ var isValidTarget = function isValidTarget(target) {
 };
 
 var setValidTargets = function setValidTargets(list) {
-  validTargets = {};
-  var length = list.length;
+  validTargets = list.reduce(function (validTargets, target) {
+    validTargets[target] = true;
 
-  for (var index = 0; index < length; index++) {
-    validTargets[list[index]] = true;
-  }
+    return validTargets;
+  }, {});
 };
 
 var getDefaultValidTargets = function getDefaultValidTargets() {
@@ -446,7 +448,6 @@ var ResourcePool = function (_EventDispatcher) {
     var _this = _possibleConstructorReturn(this, (ResourcePool.__proto__ || Object.getPrototypeOf(ResourcePool)).call(this));
 
     _this[MAP_FIELD] = new Map();
-
     Object.defineProperties(_this, {
       id: {
         value: Object(__WEBPACK_IMPORTED_MODULE_1__utils_getId__["a" /* default */])()
@@ -457,21 +458,25 @@ var ResourcePool = function (_EventDispatcher) {
 
   _createClass(ResourcePool, [{
     key: 'set',
-    value: function set(target, type) {
-      var link = null;
-      if (isValidTarget(target)) {
-        if (this[MAP_FIELD].has(target)) {
-          link = this[MAP_FIELD].get(target);
+    value: function set(value) {
+      var type = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+
+      var map = this[MAP_FIELD];
+      var resource = null;
+      if (isValidTarget(value)) {
+        if (map.has(value)) {
+          resource = map.get(value);
         } else {
-          link = Object(__WEBPACK_IMPORTED_MODULE_3__TargetResource__["a" /* createTargetResource */])(this, target, type || (typeof target === 'undefined' ? 'undefined' : _typeof(target)));
-          this[MAP_FIELD].set(link.id, link);
-          this[MAP_FIELD].set(target, link);
+          resource = Object(__WEBPACK_IMPORTED_MODULE_3__Resource__["a" /* createResource */])(this, value, type || (typeof value === 'undefined' ? 'undefined' : _typeof(value)));
+          map.set(resource.id, resource);
+          map.set(value, resource);
           if (this.hasEventListener(ResourcePoolEvents.RESOURCE_ADDED)) {
-            this.dispatchEvent(ResourcePoolEvents.RESOURCE_ADDED, link);
+            this.dispatchEvent(ResourcePoolEvents.RESOURCE_ADDED, resource);
           }
         }
       }
-      return link;
+
+      return resource;
     }
   }, {
     key: 'has',
@@ -485,33 +490,60 @@ var ResourcePool = function (_EventDispatcher) {
     }
   }, {
     key: 'remove',
-    value: function remove(target) {
-      var link = this[MAP_FIELD].get(target);
-      if (link) {
-        this[MAP_FIELD].delete(link.id);
-        this[MAP_FIELD].delete(link.resource);
+    value: function remove(value) {
+      var map = this[MAP_FIELD];
+      var resource = map.get(value);
+      if (resource) {
+        map.delete(resource.id);
+        map.delete(resource.value);
         if (this.hasEventListener(ResourcePoolEvents.RESOURCE_REMOVED)) {
-          this.dispatchEvent(ResourcePoolEvents.RESOURCE_REMOVED, link);
+          this.dispatchEvent(ResourcePoolEvents.RESOURCE_REMOVED, resource);
         }
-        link.destroy();
+        resource.destroy();
       }
     }
   }, {
     key: 'clear',
     value: function clear() {
+      var map = this[MAP_FIELD];
       if (this.hasEventListener(ResourcePoolEvents.POOL_CLEAR)) {
         this.dispatchEvent(ResourcePoolEvents.POOL_CLEAR, this);
       }
-      var key = void 0;
-      var keys = this[MAP_FIELD].keys();
-      // FIXME update to for...of loop when it comes to browsers
-      while (!(key = keys.next()).done) {
-        if (typeof key.value === 'string') {
-          var link = this[MAP_FIELD].get(key.value);
-          link.destroy();
+
+      var _iteratorNormalCompletion = true;
+      var _didIteratorError = false;
+      var _iteratorError = undefined;
+
+      try {
+        for (var _iterator = map[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+          var _ref = _step.value;
+
+          var _ref2 = _slicedToArray(_ref, 2);
+
+          var key = _ref2[0];
+          var resource = _ref2[1];
+
+          if (typeof key === 'string' && key === resource.id) {
+            resource.destroy();
+          }
+        }
+      } catch (err) {
+        _didIteratorError = true;
+        _iteratorError = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion && _iterator.return) {
+            _iterator.return();
+          }
+        } finally {
+          if (_didIteratorError) {
+            throw _iteratorError;
+          }
         }
       }
-      this[MAP_FIELD].clear();
+
+      map.clear();
+
       if (this.hasEventListener(ResourcePoolEvents.POOL_CLEARED)) {
         this.dispatchEvent(ResourcePoolEvents.POOL_CLEARED, this);
       }
@@ -536,6 +568,8 @@ var ResourcePool = function (_EventDispatcher) {
 
   return ResourcePool;
 }(__WEBPACK_IMPORTED_MODULE_0_event_dispatcher___default.a);
+
+ResourcePool.events = ResourcePoolEvents;
 
 var DefaultResourcePool = function (_ResourcePool) {
   _inherits(DefaultResourcePool, _ResourcePool);
@@ -600,9 +634,9 @@ var createDeferred = function createDeferred() {
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__TARGET_INTERNALS__ = __webpack_require__(1);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__IConvertible__ = __webpack_require__(8);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__isResource__ = __webpack_require__(0);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__request_RequestTarget__ = __webpack_require__(3);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__request_Target__ = __webpack_require__(3);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__resource_ResourcePool__ = __webpack_require__(5);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__resource_TargetResource__ = __webpack_require__(10);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__resource_Resource__ = __webpack_require__(10);
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
 
@@ -615,10 +649,10 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 /* harmony default export */ __webpack_exports__["a"] = (function (object, pool) {
   pool = pool || __WEBPACK_IMPORTED_MODULE_4__resource_ResourcePool__["d" /* defaultResourcePool */];
 
-  if (object instanceof __WEBPACK_IMPORTED_MODULE_5__resource_TargetResource__["b" /* default */]) {
+  if (object instanceof __WEBPACK_IMPORTED_MODULE_5__resource_Resource__["b" /* default */]) {
     return object.toJSON();
   } else if (_typeof(object[__WEBPACK_IMPORTED_MODULE_0__TARGET_INTERNALS__["a" /* default */]]) === 'object') {
-    return Object(__WEBPACK_IMPORTED_MODULE_3__request_RequestTarget__["f" /* toJSON */])(object);
+    return Object(__WEBPACK_IMPORTED_MODULE_3__request_Target__["f" /* toJSON */])(object);
   } else if (object instanceof __WEBPACK_IMPORTED_MODULE_1__IConvertible__["a" /* default */] || typeof object === 'function') {
     return pool.set(object).toJSON();
   } else if (Object(__WEBPACK_IMPORTED_MODULE_2__isResource__["a" /* default */])(object)) {
@@ -1140,7 +1174,7 @@ var IConvertible = function IConvertible() {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return createTargetResource; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return createResource; });
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__utils_TARGET_DATA__ = __webpack_require__(2);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__utils_TARGET_INTERNALS__ = __webpack_require__(1);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__utils_getId__ = __webpack_require__(18);
@@ -1161,15 +1195,15 @@ var getPoolId = function getPoolId(pool) {
 };
 
 /**
- * @exports TargetResource
+ * @exports Resource
  */
 
-var TargetResource = function () {
-  function TargetResource(pool, resource, type, id) {
+var Resource = function () {
+  function Resource(pool, value, type, id) {
     var _this = this,
         _Object$definePropert;
 
-    _classCallCheck(this, TargetResource);
+    _classCallCheck(this, Resource);
 
     this.toJSON = function () {
       return _defineProperty({}, __WEBPACK_IMPORTED_MODULE_0__utils_TARGET_DATA__["a" /* default */], {
@@ -1182,7 +1216,7 @@ var TargetResource = function () {
     Object.defineProperties(this, (_Object$definePropert = {}, _defineProperty(_Object$definePropert, __WEBPACK_IMPORTED_MODULE_1__utils_TARGET_INTERNALS__["a" /* default */], {
       value: {
         pool: pool,
-        resource: resource,
+        value: value,
         type: type,
         id: id,
         active: true,
@@ -1193,7 +1227,7 @@ var TargetResource = function () {
     }), _Object$definePropert));
   }
 
-  _createClass(TargetResource, [{
+  _createClass(Resource, [{
     key: 'destroy',
     value: function destroy() {
       var internals = this[__WEBPACK_IMPORTED_MODULE_1__utils_TARGET_INTERNALS__["a" /* default */]];
@@ -1208,9 +1242,9 @@ var TargetResource = function () {
       internals.active = false;
       pool.remove(id);
 
-      for (var name in internals) {
-        delete internals[name];
-      }
+      Object.keys(internals).map(function (name) {
+        return delete internals[name];
+      });
     }
   }, {
     key: 'active',
@@ -1218,14 +1252,14 @@ var TargetResource = function () {
       return Boolean(this[__WEBPACK_IMPORTED_MODULE_1__utils_TARGET_INTERNALS__["a" /* default */]].active);
     }
   }, {
-    key: 'resource',
+    key: 'value',
     get: function get() {
-      return this[__WEBPACK_IMPORTED_MODULE_1__utils_TARGET_INTERNALS__["a" /* default */]].resource;
+      return this[__WEBPACK_IMPORTED_MODULE_1__utils_TARGET_INTERNALS__["a" /* default */]].value;
     }
   }, {
     key: 'type',
     get: function get() {
-      return this[__WEBPACK_IMPORTED_MODULE_1__utils_TARGET_INTERNALS__["a" /* default */]].type || _typeof(this[__WEBPACK_IMPORTED_MODULE_1__utils_TARGET_INTERNALS__["a" /* default */]].resource);
+      return this[__WEBPACK_IMPORTED_MODULE_1__utils_TARGET_INTERNALS__["a" /* default */]].type || _typeof(this[__WEBPACK_IMPORTED_MODULE_1__utils_TARGET_INTERNALS__["a" /* default */]].value);
     }
   }, {
     key: 'id',
@@ -1239,14 +1273,15 @@ var TargetResource = function () {
     }
   }]);
 
-  return TargetResource;
+  return Resource;
 }();
 
-var createTargetResource = function createTargetResource(pool, resource, resourceType, id) {
-  return new TargetResource(pool, resource, resourceType, id || Object(__WEBPACK_IMPORTED_MODULE_2__utils_getId__["a" /* default */])());
+var createResource = function createResource(pool, value, resourceType) {
+  var id = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
+  return new Resource(pool, value, resourceType, id || Object(__WEBPACK_IMPORTED_MODULE_2__utils_getId__["a" /* default */])());
 };
 
-/* harmony default export */ __webpack_exports__["b"] = (TargetResource);
+/* harmony default export */ __webpack_exports__["b"] = (Resource);
 
 /***/ }),
 /* 11 */
@@ -1286,7 +1321,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 
 /* harmony default export */ __webpack_exports__["a"] = (function (object) {
-  // if (object instanceof TargetResource || object instanceof RequestTarget) {
+  // if (object instanceof Resource || object instanceof Target) {
   if (_typeof(object[__WEBPACK_IMPORTED_MODULE_0__TARGET_INTERNALS__["a" /* default */]]) === 'object') {
     return object[__WEBPACK_IMPORTED_MODULE_0__TARGET_INTERNALS__["a" /* default */]].id;
   } else if (Object(__WEBPACK_IMPORTED_MODULE_2__isResource__["a" /* default */])(object)) {
@@ -1304,7 +1339,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 /* unused harmony export ProxyCommandNames */
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return ProxyCommandFields; });
 /* unused harmony export createDescriptors */
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__CommandDescriptor__ = __webpack_require__(4);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Descriptor__ = __webpack_require__(4);
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -1329,9 +1364,11 @@ var ProxyCommandsClass = function () {
   function ProxyCommandsClass() {
     _classCallCheck(this, ProxyCommandsClass);
 
-    this.createGETDescriptor = Object(__WEBPACK_IMPORTED_MODULE_0__CommandDescriptor__["d" /* descriptorGeneratorFactory */])(ProxyCommandNames.GET, ProxyCommandFields.get);
-    this.createSETDescriptor = Object(__WEBPACK_IMPORTED_MODULE_0__CommandDescriptor__["d" /* descriptorGeneratorFactory */])(ProxyCommandNames.SET, ProxyCommandFields.set);
-    this.createAPPLYDescriptor = Object(__WEBPACK_IMPORTED_MODULE_0__CommandDescriptor__["d" /* descriptorGeneratorFactory */])(ProxyCommandNames.APPLY, ProxyCommandFields.apply);
+    this.names = ProxyCommandNames;
+    this.fields = ProxyCommandFields;
+    this.createGETDescriptor = Object(__WEBPACK_IMPORTED_MODULE_0__Descriptor__["d" /* descriptorGeneratorFactory */])(ProxyCommandNames.GET, ProxyCommandFields.get);
+    this.createSETDescriptor = Object(__WEBPACK_IMPORTED_MODULE_0__Descriptor__["d" /* descriptorGeneratorFactory */])(ProxyCommandNames.SET, ProxyCommandFields.set);
+    this.createAPPLYDescriptor = Object(__WEBPACK_IMPORTED_MODULE_0__Descriptor__["d" /* descriptorGeneratorFactory */])(ProxyCommandNames.APPLY, ProxyCommandFields.apply);
 
     Object.freeze(this);
   }
@@ -1366,7 +1403,7 @@ var createDescriptors = function createDescriptors(handlers) {
     var field = ProxyCommandFields[name];
 
     if (handler instanceof Function) {
-      var descriptor = __WEBPACK_IMPORTED_MODULE_0__CommandDescriptor__["b" /* createCommandDescriptor */].apply(undefined, [name, handler, field].concat(args));
+      var descriptor = __WEBPACK_IMPORTED_MODULE_0__Descriptor__["b" /* createDescriptor */].apply(undefined, [name, handler, field].concat(args));
       descriptor = Object.freeze(descriptor);
 
       if (target instanceof Array) {
@@ -1433,7 +1470,7 @@ var getResourceType = function getResourceType(object) {
     target: targetId
   };
 
-  // FIXME why? mprobably to make it not enumerable?.. fuck, dunno
+  // FIXME why? probably to make it not enumerable?.. fuck, dunno
   Object.defineProperty(result, 'args', {
     value: args
   });
@@ -1472,43 +1509,46 @@ var index = 0;
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "b", function() { return RequestTargetCommandNames; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return RequestTargetCommandFields; });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__CommandDescriptor__ = __webpack_require__(4);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "b", function() { return RequestCommandNames; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return RequestCommandFields; });
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Descriptor__ = __webpack_require__(4);
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 
 
-var RequestTargetCommandNames = Object.freeze({
+var RequestCommandNames = Object.freeze({
   DESTROY: '::destroy.resource'
 });
 
-var RequestTargetCommandFields = Object.freeze({
+var RequestCommandFields = Object.freeze({
   DESTROY: Symbol('::destroy.resource')
 });
 
 /**
- * Destroy is unique type that exists for every RequestTarget
+ * Destroy is unique type that exists for every Target
  * and does not have a method on its instances. This type will
- * be send each time RequestTarget.destroy() is applied to
- * RequestTarget in stance.
+ * be send each time Target.destroy() is applied to
+ * Target in stance.
  */
 
-var RequestTargetCommands = function RequestTargetCommands() {
-  _classCallCheck(this, RequestTargetCommands);
+var RequestCommands = function RequestCommands() {
+  _classCallCheck(this, RequestCommands);
+
+  this.names = RequestCommandNames;
+  this.fields = RequestCommandFields;
 
   this.createDESTROYDescriptor = function (handler, target) {
-    var descriptor = new __WEBPACK_IMPORTED_MODULE_0__CommandDescriptor__["c" /* default */](RequestTargetCommandNames.DESTROY, handler, RequestTargetCommandFields.DESTROY);
+    var descriptor = new __WEBPACK_IMPORTED_MODULE_0__Descriptor__["c" /* default */](RequestCommandNames.DESTROY, handler, RequestCommandFields.DESTROY);
     descriptor.cacheable = false;
     descriptor.virtual = true;
-    Object(__WEBPACK_IMPORTED_MODULE_0__CommandDescriptor__["a" /* addDescriptorTo */])(descriptor, target);
+    Object(__WEBPACK_IMPORTED_MODULE_0__Descriptor__["a" /* addDescriptorTo */])(descriptor, target);
     return Object.freeze(descriptor);
   };
 
   Object.freeze(this);
 };
 
-/* harmony default export */ __webpack_exports__["c"] = (new RequestTargetCommands());
+/* harmony default export */ __webpack_exports__["c"] = (new RequestCommands());
 
 /***/ }),
 /* 20 */
@@ -1520,7 +1560,7 @@ var RequestTargetCommands = function RequestTargetCommands() {
  */
 /* harmony default export */ __webpack_exports__["a"] = (Object.freeze({
   /**
-   * Contains property names that cannot be used for CommandDescriptor's
+   * Contains property names that cannot be used for Descriptor's
    */
   names: Object.freeze({
     // INFO Exposed Promise method, cannot be overwritten by type
@@ -1536,8 +1576,8 @@ var RequestTargetCommands = function RequestTargetCommands() {
 
 "use strict";
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return createRequestFactory; });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__RequestTargetDecorator__ = __webpack_require__(33);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__RequestTarget__ = __webpack_require__(3);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Decorator__ = __webpack_require__(35);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__Target__ = __webpack_require__(3);
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -1545,20 +1585,20 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 
 
-var RequestFactory = function () {
+var Factory = function () {
   /*
    function DummyCacheImpl() {
    this.get = function(name, pack) {
-     };
+    };
    this.set = function(name, pack, request) {
-     };
+    };
    }
    */
-  function RequestFactory(handlers) {
+  function Factory(handlers) {
     var cacheImpl = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
     var noInit = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
 
-    _classCallCheck(this, RequestFactory);
+    _classCallCheck(this, Factory);
 
     if (noInit) {
       return;
@@ -1566,13 +1606,13 @@ var RequestFactory = function () {
 
     this.cache = cacheImpl;
     this.handlers = handlers;
-    this.decorator = Object(__WEBPACK_IMPORTED_MODULE_0__RequestTargetDecorator__["a" /* createRequestTargetDecorator */])(this, handlers);
+    this.decorator = Object(__WEBPACK_IMPORTED_MODULE_0__Decorator__["a" /* createDecorator */])(this, handlers);
   }
 
-  _createClass(RequestFactory, [{
+  _createClass(Factory, [{
     key: 'create',
     value: function create(promise) {
-      var request = Object(__WEBPACK_IMPORTED_MODULE_1__RequestTarget__["a" /* createRequestTarget */])(promise, this.handlers);
+      var request = Object(__WEBPACK_IMPORTED_MODULE_1__Target__["a" /* createRequestTarget */])(promise, this.handlers);
       if (this.handlers.available) {
         this.decorator.apply(request);
       }
@@ -1595,21 +1635,21 @@ var RequestFactory = function () {
     }
   }]);
 
-  return RequestFactory;
+  return Factory;
 }();
 
 var createRequestFactory = function createRequestFactory(handlers, cacheImpl) {
-  return new RequestFactory(handlers, cacheImpl);
+  return new Factory(handlers, cacheImpl);
 };
 
-/* harmony default export */ __webpack_exports__["b"] = (RequestFactory);
+/* harmony default export */ __webpack_exports__["b"] = (Factory);
 
 /***/ }),
 /* 22 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* unused harmony export ResourceConverterEvents */
+/* unused harmony export ConverterEvents */
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return createResourceConverter; });
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_event_dispatcher__ = __webpack_require__(9);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_event_dispatcher___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_event_dispatcher__);
@@ -1618,7 +1658,7 @@ var createRequestFactory = function createRequestFactory(handlers, cacheImpl) {
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__utils_isResource__ = __webpack_require__(0);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__utils_isResourceConvertible__ = __webpack_require__(23);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__utils_getRawResource__ = __webpack_require__(7);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__request_RequestTarget__ = __webpack_require__(3);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__request_Target__ = __webpack_require__(3);
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -1637,7 +1677,7 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 
 
 
-var ResourceConverterEvents = Object.freeze({
+var ConverterEvents = Object.freeze({
   RESOURCE_CREATED: 'resourceCreated',
   RESOURCE_CONVERTED: 'resourceConverted'
 });
@@ -1645,35 +1685,30 @@ var ResourceConverterEvents = Object.freeze({
 /**
  * Resource converter contains bunch of methods to lookup for resources
  * and registering them, converting them into RAWResource or into
- * RequestTargets, depending on their origin.
+ * Targets, depending on their origin.
  * Before sending data, bundled resources should be registered in ResourcePool
  * and then converted to RAWResource objects.
- * After data received, its RAWResources should be converted to RequestTargets
+ * After data received, its RAWResources should be converted to Targets
  * for not resolved resources or to resource target values otherwise.
- * Resource can be resolved by its `id` and `poolId`, if ResourceConverter
+ * Resource can be resolved by its `id` and `poolId`, if Converter
  * can find ResourcePool with id from poolId, it will try to get target
  * resource value and replace with it RAWResource object.
- * If ResourcePool not found, ResourceConverter assumes that resource come from
- * other origin/environment and creates RequestTarget object that can be target
+ * If ResourcePool not found, Converter assumes that resource come from
+ * other origin/environment and creates Target object that can be target
  * object for commands.
- * ResourceConverter while handling data does not look deeply, so its developer
+ * Converter while handling data does not look deeply, so its developer
  * responsibility to convert deeply nested resource targets.
- * @param {RequestFactory} factory
- * @param {ResourcePoolRegistry} registry
- * @param {ResourcePool} pool
- * @param {RequestHandlers} handlers
- * @extends EventDispatcher
  */
 
-var ResourceConverter = function (_EventDispatcher) {
-  _inherits(ResourceConverter, _EventDispatcher);
+var Converter = function (_EventDispatcher) {
+  _inherits(Converter, _EventDispatcher);
 
-  function ResourceConverter(factory, registry, pool) {
+  function Converter(factory, registry, pool) {
     var handlers = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
 
-    _classCallCheck(this, ResourceConverter);
+    _classCallCheck(this, Converter);
 
-    var _this = _possibleConstructorReturn(this, (ResourceConverter.__proto__ || Object.getPrototypeOf(ResourceConverter)).call(this));
+    var _this = _possibleConstructorReturn(this, (Converter.__proto__ || Object.getPrototypeOf(Converter)).call(this));
 
     _this.factory = factory;
     _this.pool = pool;
@@ -1685,7 +1720,7 @@ var ResourceConverter = function (_EventDispatcher) {
     return _this;
   }
 
-  _createClass(ResourceConverter, [{
+  _createClass(Converter, [{
     key: 'resourceToObject',
     value: function resourceToObject(data) {
       var result = void 0;
@@ -1698,8 +1733,8 @@ var ResourceConverter = function (_EventDispatcher) {
         return data;
       }
 
-      if (this.hasEventListener(ResourceConverterEvents.RESOURCE_CONVERTED)) {
-        this.dispatchEvent(ResourceConverterEvents.RESOURCE_CONVERTED, {
+      if (this.hasEventListener(ConverterEvents.RESOURCE_CONVERTED)) {
+        this.dispatchEvent(ConverterEvents.RESOURCE_CONVERTED, {
           data: data,
           result: result
         });
@@ -1728,7 +1763,7 @@ var ResourceConverter = function (_EventDispatcher) {
           var target = this.registry.get(poolId).get(Object(__WEBPACK_IMPORTED_MODULE_2__utils_getResourceId__["a" /* default */])(data));
 
           if (target) {
-            result = target.resource;
+            result = target.value;
           }
         } else {
           // target object has another origin, should be wrapped
@@ -1736,8 +1771,8 @@ var ResourceConverter = function (_EventDispatcher) {
         }
       }
 
-      if (result !== data && this.hasEventListener(ResourceConverterEvents.RESOURCE_CREATED)) {
-        this.dispatchEvent(ResourceConverterEvents.RESOURCE_CREATED, {
+      if (result !== data && this.hasEventListener(ConverterEvents.RESOURCE_CREATED)) {
+        this.dispatchEvent(ConverterEvents.RESOURCE_CREATED, {
           data: data,
           result: result
         });
@@ -1781,9 +1816,9 @@ var ResourceConverter = function (_EventDispatcher) {
         if (Object.prototype.hasOwnProperty.call(data, name)) {
           result[name] = linkConvertHandler.call(_this3, data[name]);
         }
+
+        return result;
       }, {});
-      for (var name in data) {}
-      return result;
     }
 
     /**
@@ -1800,7 +1835,7 @@ var ResourceConverter = function (_EventDispatcher) {
 
       if (data !== undefined && data !== null) {
         if (Object(__WEBPACK_IMPORTED_MODULE_4__utils_isResourceConvertible__["a" /* default */])(data)) {
-          // if data is RequestTarget, TargetResource, IConvertible, Function or RAW resource data
+          // if data is Target, Resource, IConvertible, Function or RAW resource data
           result = this.resourceToObject(data);
         } else if (data instanceof Array) {
           // if data is Array of values, check its
@@ -1852,14 +1887,14 @@ var ResourceConverter = function (_EventDispatcher) {
       var result = [];
 
       var add = function add(value) {
-        if (Object(__WEBPACK_IMPORTED_MODULE_6__request_RequestTarget__["d" /* isPending */])(value)) {
+        if (Object(__WEBPACK_IMPORTED_MODULE_6__request_Target__["d" /* isPending */])(value)) {
           result.push(value);
         }
         return value;
       };
 
       if ((typeof data === 'undefined' ? 'undefined' : _typeof(data)) === 'object' && data !== null) {
-        if (Object(__WEBPACK_IMPORTED_MODULE_6__request_RequestTarget__["d" /* isPending */])(data)) {
+        if (Object(__WEBPACK_IMPORTED_MODULE_6__request_Target__["d" /* isPending */])(data)) {
           result.push(data);
         } else if (data instanceof Array) {
           this.lookupArray(data, add);
@@ -1871,23 +1906,24 @@ var ResourceConverter = function (_EventDispatcher) {
     }
   }]);
 
-  return ResourceConverter;
+  return Converter;
 }(__WEBPACK_IMPORTED_MODULE_0_event_dispatcher___default.a);
 
 /**
  * @param {RequestFactory} factory
  * @param {DataAccessInterface.ResourcePoolRegistry} registry
  * @param {DataAccessInterface.ResourcePool} pool
- * @param {RequestHandlers} handlers
+ * @param {Handlers} handlers
  * @returns {ResourceConverter}
  */
 
 
+Converter.events = ConverterEvents;
 var createResourceConverter = function createResourceConverter(factory, registry, pool, handlers) {
-  return new ResourceConverter(factory, registry, pool, handlers);
+  return new Converter(factory, registry, pool, handlers);
 };
 
-/* harmony default export */ __webpack_exports__["b"] = (ResourceConverter);
+/* harmony default export */ __webpack_exports__["b"] = (Converter);
 
 /***/ }),
 /* 23 */
@@ -1908,8 +1944,8 @@ var createResourceConverter = function createResourceConverter(factory, registry
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* unused harmony export ResourcePoolRegistryEvents */
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return createResourcePoolRegistry; });
+/* unused harmony export PoolRegistryEvents */
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return createPoolRegistry; });
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_event_dispatcher__ = __webpack_require__(9);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_event_dispatcher___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_event_dispatcher__);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__ResourcePool__ = __webpack_require__(5);
@@ -1924,7 +1960,7 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 
 
 
-var ResourcePoolRegistryEvents = Object.freeze({
+var PoolRegistryEvents = Object.freeze({
   RESOURCE_POOL_CREATED: 'resourcePoolCreated',
   RESOURCE_POOL_REGISTERED: 'resourcePoolRegistered',
   RESOURCE_POOL_REMOVED: 'resourcePoolRemoved'
@@ -1934,17 +1970,17 @@ var POOLS_FIELD = Symbol('resource.pool.registry::pools');
 
 /**
  * @classdesc Collection of ResourcePool instances. Allows lookup for ResourcePool by its Id.
- * When ResourcePool is registered in ResourcePoolRegistry, it subscribes to
+ * When ResourcePool is registered in PoolRegistry, it subscribes to
  * ResourcePool POOL_DESTROYED event and removes pool from registry after its destroyed.
  */
 
-var ResourcePoolRegistry = function (_EventDispatcher) {
-  _inherits(ResourcePoolRegistry, _EventDispatcher);
+var PoolRegistry = function (_EventDispatcher) {
+  _inherits(PoolRegistry, _EventDispatcher);
 
-  function ResourcePoolRegistry() {
-    _classCallCheck(this, ResourcePoolRegistry);
+  function PoolRegistry() {
+    _classCallCheck(this, PoolRegistry);
 
-    var _this = _possibleConstructorReturn(this, (ResourcePoolRegistry.__proto__ || Object.getPrototypeOf(ResourcePoolRegistry)).call(this));
+    var _this = _possibleConstructorReturn(this, (PoolRegistry.__proto__ || Object.getPrototypeOf(PoolRegistry)).call(this));
 
     _this.handlePoolDestroyed = function (event) {
       _this.remove(event.data);
@@ -1957,7 +1993,7 @@ var ResourcePoolRegistry = function (_EventDispatcher) {
     return _this;
   }
 
-  _createClass(ResourcePoolRegistry, [{
+  _createClass(PoolRegistry, [{
     key: 'createPool',
 
 
@@ -1967,8 +2003,8 @@ var ResourcePoolRegistry = function (_EventDispatcher) {
      */
     value: function createPool() {
       var pool = Object(__WEBPACK_IMPORTED_MODULE_1__ResourcePool__["b" /* createResourcePool */])();
-      if (this.hasEventListener(ResourcePoolRegistryEvents.RESOURCE_POOL_CREATED)) {
-        this.dispatchEvent(ResourcePoolRegistryEvents.RESOURCE_POOL_CREATED, pool);
+      if (this.hasEventListener(PoolRegistryEvents.RESOURCE_POOL_CREATED)) {
+        this.dispatchEvent(PoolRegistryEvents.RESOURCE_POOL_CREATED, pool);
       }
       this.register(pool);
       return pool;
@@ -1985,8 +2021,8 @@ var ResourcePoolRegistry = function (_EventDispatcher) {
       if (Object.prototype.hasOwnProperty.call(this[POOLS_FIELD], pool.id)) return;
       this[POOLS_FIELD][pool.id] = pool;
       pool.addEventListener(__WEBPACK_IMPORTED_MODULE_1__ResourcePool__["a" /* ResourcePoolEvents */].POOL_DESTROYED, this.handlePoolDestroyed);
-      if (this.hasEventListener(ResourcePoolRegistryEvents.RESOURCE_POOL_REGISTERED)) {
-        this.dispatchEvent(ResourcePoolRegistryEvents.RESOURCE_POOL_REGISTERED, pool);
+      if (this.hasEventListener(PoolRegistryEvents.RESOURCE_POOL_REGISTERED)) {
+        this.dispatchEvent(PoolRegistryEvents.RESOURCE_POOL_REGISTERED, pool);
       }
     }
 
@@ -2029,21 +2065,24 @@ var ResourcePoolRegistry = function (_EventDispatcher) {
         pool.removeEventListener(__WEBPACK_IMPORTED_MODULE_1__ResourcePool__["a" /* ResourcePoolEvents */].POOL_DESTROYED, this.handlePoolDestroyed);
         result = delete this[POOLS_FIELD][pool.id];
       }
-      if (this.hasEventListener(ResourcePoolRegistryEvents.RESOURCE_POOL_REMOVED)) {
-        this.dispatchEvent(ResourcePoolRegistryEvents.RESOURCE_POOL_REMOVED, pool);
+      if (this.hasEventListener(PoolRegistryEvents.RESOURCE_POOL_REMOVED)) {
+        this.dispatchEvent(PoolRegistryEvents.RESOURCE_POOL_REMOVED, pool);
       }
       return result;
     }
   }]);
 
-  return ResourcePoolRegistry;
+  return PoolRegistry;
 }(__WEBPACK_IMPORTED_MODULE_0_event_dispatcher___default.a);
 
-var createResourcePoolRegistry = function createResourcePoolRegistry() {
-  return new ResourcePoolRegistry();
+PoolRegistry.events = PoolRegistryEvents;
+
+
+var createPoolRegistry = function createPoolRegistry() {
+  return new PoolRegistry();
 };
 
-/* harmony default export */ __webpack_exports__["b"] = (ResourcePoolRegistry);
+/* harmony default export */ __webpack_exports__["b"] = (PoolRegistry);
 
 /***/ }),
 /* 25 */
@@ -2053,14 +2092,14 @@ var createResourcePoolRegistry = function createResourcePoolRegistry() {
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__DataAccessInterface__ = __webpack_require__(26);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__utils_Deferred__ = __webpack_require__(6);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__commands_CommandDescriptor__ = __webpack_require__(4);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__commands_Reserved__ = __webpack_require__(20);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__commands_RequestTargetCommands__ = __webpack_require__(19);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__commands_ProxyCommands__ = __webpack_require__(13);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__request_RequestTarget__ = __webpack_require__(3);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__command_Descriptor__ = __webpack_require__(4);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__command_Reserved__ = __webpack_require__(20);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__command_internal_RequestCommands__ = __webpack_require__(19);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__command_internal_ProxyCommands__ = __webpack_require__(13);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__request_Target__ = __webpack_require__(3);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_7__resource_ResourcePool__ = __webpack_require__(5);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_8__resource_ResourcePoolRegistry__ = __webpack_require__(24);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_9__resource_ResourceConverter__ = __webpack_require__(22);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_8__resource_PoolRegistry__ = __webpack_require__(24);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_9__resource_Converter__ = __webpack_require__(22);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_10__utils_IConvertible__ = __webpack_require__(8);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_11__utils_isResourceConvertible__ = __webpack_require__(23);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_12__utils_getRawResource__ = __webpack_require__(7);
@@ -2073,14 +2112,14 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 /* harmony reexport (binding) */ __webpack_require__.d(__webpack_exports__, "dummy", function() { return __WEBPACK_IMPORTED_MODULE_0__DataAccessInterface__["c"]; });
 /* harmony reexport (binding) */ __webpack_require__.d(__webpack_exports__, "createDeferred", function() { return __WEBPACK_IMPORTED_MODULE_1__utils_Deferred__["a"]; });
 /* harmony reexport (binding) */ __webpack_require__.d(__webpack_exports__, "Deferred", function() { return __WEBPACK_IMPORTED_MODULE_1__utils_Deferred__["b"]; });
-/* harmony reexport (binding) */ __webpack_require__.d(__webpack_exports__, "CommandDescriptor", function() { return __WEBPACK_IMPORTED_MODULE_2__commands_CommandDescriptor__["c"]; });
-/* harmony reexport (binding) */ __webpack_require__.d(__webpack_exports__, "Reserved", function() { return __WEBPACK_IMPORTED_MODULE_3__commands_Reserved__["a"]; });
-/* harmony reexport (binding) */ __webpack_require__.d(__webpack_exports__, "RequestTargetCommands", function() { return __WEBPACK_IMPORTED_MODULE_4__commands_RequestTargetCommands__["c"]; });
-/* harmony reexport (binding) */ __webpack_require__.d(__webpack_exports__, "ProxyCommands", function() { return __WEBPACK_IMPORTED_MODULE_5__commands_ProxyCommands__["b"]; });
-/* harmony reexport (binding) */ __webpack_require__.d(__webpack_exports__, "RequestTarget", function() { return __WEBPACK_IMPORTED_MODULE_6__request_RequestTarget__["b"]; });
+/* harmony reexport (binding) */ __webpack_require__.d(__webpack_exports__, "Descriptor", function() { return __WEBPACK_IMPORTED_MODULE_2__command_Descriptor__["c"]; });
+/* harmony reexport (binding) */ __webpack_require__.d(__webpack_exports__, "Reserved", function() { return __WEBPACK_IMPORTED_MODULE_3__command_Reserved__["a"]; });
+/* harmony reexport (binding) */ __webpack_require__.d(__webpack_exports__, "RequestCommands", function() { return __WEBPACK_IMPORTED_MODULE_4__command_internal_RequestCommands__["c"]; });
+/* harmony reexport (binding) */ __webpack_require__.d(__webpack_exports__, "ProxyCommands", function() { return __WEBPACK_IMPORTED_MODULE_5__command_internal_ProxyCommands__["b"]; });
+/* harmony reexport (binding) */ __webpack_require__.d(__webpack_exports__, "Target", function() { return __WEBPACK_IMPORTED_MODULE_6__request_Target__["b"]; });
 /* harmony reexport (binding) */ __webpack_require__.d(__webpack_exports__, "ResourcePool", function() { return __WEBPACK_IMPORTED_MODULE_7__resource_ResourcePool__["c"]; });
-/* harmony reexport (binding) */ __webpack_require__.d(__webpack_exports__, "ResourcePoolRegistry", function() { return __WEBPACK_IMPORTED_MODULE_8__resource_ResourcePoolRegistry__["b"]; });
-/* harmony reexport (binding) */ __webpack_require__.d(__webpack_exports__, "ResourceConverter", function() { return __WEBPACK_IMPORTED_MODULE_9__resource_ResourceConverter__["b"]; });
+/* harmony reexport (binding) */ __webpack_require__.d(__webpack_exports__, "PoolRegistry", function() { return __WEBPACK_IMPORTED_MODULE_8__resource_PoolRegistry__["b"]; });
+/* harmony reexport (binding) */ __webpack_require__.d(__webpack_exports__, "Converter", function() { return __WEBPACK_IMPORTED_MODULE_9__resource_Converter__["b"]; });
 /* harmony reexport (binding) */ __webpack_require__.d(__webpack_exports__, "IConvertible", function() { return __WEBPACK_IMPORTED_MODULE_10__utils_IConvertible__["a"]; });
 /* harmony reexport (binding) */ __webpack_require__.d(__webpack_exports__, "isResourceConvertible", function() { return __WEBPACK_IMPORTED_MODULE_11__utils_isResourceConvertible__["a"]; });
 /* harmony reexport (binding) */ __webpack_require__.d(__webpack_exports__, "getRawResource", function() { return __WEBPACK_IMPORTED_MODULE_12__utils_getRawResource__["a"]; });
@@ -2123,12 +2162,12 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__utils_isResource__ = __webpack_require__(0);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__utils_getResourcePoolId__ = __webpack_require__(11);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__utils_getResourceId__ = __webpack_require__(12);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__request_RequestHandlers__ = __webpack_require__(30);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__request_RequestProxyFactory__ = __webpack_require__(32);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__request_RequestFactory__ = __webpack_require__(21);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__request_Handlers__ = __webpack_require__(32);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__request_ProxyFactory__ = __webpack_require__(34);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__request_Factory__ = __webpack_require__(21);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_7__resource_ResourcePool__ = __webpack_require__(5);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_8__resource_ResourceConverter__ = __webpack_require__(22);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_9__resource_ResourcePoolRegistry__ = __webpack_require__(24);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_8__resource_Converter__ = __webpack_require__(22);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_9__resource_PoolRegistry__ = __webpack_require__(24);
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -2155,7 +2194,7 @@ var DataAccessInterface = function () {
    * @classdesc Facade of Deferred Data Access library, it holds all
    * of public API -- objects like ResourcePool and methods to work
    * with resources.
-   * @param {CommandDescriptor[]|Object.<string, Function|CommandDescriptor>} descriptors
+   * @param {Descriptor[]|Object.<string, Function|Descriptor>} descriptors
    * @param {boolean} [proxyEnabled=false]
    * @param {ResourcePoolRegistry} [poolRegistry]
    * @param {ResourcePool} [pool]
@@ -2184,17 +2223,17 @@ var DataAccessInterface = function () {
         throw new Error('Proxies are not available in this environment');
       }
 
-      this.handlers = Object(__WEBPACK_IMPORTED_MODULE_4__request_RequestHandlers__["a" /* createRequestHandlers */])(proxyEnabled);
-      this.resourceConverter = Object(__WEBPACK_IMPORTED_MODULE_8__resource_ResourceConverter__["a" /* createResourceConverter */])(this.factory, this.poolRegistry, this.pool, this.handlers);
+      this.handlers = Object(__WEBPACK_IMPORTED_MODULE_4__request_Handlers__["a" /* createHandlers */])(proxyEnabled);
+      this.resourceConverter = Object(__WEBPACK_IMPORTED_MODULE_8__resource_Converter__["a" /* createResourceConverter */])(this.factory, this.poolRegistry, this.pool, this.handlers);
 
       if (proxyEnabled) {
-        this.factory = Object(__WEBPACK_IMPORTED_MODULE_5__request_RequestProxyFactory__["a" /* createRequestProxyFactory */])(this.handlers, this.cache);
+        this.factory = Object(__WEBPACK_IMPORTED_MODULE_5__request_ProxyFactory__["a" /* createProxyFactory */])(this.handlers, this.cache);
       } else {
-        this.factory = Object(__WEBPACK_IMPORTED_MODULE_6__request_RequestFactory__["a" /* createRequestFactory */])(this.handlers, this.cache);
+        this.factory = Object(__WEBPACK_IMPORTED_MODULE_6__request_Factory__["a" /* createRequestFactory */])(this.handlers, this.cache);
       }
 
       if (!this.poolRegistry) {
-        this.poolRegistry = Object(__WEBPACK_IMPORTED_MODULE_9__resource_ResourcePoolRegistry__["a" /* createResourcePoolRegistry */])();
+        this.poolRegistry = Object(__WEBPACK_IMPORTED_MODULE_9__resource_PoolRegistry__["a" /* createPoolRegistry */])();
       }
 
       if (this.pool) {
@@ -2278,13 +2317,16 @@ var dummy = function dummy(handlers, proxyEnabled, poolRegistry, pool, cacheImpl
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__utils_createRequestPackage__ = __webpack_require__(16);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__utils_isResource__ = __webpack_require__(0);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__utils_getResourceData__ = __webpack_require__(17);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__RequestTarget__ = __webpack_require__(3);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_7__commands_RequestTargetCommands__ = __webpack_require__(19);
-var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
-
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__Queue__ = __webpack_require__(30);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_7__Children__ = __webpack_require__(31);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_8__command_internal_RequestCommands__ = __webpack_require__(19);
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -2297,23 +2339,12 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 
 
-/**
- * @exports RequestTargetInternals
- */
 
-var RequestTargetInternals = function () {
-
-  /**
-   * @class RequestTargetInternals
-   * @param {DataAccessInterface.RequestTarget} _requestTarget
-   * @param {Promise} _promise
-   * @param {RequestHandlers} _requestHandlers
-   * @mixin Promise
-   */
-  function RequestTargetInternals(requestTarget, promise, requestHandlers) {
+var Internals = function () {
+  function Internals(requestTarget, promise, requestHandlers) {
     var _this = this;
 
-    _classCallCheck(this, RequestTargetInternals);
+    _classCallCheck(this, Internals);
 
     this.handlePromiseResolve = function (value) {
       _this.status = __WEBPACK_IMPORTED_MODULE_0__utils_TargetStatus__["a" /* default */].RESOLVED;
@@ -2328,7 +2359,7 @@ var RequestTargetInternals = function () {
         _this.sendQueue();
         /*
         In theory, at time of these lines executing, "temporary" property should be
-        already set via _commandHandler() set from RequestTargetDecorator
+        already set via _commandHandler() set from Decorator
          */
         if (_this.temporary) {
           _this.destroy();
@@ -2355,49 +2386,50 @@ var RequestTargetInternals = function () {
     this.temporary = undefined;
     this.hadChildPromises = false;
     this.status = __WEBPACK_IMPORTED_MODULE_0__utils_TargetStatus__["a" /* default */].PENDING;
-    this.queue = [];
-    this.children = [];
+    this.queue = new __WEBPACK_IMPORTED_MODULE_6__Queue__["a" /* default */]();
+
+    var Abc = function (_Array) {
+      _inherits(Abc, _Array);
+
+      function Abc() {
+        _classCallCheck(this, Abc);
+
+        return _possibleConstructorReturn(this, (Abc.__proto__ || Object.getPrototypeOf(Abc)).apply(this, arguments));
+      }
+
+      return Abc;
+    }(Array);
+
+    console.log(' --- ', Abc, new Abc());
+    this.children = new __WEBPACK_IMPORTED_MODULE_7__Children__["a" /* default */]();
     this.deferred = Object(__WEBPACK_IMPORTED_MODULE_1__utils_Deferred__["a" /* createDeferred */])();
     this.promise = this.deferred.promise;
+    // FIXME why we have to use own deferred object? use passed promise
+    // chain of events should not be altered
     promise.then(this.handlePromiseResolve).catch(this.handlePromiseReject);
   }
 
-  _createClass(RequestTargetInternals, [{
+  _createClass(Internals, [{
     key: 'sendQueue',
     value: function sendQueue() {
-      while (this.queue && this.queue.length) {
-        var _queue$shift = this.queue.shift(),
-            _queue$shift2 = _slicedToArray(_queue$shift, 4),
-            name = _queue$shift2[0],
-            pack = _queue$shift2[1],
-            deferred = _queue$shift2[2],
-            child = _queue$shift2[3];
-
-        pack.target = this.link.id;
-        this.handleRequest(name, pack, deferred, child);
-      }
+      this.queue.send(this.link.id, this.handleRequest);
+      console.log('queue sent');
       this.queue = null;
     }
   }, {
     key: 'rejectQueue',
-    value: function rejectQueue(message) {
-      var error = new Error(message || 'This request was rejected before sending.');
-      while (this.queue && this.queue.length) {
-        /**
-         * @type {Array.<string, CommandDataPack, DataAccessInterface.Deferred>}
-         */
-        // FIXME [string, {type:string, cmd:string, value:*, target:string}, Deferred]
-        var _queue$shift3 = this.queue.shift(),
-            _queue$shift4 = _slicedToArray(_queue$shift3, 3),
-            deferred = _queue$shift4[2];
+    value: function rejectQueue() {
+      var message = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
 
-        deferred.reject(error);
-      }
+      this.queue.reject(new Error(message || 'This request was rejected before sending.'));
       this.queue = null;
     }
   }, {
     key: 'sendRequest',
-    value: function sendRequest(name, pack, deferred, child) {
+    value: function sendRequest(name, pack) {
+      var deferred = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
+      var child = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
+
       var promise = null;
 
       if (this.requestHandlers.hasHandler(name)) {
@@ -2414,14 +2446,28 @@ var RequestTargetInternals = function () {
     }
   }, {
     key: 'addToQueue',
-    value: function addToQueue(name, pack, deferred, child) {
-      this.queue.push([name, pack, deferred, child]);
+    value: function addToQueue(name, pack) {
+      var deferred = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
+      var child = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
+
+      if (!this.queue) {
+        throw new Error('Request does not contain queue, probably too little too late.');
+      }
+
+      this.queue.add(name, pack, deferred, child);
     }
   }, {
     key: 'applyRequest',
-    value: function applyRequest(name, pack, deferred, child) {
-      var promise = deferred.promise;
+    value: function applyRequest(name, pack) {
+      var deferred = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
+      var child = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
 
+      var promise = void 0;
+
+      // FIXME can deferred be null at this point?
+      if (deferred) {
+        promise = deferred.promise;
+      }
 
       switch (this.status) {
         case __WEBPACK_IMPORTED_MODULE_0__utils_TargetStatus__["a" /* default */].PENDING:
@@ -2449,20 +2495,8 @@ var RequestTargetInternals = function () {
     }
   }, {
     key: 'registerChild',
-    value: function registerChild(childRequestTarget) {
-      var _this2 = this;
-
-      var handleChildRequest = function handleChildRequest() {
-        if (_this2.children) {
-          var index = _this2.children.indexOf(childRequestTarget);
-          if (index >= 0) {
-            _this2.children.splice(index, 1);
-          }
-        }
-      };
-
-      this.children.push(childRequestTarget);
-      Object(__WEBPACK_IMPORTED_MODULE_6__RequestTarget__["c" /* getRawPromise */])(childRequestTarget).then(handleChildRequest, handleChildRequest);
+    value: function registerChild(child) {
+      this.children.register(child);
     }
   }, {
     key: 'isActive',
@@ -2481,7 +2515,7 @@ var RequestTargetInternals = function () {
       if (this.canBeDestroyed()) {
         // INFO I should not clear children list, since they are pending and requests already sent.
         if (this.status === __WEBPACK_IMPORTED_MODULE_0__utils_TargetStatus__["a" /* default */].RESOLVED) {
-          promise = this.sendRequest(__WEBPACK_IMPORTED_MODULE_7__commands_RequestTargetCommands__["a" /* RequestTargetCommandFields */].DESTROY, Object(__WEBPACK_IMPORTED_MODULE_3__utils_createRequestPackage__["a" /* default */])(__WEBPACK_IMPORTED_MODULE_7__commands_RequestTargetCommands__["b" /* RequestTargetCommandNames */].DESTROY, [null, null], this.id));
+          promise = this.sendRequest(__WEBPACK_IMPORTED_MODULE_8__command_internal_RequestCommands__["a" /* RequestCommandFields */].DESTROY, Object(__WEBPACK_IMPORTED_MODULE_3__utils_createRequestPackage__["a" /* default */])(__WEBPACK_IMPORTED_MODULE_8__command_internal_RequestCommands__["b" /* RequestCommandNames */].DESTROY, [null, null], this.id));
         } else {
           promise = Promise.resolve();
         }
@@ -2531,10 +2565,10 @@ var RequestTargetInternals = function () {
     }
   }]);
 
-  return RequestTargetInternals;
+  return Internals;
 }();
 
-/* harmony default export */ __webpack_exports__["a"] = (RequestTargetInternals);
+/* harmony default export */ __webpack_exports__["a"] = (Internals);
 
 /***/ }),
 /* 29 */
@@ -2569,12 +2603,120 @@ module.exports = function(module) {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var Queue = function (_Array) {
+  _inherits(Queue, _Array);
+
+  function Queue() {
+    _classCallCheck(this, Queue);
+
+    return _possibleConstructorReturn(this, (Queue.__proto__ || Object.getPrototypeOf(Queue)).call(this));
+  }
+
+  _createClass(Queue, [{
+    key: 'add',
+    value: function add(name, pack, deferred, child) {
+      this.push({
+        name: name,
+        pack: pack,
+        deferred: deferred,
+        child: child
+      });
+    }
+  }, {
+    key: 'send',
+    value: function send(id, callback) {
+      this.forEach(function (_ref) {
+        var name = _ref.name,
+            pack = _ref.pack,
+            deferred = _ref.deferred,
+            child = _ref.child;
+
+        pack.target = id;
+        callback(name, pack, deferred, child);
+      });
+    }
+  }, {
+    key: 'reject',
+    value: function reject(message) {
+      var error = new Error(message || 'This request was rejected before sending.');
+      this.forEach(function (_ref2) {
+        var deferred = _ref2.deferred;
+        return deferred.reject(error);
+      });
+    }
+  }]);
+
+  return Queue;
+}(Array);
+
+/* harmony default export */ __webpack_exports__["a"] = (Queue);
+
+/***/ }),
+/* 31 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Target__ = __webpack_require__(3);
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+
+
+var Children = function (_Array) {
+  _inherits(Children, _Array);
+
+  function Children() {
+    _classCallCheck(this, Children);
+
+    return _possibleConstructorReturn(this, (Children.__proto__ || Object.getPrototypeOf(Children)).apply(this, arguments));
+  }
+
+  _createClass(Children, [{
+    key: 'register',
+    value: function register(child) {
+      var _this2 = this;
+
+      var handler = function handler() {
+        var index = _this2.indexOf(child);
+        if (index >= 0) {
+          _this2.splice(index, 1);
+        }
+      };
+
+      Object(__WEBPACK_IMPORTED_MODULE_0__Target__["c" /* getRawPromise */])(child).then(handler, handler);
+      this.push(child);
+    }
+  }]);
+
+  return Children;
+}(Array);
+
+/* harmony default export */ __webpack_exports__["a"] = (Children);
+
+/***/ }),
+/* 32 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
 /* unused harmony export areProxyHandlersAvailable */
-/* unused harmony export RequestHandlersEvents */
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return createRequestHandlers; });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__commands_CommandDescriptor__ = __webpack_require__(4);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__commands_ProxyCommands__ = __webpack_require__(13);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__utils_filterRequestHandlers__ = __webpack_require__(31);
+/* unused harmony export HandlersEvents */
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return createHandlers; });
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__command_Descriptor__ = __webpack_require__(4);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__command_internal_ProxyCommands__ = __webpack_require__(13);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__utils_filterRequestHandlers__ = __webpack_require__(33);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__utils_getResourceType__ = __webpack_require__(14);
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
@@ -2596,8 +2738,8 @@ var DEFAULT_KEY = '';
 
 var areProxyHandlersAvailable = function areProxyHandlersAvailable(handlers, throwError) {
   var result = true;
-  __WEBPACK_IMPORTED_MODULE_1__commands_ProxyCommands__["b" /* default */].required.forEach(function (name) {
-    if (!(__WEBPACK_IMPORTED_MODULE_1__commands_ProxyCommands__["a" /* ProxyCommandFields */][name] in handlers)) {
+  __WEBPACK_IMPORTED_MODULE_1__command_internal_ProxyCommands__["b" /* default */].required.forEach(function (name) {
+    if (!(__WEBPACK_IMPORTED_MODULE_1__command_internal_ProxyCommands__["a" /* ProxyCommandFields */][name] in handlers)) {
       result = false;
       if (throwError) {
         throw new Error('For Proxy interface, handler "' + name + '" should be set.');
@@ -2608,30 +2750,24 @@ var areProxyHandlersAvailable = function areProxyHandlersAvailable(handlers, thr
   return result;
 };
 
-var RequestHandlersEvents = Object.freeze({
+var HandlersEvents = Object.freeze({
   HANDLERS_UPDATED: 'handlersUpdated'
 });
 
-var RequestHandlers = function () {
-
-  /**
-   * @class RequestHandlers
-   * @param {boolean} proxyEnabled
-   * @private
-   */
-  function RequestHandlers() {
+var Handlers = function () {
+  function Handlers() {
     var proxyEnabled = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
 
-    _classCallCheck(this, RequestHandlers);
+    _classCallCheck(this, Handlers);
 
-    // named collection of CommandDescriptor lists that may be applied
+    // named collection of Descriptor lists that may be applied
     this.properties = {};
     this.descriptors = {};
     this.proxyEnabled = Boolean(proxyEnabled);
     this.converter = null;
   }
 
-  _createClass(RequestHandlers, [{
+  _createClass(Handlers, [{
     key: 'setConverter',
     value: function setConverter(converter) {
       this.converter = converter;
@@ -2663,14 +2799,6 @@ var RequestHandlers = function () {
       this.descriptors[type] = descrs;
       this.properties[type] = props;
     }
-
-    /**
-     * @method RequestHandlers#hasHandler
-     * @param {String|Symbol} name Property name of CommandDescriptor
-     * @param {String} [type] Resource type for type-specific handlers
-     * @returns {boolean}
-     */
-
   }, {
     key: 'hasHandler',
     value: function hasHandler(name, type) {
@@ -2703,15 +2831,6 @@ var RequestHandlers = function () {
 
       return Object.assign({}, this.descriptors[DEFAULT_KEY]);
     }
-
-    /**
-     * @method RequestHandlers#getHandler
-     * @param name
-     * @param {String} [type]
-     * @returns {*|null}
-     * @private
-     */
-
   }, {
     key: 'getHandler',
     value: function getHandler(name, type) {
@@ -2719,17 +2838,6 @@ var RequestHandlers = function () {
 
       return handler || null;
     }
-
-    /**
-     * @method RequestHandlers#handle
-     * @param {DataAccessInterface.RequestTarget} parentRequest
-     * @param {String|Symbol} name
-     * @param {CommandDataPack} pack
-     * @param {DataAccessInterface.Deferred} deferred
-     * @param {DataAccessInterface.RequestTarget} [resultRequest]
-     * @private
-     */
-
   }, {
     key: 'handle',
     value: function handle(parentRequest, name, pack, deferred, resultRequest) {
@@ -2738,7 +2846,7 @@ var RequestHandlers = function () {
       var list = this.converter ? this.converter.lookupForPending(pack.value) : null;
       if (list && list.length) {
         // FIXME Need to test on all platforms: In other browsers this might not work
-        // because may need list of Promise objects, not RequestTargets
+        // because may need list of Promise objects, not Targets
         Promise.all(list).then(function () {
           _this2.handleImmediately(parentRequest, name, pack, deferred, resultRequest);
         });
@@ -2746,25 +2854,14 @@ var RequestHandlers = function () {
         this.handleImmediately(parentRequest, name, pack, deferred, resultRequest);
       }
     }
-
-    /**
-     *
-     * @param {DataAccessInterface.RequestTarget} parentRequest
-     * @param {String|Symbol} name
-     * @param {CommandDataPack} data
-     * @param {DataAccessInterface.Deferred} deferred
-     * @param {DataAccessInterface.RequestTarget} [resultRequest]
-     * @private
-     */
-
   }, {
     key: 'handleImmediately',
     value: function handleImmediately(parentRequest, name, data, deferred, resultRequest) {
       /**
-       * @type {DataAccessInterface.CommandDescriptor|null}
+       * @type {DataAccessInterface.Descriptor|null}
        */
       var handler = this.getHandler(name, Object(__WEBPACK_IMPORTED_MODULE_3__utils_getResourceType__["a" /* default */])(parentRequest));
-      if (handler instanceof __WEBPACK_IMPORTED_MODULE_0__commands_CommandDescriptor__["c" /* default */]) {
+      if (handler instanceof __WEBPACK_IMPORTED_MODULE_0__command_Descriptor__["c" /* default */]) {
         // INFO result should be applied to deferred.resolve() or deferred.reject()
         handler.handler(parentRequest, data, deferred, resultRequest);
       } else {
@@ -2784,46 +2881,44 @@ var RequestHandlers = function () {
     }
   }]);
 
-  return RequestHandlers;
+  return Handlers;
 }();
 
-/**
- * @member RequestHandlers.create
- * @param {Boolean} proxyEnabled
- * @returns {RequestHandlers}
- */
+Handlers.events = HandlersEvents;
 
 
-var createRequestHandlers = function createRequestHandlers(proxyEnabled) {
-  return new RequestHandlers(proxyEnabled);
+var createHandlers = function createHandlers(proxyEnabled) {
+  return new Handlers(proxyEnabled);
 };
 
-/* unused harmony default export */ var _unused_webpack_default_export = (RequestHandlers);
+/* unused harmony default export */ var _unused_webpack_default_export = (Handlers);
 
 /***/ }),
-/* 31 */
+/* 33 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__commands_CommandDescriptor__ = __webpack_require__(4);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__commands_Reserved__ = __webpack_require__(20);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__command_Descriptor__ = __webpack_require__(4);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__command_Reserved__ = __webpack_require__(20);
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
 
 
 
 /**
- * Checks for CommandDescriptor uniqueness and reserved words usage.
- * @param {DataAccessInterface.CommandDescriptor} descriptor
- * @param {Object.<string, DataAccessInterface.CommandDescriptor>} descriptors
- * @param {Array.<number, DataAccessInterface.CommandDescriptor>} properties
+ * Checks for Descriptor uniqueness and reserved words usage.
+ * @param {DataAccessInterface.Descriptor} descriptor
+ * @param {Object.<string, DataAccessInterface.Descriptor>} descriptors
+ * @param {Array.<number, DataAccessInterface.Descriptor>} properties
  * @private
  */
 var applyDescriptor = function applyDescriptor(descriptor, descriptors, properties) {
   var name = descriptor.name;
 
-  if (name in __WEBPACK_IMPORTED_MODULE_1__commands_Reserved__["a" /* default */].names) {
+  if (name in __WEBPACK_IMPORTED_MODULE_1__command_Reserved__["a" /* default */].names) {
     throw new Error('Name "' + name + '" is reserved and cannot be used in descriptor.');
   }
-  if (Object.prototype.hasOwnProperty.call(descriptors, name) && descriptors[name] instanceof __WEBPACK_IMPORTED_MODULE_0__commands_CommandDescriptor__["c" /* default */]) {
+  if (Object.prototype.hasOwnProperty.call(descriptors, name) && descriptors[name] instanceof __WEBPACK_IMPORTED_MODULE_0__command_Descriptor__["c" /* default */]) {
     throw new Error('Field names should be unique, "' + String(name) + '" field has duplicates.');
   }
   descriptors[name] = descriptor;
@@ -2838,44 +2933,37 @@ var applyDescriptor = function applyDescriptor(descriptor, descriptors, properti
  * @private
  */
 var filterArray = function filterArray(handlers, descriptors, properties) {
-  var length = handlers.length;
-
-  for (var index = 0; index < length; index++) {
-    var value = handlers[index];
-    if (value instanceof __WEBPACK_IMPORTED_MODULE_0__commands_CommandDescriptor__["c" /* default */]) {
+  handlers.forEach(function (value) {
+    if (value instanceof __WEBPACK_IMPORTED_MODULE_0__command_Descriptor__["c" /* default */]) {
       applyDescriptor(value, descriptors, properties);
     }
-  }
+  });
 };
 
 /**
  * @param {Object} handlers
- * @param {Object.<string, DataAccessInterface.CommandDescriptor>} descriptors
- * @param {Array.<number, DataAccessInterface.CommandDescriptor>} properties
+ * @param {Object.<string, DataAccessInterface.Descriptor>} descriptors
+ * @param {Array.<number, DataAccessInterface.Descriptor>} properties
  * @private
  */
 var filterHash = function filterHash(handlers, descriptors, properties) {
   if (!handlers) return;
-  var keys = Object.getOwnPropertyNames(handlers).concat(Object.getOwnPropertySymbols(handlers));
-  var length = keys.length;
-
-  for (var index = 0; index < length; index++) {
-    var name = keys[index];
+  [].concat(_toConsumableArray(Object.getOwnPropertyNames(handlers)), _toConsumableArray(Object.getOwnPropertySymbols(handlers))).forEach(function (name) {
     var value = handlers[name];
     if (typeof value === 'function') {
-      value = Object(__WEBPACK_IMPORTED_MODULE_0__commands_CommandDescriptor__["b" /* createCommandDescriptor */])(name, value);
+      value = Object(__WEBPACK_IMPORTED_MODULE_0__command_Descriptor__["b" /* createDescriptor */])(name, value);
     }
-    if (value instanceof __WEBPACK_IMPORTED_MODULE_0__commands_CommandDescriptor__["c" /* default */]) {
+    if (value instanceof __WEBPACK_IMPORTED_MODULE_0__command_Descriptor__["c" /* default */]) {
       applyDescriptor(value, descriptors, properties);
     }
-  }
+  });
 };
 
 /**
- * @method RequestHandlers.filterHandlers
+ * @method Handlers.filterHandlers
  * @param {Array|Object} handlers
- * @param {Object.<string, DataAccessInterface.CommandDescriptor>} descriptors
- * @param {Array.<number, DataAccessInterface.CommandDescriptor>} properties
+ * @param {Object.<string, DataAccessInterface.Descriptor>} descriptors
+ * @param {Array.<number, DataAccessInterface.Descriptor>} properties
  */
 /* harmony default export */ __webpack_exports__["a"] = (function (handlers, descriptors, properties) {
   if (handlers instanceof Array) {
@@ -2886,15 +2974,15 @@ var filterHash = function filterHash(handlers, descriptors, properties) {
 });
 
 /***/ }),
-/* 32 */
+/* 34 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* unused harmony export createProxyHandlers */
 /* unused harmony export applyProxyWithDefaultHandlers */
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return createRequestProxyFactory; });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__RequestFactory__ = __webpack_require__(21);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__commands_ProxyCommands__ = __webpack_require__(13);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return createProxyFactory; });
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Factory__ = __webpack_require__(21);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__command_internal_ProxyCommands__ = __webpack_require__(13);
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
@@ -2946,12 +3034,12 @@ var proxyGet = function proxyGet(wrapper, name) {
     return target[name];
   }
   // INFO Proxy should be already applied, so no need in additional wrapping
-  return target[__WEBPACK_IMPORTED_MODULE_1__commands_ProxyCommands__["a" /* ProxyCommandFields */].get](name);
+  return target[__WEBPACK_IMPORTED_MODULE_1__command_internal_ProxyCommands__["a" /* ProxyCommandFields */].get](name);
 };
 
 // INFO Proxy should be already applied, so no need in additional wrapping
 var proxyApply = function proxyApply(wrapper, thisValue, args) {
-  return wrapper.target[__WEBPACK_IMPORTED_MODULE_1__commands_ProxyCommands__["a" /* ProxyCommandFields */].apply](null, args);
+  return wrapper.target[__WEBPACK_IMPORTED_MODULE_1__command_internal_ProxyCommands__["a" /* ProxyCommandFields */].apply](null, args);
 };
 
 var proxySet = function proxySet(wrapper, name, value) {
@@ -2963,8 +3051,8 @@ var proxySet = function proxySet(wrapper, name, value) {
     return value;
   }
 
-  if (__WEBPACK_IMPORTED_MODULE_1__commands_ProxyCommands__["a" /* ProxyCommandFields */].set in target) {
-    target[__WEBPACK_IMPORTED_MODULE_1__commands_ProxyCommands__["a" /* ProxyCommandFields */].set](name, value);
+  if (__WEBPACK_IMPORTED_MODULE_1__command_internal_ProxyCommands__["a" /* ProxyCommandFields */].set in target) {
+    target[__WEBPACK_IMPORTED_MODULE_1__command_internal_ProxyCommands__["a" /* ProxyCommandFields */].set](name, value);
     return true;
   }
 
@@ -2978,8 +3066,8 @@ var proxyHas = function proxyHas(wrapper, name) {
 var proxyDeleteProperty = function proxyDeleteProperty(wrapper, name) {
   var target = wrapper.target;
 
-  if (__WEBPACK_IMPORTED_MODULE_1__commands_ProxyCommands__["a" /* ProxyCommandFields */].deleteProperty in target) {
-    target[__WEBPACK_IMPORTED_MODULE_1__commands_ProxyCommands__["a" /* ProxyCommandFields */].deleteProperty](name);
+  if (__WEBPACK_IMPORTED_MODULE_1__command_internal_ProxyCommands__["a" /* ProxyCommandFields */].deleteProperty in target) {
+    target[__WEBPACK_IMPORTED_MODULE_1__command_internal_ProxyCommands__["a" /* ProxyCommandFields */].deleteProperty](name);
     return true;
   }
 
@@ -3025,21 +3113,21 @@ var createProxyHandlers = function createProxyHandlers() {
 
 var PROXY_HANDLERS = createProxyHandlers();
 
-var RequestProxyFactory = function (_RequestFactory) {
-  _inherits(RequestProxyFactory, _RequestFactory);
+var ProxyFactory = function (_Factory) {
+  _inherits(ProxyFactory, _Factory);
 
-  function RequestProxyFactory(handlers, cacheImpl) {
-    _classCallCheck(this, RequestProxyFactory);
+  function ProxyFactory(handlers, cacheImpl) {
+    _classCallCheck(this, ProxyFactory);
 
-    var _this2 = _possibleConstructorReturn(this, (RequestProxyFactory.__proto__ || Object.getPrototypeOf(RequestProxyFactory)).call(this, null, null, true));
+    var _this2 = _possibleConstructorReturn(this, (ProxyFactory.__proto__ || Object.getPrototypeOf(ProxyFactory)).call(this, null, null, true));
 
     _this2.handlers = handlers;
-    _this2.factory = Object(__WEBPACK_IMPORTED_MODULE_0__RequestFactory__["a" /* createRequestFactory */])(handlers, cacheImpl);
+    _this2.factory = Object(__WEBPACK_IMPORTED_MODULE_0__Factory__["a" /* createRequestFactory */])(handlers, cacheImpl);
     _this2.factory.decorator.setFactory(_this2);
     return _this2;
   }
 
-  _createClass(RequestProxyFactory, [{
+  _createClass(ProxyFactory, [{
     key: 'create',
     value: function create(promise) {
       var instance = this.factory.create(promise);
@@ -3068,26 +3156,26 @@ var RequestProxyFactory = function (_RequestFactory) {
     }
   }]);
 
-  return RequestProxyFactory;
-}(__WEBPACK_IMPORTED_MODULE_0__RequestFactory__["b" /* default */]);
+  return ProxyFactory;
+}(__WEBPACK_IMPORTED_MODULE_0__Factory__["b" /* default */]);
 
 var applyProxyWithDefaultHandlers = function applyProxyWithDefaultHandlers(target) {
   return wrapWithProxy(target, PROXY_HANDLERS);
 };
 
-var createRequestProxyFactory = function createRequestProxyFactory(handlers, cacheImpl) {
-  return new RequestProxyFactory(handlers, cacheImpl);
+var createProxyFactory = function createProxyFactory(handlers, cacheImpl) {
+  return new ProxyFactory(handlers, cacheImpl);
 };
 
-/* unused harmony default export */ var _unused_webpack_default_export = (RequestProxyFactory);
+/* unused harmony default export */ var _unused_webpack_default_export = (ProxyFactory);
 
 /***/ }),
-/* 33 */
+/* 35 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return createRequestTargetDecorator; });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__commands_CommandHandlerFactory__ = __webpack_require__(34);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return createDecorator; });
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__command_CallbackFactory__ = __webpack_require__(36);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__utils_getResourceType__ = __webpack_require__(14);
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
@@ -3096,21 +3184,15 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 
 
-var RequestTargetDecorator = function () {
-
-  /**
-   * @param {RequestFactory} factory
-   * @param {RequestHandlers} handlers
-   * @private
-   */
-  function RequestTargetDecorator(factory, handlers) {
-    _classCallCheck(this, RequestTargetDecorator);
+var Decorator = function () {
+  function Decorator(factory, handlers) {
+    _classCallCheck(this, Decorator);
 
     this.handlers = handlers;
-    this.members = new __WEBPACK_IMPORTED_MODULE_0__commands_CommandHandlerFactory__["a" /* default */](factory);
+    this.members = new __WEBPACK_IMPORTED_MODULE_0__command_CallbackFactory__["a" /* default */](factory);
   }
 
-  _createClass(RequestTargetDecorator, [{
+  _createClass(Decorator, [{
     key: 'apply',
     value: function apply(request) {
       var _this = this;
@@ -3120,12 +3202,9 @@ var RequestTargetDecorator = function () {
       }
 
       var descriptors = this.handlers.getPropertyHandlers(Object(__WEBPACK_IMPORTED_MODULE_1__utils_getResourceType__["a" /* default */])(request));
-      descriptors.reduce(function (request, descriptor) {
+      return descriptors.forEach(function (descriptor) {
         request[descriptor.name] = _this.members.get(descriptor);
-        return request;
-      }, request);
-
-      return request;
+      });
     }
   }, {
     key: 'setFactory',
@@ -3136,24 +3215,24 @@ var RequestTargetDecorator = function () {
     }
   }]);
 
-  return RequestTargetDecorator;
+  return Decorator;
 }();
 
-var createRequestTargetDecorator = function createRequestTargetDecorator(factory, handlers) {
-  return new RequestTargetDecorator(factory, handlers);
+var createDecorator = function createDecorator(factory, handlers) {
+  return new Decorator(factory, handlers);
 };
 
-/* unused harmony default export */ var _unused_webpack_default_export = (RequestTargetDecorator);
+/* unused harmony default export */ var _unused_webpack_default_export = (Decorator);
 
 /***/ }),
-/* 34 */
+/* 36 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__utils_TARGET_INTERNALS__ = __webpack_require__(1);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__utils_Deferred__ = __webpack_require__(6);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__utils_createRequestPackage__ = __webpack_require__(16);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__request_RequestTarget__ = __webpack_require__(3);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__request_Target__ = __webpack_require__(3);
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -3163,7 +3242,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 
 
-var createCommandHandlerFor = function createCommandHandlerFor(factoryWrapper, propertyName, commandType, isTemporary, cacheable) {
+var createHandlerFor = function createHandlerFor(factoryWrapper, propertyName, commandType, isTemporary, cacheable) {
   var factory = factoryWrapper.factory,
       checkState = factoryWrapper.checkState,
       getChildRequest = factoryWrapper.getChildRequest;
@@ -3203,13 +3282,13 @@ var createCommandHandlerFor = function createCommandHandlerFor(factoryWrapper, p
   return commandHandler;
 };
 
-var CommandHandlerFactory = function () {
-  function CommandHandlerFactory() {
+var CallbackFactory = function () {
+  function CallbackFactory() {
     var _this = this;
 
     var factory = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
 
-    _classCallCheck(this, CommandHandlerFactory);
+    _classCallCheck(this, CallbackFactory);
 
     this.members = new Map();
     this.factory = null;
@@ -3237,7 +3316,7 @@ var CommandHandlerFactory = function () {
       if (promise) {
         promise.then(function (data) {
           var isTemporary = Boolean(isTemporaryFn(parentRequest, childRequest, pack, data));
-          Object(__WEBPACK_IMPORTED_MODULE_3__request_RequestTarget__["e" /* setTemporary */])(childRequest, isTemporary);
+          Object(__WEBPACK_IMPORTED_MODULE_3__request_Target__["e" /* setTemporary */])(childRequest, isTemporary);
         });
       }
     };
@@ -3246,13 +3325,13 @@ var CommandHandlerFactory = function () {
   }
 
   /**
-   * @param {CommandDescriptor} descriptor
+   * @param {Descriptor} descriptor
    * @returns {Function}
    * @private
    */
 
 
-  _createClass(CommandHandlerFactory, [{
+  _createClass(CallbackFactory, [{
     key: 'get',
     value: function get(descriptor) {
       var propertyName = descriptor.name;
@@ -3264,7 +3343,7 @@ var CommandHandlerFactory = function () {
   }, {
     key: 'create',
     value: function create(propertyName, commandType, isTemporary, cacheable) {
-      return createCommandHandlerFor(this, propertyName, commandType, isTemporary, cacheable);
+      return createHandlerFor(this, propertyName, commandType, isTemporary, cacheable);
     }
   }, {
     key: 'setFactory',
@@ -3273,10 +3352,10 @@ var CommandHandlerFactory = function () {
     }
   }]);
 
-  return CommandHandlerFactory;
+  return CallbackFactory;
 }();
 
-/* harmony default export */ __webpack_exports__["a"] = (CommandHandlerFactory);
+/* harmony default export */ __webpack_exports__["a"] = (CallbackFactory);
 
 /***/ })
 /******/ ]);

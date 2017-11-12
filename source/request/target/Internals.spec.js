@@ -11,6 +11,8 @@ import RequestCommands, {
   RequestCommandFields,
 } from '../../command/internal/RequestCommands';
 import Internals from './Internals';
+import Queue from './Queue';
+import Children from './Children';
 import {
   __createRequest,
   __createRequestData,
@@ -40,14 +42,22 @@ describe('Internals', () => {
     target = new Internals(requestTarget, deferred.promise, handlers);
   });
 
+  it('should contain instance of Queue', () => {
+    expect(target.queue).to.be.an.instanceof(Queue);
+  });
+
+  it('should contain instance of Children', () => {
+    expect(target.children).to.be.an.instanceof(Children);
+  });
+
   describe('When created, pending', () => {
     it('should store construction arguments', () => {
-      expect(target.requestTarget).to.be.equal(requestTarget);
-      expect(target.requestHandlers).to.be.equal(handlers);
+      expect(target.target).to.be.equal(requestTarget);
+      expect(target.handlers).to.be.equal(handlers);
     });
 
     it('should initialize internals', () => {
-      expect(target.queue).to.be.an.instanceof(Array);
+      expect(target.queue).to.be.an.instanceof(Queue);
       expect(target.hadChildPromises).to.be.false;
       expect(target.status).to.be.equal(TargetStatus.PENDING);
       expect(target.link).to.be.an('object');
@@ -418,6 +428,7 @@ describe('Internals', () => {
 
   describe('When registering children', () => {
     let child;
+
     describe('When registered child is fulfilled', () => {
       beforeEach(() => {
         linkData = __createRequestData();
@@ -430,31 +441,41 @@ describe('Internals', () => {
 
       it('should add pending child to the list', () => {
         expect(target.children).to.have.length(1);
-        expect(target.children).to.contain(child);
+        expect(target.children.getList()).to.contain(child);
       });
 
-      it('should remove child from the list when its resolved', () => child.then(() => expect(target.children).to.not.contain(child)));
+      it('should remove child from the list when its resolved', () => {
+        return child.then(() => {
+          expect(target.children.getList()).to.not.contain(child);
+        })
+      });
     });
 
     describe('When registered child is rejected', () => {
+      let childPromise;
+
       beforeEach(() => {
         linkData = __createRequestData();
         deferred.resolve(linkData);
         return deferred.promise.then(() => {
           const promise = Promise.reject('bad child');
           child = __createRequest(promise);
-          target.registerChild(child);
+          childPromise = target.registerChild(child);
         });
       });
 
       it('should add pending child to the list', () => {
         expect(target.children).to.have.length(1);
-        expect(target.children).to.contain(child);
+        expect(target.children.getList()).to.contain(child);
       });
 
-      it('should remove child from the list when its rejected', () => child
-        .then(() => assert(false, 'should be rejected'))
-        .catch(() => expect(target.children).to.not.contain(child)));
+      it('should remove child from the list when its rejected', () => {
+        return childPromise
+          .then(() => assert(false, 'should be rejected'))
+          .catch(() => {
+            expect(target.children.getList()).to.not.contain(child);
+          });
+      });
     });
   });
 

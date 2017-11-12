@@ -18,6 +18,8 @@ import Internals from './Internals';
 import Deferred from '../utils/Deferred';
 import TARGET_INTERNALS from '../utils/TARGET_INTERNALS';
 import TargetStatus from '../utils/TargetStatus';
+import Queue from './target/Queue';
+import Children from './target/Children';
 import {
   __createRequestData,
 } from '../../tests/stubs';
@@ -362,18 +364,18 @@ describe('RequestTarget', () => {
       target[TARGET_INTERNALS] = {
         /* queue has format
             [
-              [name, command, deferred],
-              [name, command, deferred],
-              [name, command, deferred],
+              {name, command, deferred},
+              {name, command, deferred},
+              {name, command, deferred},
                ...
             ]
          */
-        queue: [
-          ['command1', { type: 'abc' }],
-          ['command2', { type: 'def' }],
-          ['command3', { type: 'ghi' }],
-          ['command4', { type: 'jkl' }],
-        ],
+        queue: new Queue([
+          { name: 'command1', pack: { type: 'abc' } },
+          { name: 'command2', pack: { type: 'def' } },
+          { name: 'command3', pack: { type: 'ghi' } },
+          { name: 'command4', pack: { type: 'jkl' } },
+        ]),
       };
       result = module.getQueueCommands(target);
     });
@@ -436,7 +438,7 @@ describe('RequestTarget', () => {
     beforeEach(() => {
       target = {};
       target[TARGET_INTERNALS] = {
-        children: [{}, {}, {}],
+        children: new Children([{}, {}, {}]),
       };
       result = module.getChildren(target);
     });
@@ -453,17 +455,19 @@ describe('RequestTarget', () => {
   describe('getLastChild()', () => {
     let target;
     let result;
+    let lastItem;
 
     beforeEach(() => {
       target = {};
+      lastItem = {};
       target[TARGET_INTERNALS] = {
-        children: [{}, {}, {}],
+        children: new Children([{}, {}, lastItem]),
       };
       result = module.getLastChild(target);
     });
 
     it('should result with last item from children', () => {
-      expect(result).to.be.equal(target[TARGET_INTERNALS].children.pop());
+      expect(result).to.be.equal(lastItem);
     });
   });
 

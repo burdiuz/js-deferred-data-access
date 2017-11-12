@@ -79,52 +79,46 @@ export const isPending = (value) => (
 );
 
 export const getQueueLength = (target) => {
-  const list = target && target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].queue : null;
-  return list ? list.length : 0;
+  const queue = target && target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].queue : null;
+  return queue ? queue.length : 0;
 };
 
 export const getQueueCommands = (target) => {
   const queue = target && target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].queue : null;
-  if (queue) {
-    return queue.map(([name]) => name);
-    // return queue.map(([name, pack]) => pack.type);
-  }
-  return [];
+  return queue ? queue.getCommands() : [];
 };
 
-export const hadChildPromises = (target) => Boolean(target
+export const hadChildPromises = (target) => Boolean(
+  target
   && target[TARGET_INTERNALS]
-  && target[TARGET_INTERNALS].hadChildPromises);
+  && target[TARGET_INTERNALS].hadChildPromises
+);
 
 export const getRawPromise = (target) => (
   target
   && target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].promise : null
 );
 
-const getRequestChildren = (target) => (
+const getChildRequests = (target) => (
   target
-  && target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].children : null
+  && target[TARGET_INTERNALS]
+  && target[TARGET_INTERNALS].children
+  || null
 );
 
 export const getChildren = (target) => {
-  const list = getRequestChildren(target);
-  return list ? [...list] : [];
+  const children = getChildRequests(target);
+  return children ? children.getList() : [];
 };
 
 export const getLastChild = (target) => {
-  const list = getRequestChildren(target);
-  return list && list.length ? list[list.length - 1] : null;
+  const children = getChildRequests(target);
+  return children.lastItem;
 };
 
 export const getChildrenCount = (target) => {
-  const list = getRequestChildren(target);
-  return list ? list.length : 0;
-};
-
-// FIXME Is it used? Why its similar to getChildrenCount()?
-export const sendRequest = (target) => {
-  const list = getRequestChildren(target);
-  return list ? list.length : 0;
+  const children = getChildRequests(target);
+  return children ? children.length : 0;
 };
 
 export const createRequestTarget = (promise, requestHandlers) => (
