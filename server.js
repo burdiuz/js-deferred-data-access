@@ -18,7 +18,7 @@ app.use(function(req, res, next) {
   }
 });
 app.use(express.static('.'));
-var calc = require('./example/calc_server.js');
+var calc = require('./example/calc/calc_server.js');
 calc(app);
 server.on('request', app);
 server.listen(8081);

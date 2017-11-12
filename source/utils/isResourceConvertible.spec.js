@@ -2,28 +2,28 @@ import IConvertible from './IConvertible';
 import isResourceConvertible from './isResourceConvertible';
 import {
   __createDataResolvedPromise,
-  __createTargetResource,
-  __createRequestTarget,
-  __createRequestTargetData,
-  __createRequestTargetProxy,
+  __createResource,
+  __createRequest,
+  __createRequestData,
+  __createRequestProxy,
 } from '../../tests/stubs';
 
 describe('isResourceConvertible()', () => {
-  it('should return true for TargetResource', () => {
-    expect(isResourceConvertible(__createTargetResource())).to.be.true;
+  it('should return true for Resource', () => {
+    expect(isResourceConvertible(__createResource())).to.be.true;
   });
 
-  it('should return true for RequestTarget', () => {
-    expect(isResourceConvertible(__createRequestTarget())).to.be.true;
+  it('should return true for Target', () => {
+    expect(isResourceConvertible(__createRequest())).to.be.true;
   });
 
-  it('should return true for RequestTarget wrapped into Proxy', () => {
-    expect(isResourceConvertible(__createRequestTargetProxy(__createDataResolvedPromise())))
+  it('should return true for Target wrapped into Proxy', () => {
+    expect(isResourceConvertible(__createRequestProxy(__createDataResolvedPromise())))
       .to.be.true;
   });
 
   it('should return true for RAW resource', () => {
-    expect(isResourceConvertible(__createRequestTargetData())).to.be.true;
+    expect(isResourceConvertible(__createRequestData())).to.be.true;
   });
 
   it('should return true for IConvertible instance', () => {

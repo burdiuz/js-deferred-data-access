@@ -1,14 +1,14 @@
 import TARGET_INTERNALS from './TARGET_INTERNALS';
 import IConvertible from './IConvertible';
 import isResource from './isResource';
-import { toJSON } from '../request/RequestTarget';
+import { toJSON } from '../request/Target';
 import { defaultResourcePool } from '../resource/ResourcePool';
-import TargetResource from '../resource/TargetResource';
+import Resource from '../resource/Resource';
 
 export default (object, pool) => {
   pool = pool || defaultResourcePool;
 
-  if (object instanceof TargetResource) {
+  if (object instanceof Resource) {
     return object.toJSON();
   } else if (typeof object[TARGET_INTERNALS] === 'object') {
     return toJSON(object);

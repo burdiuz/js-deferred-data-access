@@ -7,10 +7,10 @@ import {
 } from '../resource/ResourcePool';
 import {
   __createDataResolvedPromise,
-  __createRequestTarget,
-  __createTargetResource,
-  __createRequestTargetData,
-  __createRequestTargetProxy,
+  __createRequest,
+  __createResource,
+  __createRequestData,
+  __createRequestProxy,
 } from '../../tests/stubs';
 
 describe('getRawResource()', () => {
@@ -18,8 +18,8 @@ describe('getRawResource()', () => {
     defaultResourcePool.clear();
   });
 
-  it('should result into raw resource data from TargetResource', () => {
-    const resource = __createTargetResource();
+  it('should result into raw resource data from Resource', () => {
+    const resource = __createResource();
     const data = {};
     data[TARGET_DATA] = {
       id: resource.id,
@@ -29,18 +29,18 @@ describe('getRawResource()', () => {
     expect(getRawResource(resource)).to.be.eql(data);
   });
 
-  it('should result into RAW resource data from RequestTarget', () => {
-    const resource = __createRequestTarget(__createDataResolvedPromise());
+  it('should result into RAW resource data from Target', () => {
+    const resource = __createRequest(__createDataResolvedPromise());
     return resource.then(() => {
-      expect(getRawResource(resource)).to.be.eql(__createRequestTargetData());
+      expect(getRawResource(resource)).to.be.eql(__createRequestData());
     });
   });
 
-  it('should result into RAW resource data from RequestTarget wrapped into Proxy', () => {
+  it('should result into RAW resource data from Target wrapped into Proxy', () => {
     const promise = __createDataResolvedPromise();
-    const resource = __createRequestTargetProxy();
+    const resource = __createRequestProxy();
     return promise.then(() => {
-      expect(getRawResource(resource)).to.be.eql(__createRequestTargetData());
+      expect(getRawResource(resource)).to.be.eql(__createRequestData());
     });
   });
 

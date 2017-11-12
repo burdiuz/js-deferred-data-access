@@ -1,13 +1,13 @@
 import DataAccessInterface, { create, dummy } from './DataAccessInterface';
 import Deferred, { createDeferred } from './utils/Deferred';
-import CommandDescriptor from './commands/CommandDescriptor';
-import Reserved from './commands/Reserved';
-import RequestTargetCommands from './commands/RequestTargetCommands';
-import ProxyCommands from './commands/ProxyCommands';
-import RequestTarget from './request/RequestTarget';
+import Descriptor from './command/Descriptor';
+import Reserved from './command/Reserved';
+import RequestCommands from './command/internal/RequestCommands';
+import ProxyCommands from './command/internal/ProxyCommands';
+import Target from './request/Target';
 import ResourcePool from './resource/ResourcePool';
-import ResourcePoolRegistry from './resource/ResourcePoolRegistry';
-import ResourceConverter from './resource/ResourceConverter';
+import PoolRegistry from './resource/PoolRegistry';
+import Converter from './resource/Converter';
 import IConvertible from './utils/IConvertible';
 import isResourceConvertible from './utils/isResourceConvertible';
 import getRawResource from './utils/getRawResource';
@@ -24,14 +24,14 @@ export {
   dummy,
   createDeferred,
   Deferred,
-  CommandDescriptor,
+  Descriptor,
   Reserved,
-  RequestTargetCommands,
+  RequestCommands,
   ProxyCommands,
-  RequestTarget,
+  Target,
   ResourcePool,
-  ResourcePoolRegistry,
-  ResourceConverter,
+  PoolRegistry,
+  Converter,
   IConvertible,
   isResourceConvertible,
   getRawResource,

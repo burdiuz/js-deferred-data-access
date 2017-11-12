@@ -1,7 +1,7 @@
 import EventDispatcher from 'event-dispatcher';
 import getId from '../utils/getId';
 import isResource from '../utils/isResource';
-import { createTargetResource } from './TargetResource';
+import { createResource } from './Resource';
 
 export const ResourcePoolEvents = Object.freeze({
   RESOURCE_ADDED: 'resourceAdded',
@@ -11,7 +11,7 @@ export const ResourcePoolEvents = Object.freeze({
   POOL_DESTROYED: 'poolDestroyed',
 });
 
-const MAP_FIELD = Symbol('ResourcePool::map');
+export const MAP_FIELD = Symbol('ResourcePool::map');
 
 let validTargets = {};
 
@@ -31,10 +31,9 @@ export const setValidTargets = (list) => {
 export const getDefaultValidTargets = () => ['object', 'function'];
 
 class ResourcePool extends EventDispatcher {
-  [MAP_FIELD] = new Map();
-
   constructor() {
     super();
+    this[MAP_FIELD] = new Map();
     Object.defineProperties(this, {
       id: {
         value: getId(),
@@ -42,21 +41,23 @@ class ResourcePool extends EventDispatcher {
     });
   }
 
-  set(target, type) {
-    let link = null;
-    if (isValidTarget(target)) {
-      if (this[MAP_FIELD].has(target)) {
-        link = this[MAP_FIELD].get(target);
+  set(value, type = null) {
+    const map = this[MAP_FIELD];
+    let resource = null;
+    if (isValidTarget(value)) {
+      if (map.has(value)) {
+        resource = map.get(value);
       } else {
-        link = createTargetResource(this, target, type || typeof target);
-        this[MAP_FIELD].set(link.id, link);
-        this[MAP_FIELD].set(target, link);
+        resource = createResource(this, value, type || typeof value);
+        map.set(resource.id, resource);
+        map.set(value, resource);
         if (this.hasEventListener(ResourcePoolEvents.RESOURCE_ADDED)) {
-          this.dispatchEvent(ResourcePoolEvents.RESOURCE_ADDED, link);
+          this.dispatchEvent(ResourcePoolEvents.RESOURCE_ADDED, resource);
         }
       }
     }
-    return link;
+
+    return resource;
   }
 
   has(target) {
@@ -67,32 +68,33 @@ class ResourcePool extends EventDispatcher {
     return this[MAP_FIELD].get(target);
   }
 
-  remove(target) {
-    const link = this[MAP_FIELD].get(target);
-    if (link) {
-      this[MAP_FIELD].delete(link.id);
-      this[MAP_FIELD].delete(link.resource);
+  remove(value) {
+    const map = this[MAP_FIELD];
+    const resource = map.get(value);
+    if (resource) {
+      map.delete(resource.id);
+      map.delete(resource.value);
       if (this.hasEventListener(ResourcePoolEvents.RESOURCE_REMOVED)) {
-        this.dispatchEvent(ResourcePoolEvents.RESOURCE_REMOVED, link);
+        this.dispatchEvent(ResourcePoolEvents.RESOURCE_REMOVED, resource);
       }
-      link.destroy();
+      resource.destroy();
     }
   }
 
   clear() {
+    const map = this[MAP_FIELD];
     if (this.hasEventListener(ResourcePoolEvents.POOL_CLEAR)) {
       this.dispatchEvent(ResourcePoolEvents.POOL_CLEAR, this);
     }
-    let key;
-    const keys = this[MAP_FIELD].keys();
-    // FIXME update to for...of loop when it comes to browsers
-    while (!(key = keys.next()).done) {
-      if (typeof key.value === 'string') {
-        const link = this[MAP_FIELD].get(key.value);
-        link.destroy();
+
+    for (const [key, resource] of map) {
+      if (typeof key === 'string' && key === resource.id) {
+        resource.destroy();
       }
     }
-    this[MAP_FIELD].clear();
+
+    map.clear();
+
     if (this.hasEventListener(ResourcePoolEvents.POOL_CLEARED)) {
       this.dispatchEvent(ResourcePoolEvents.POOL_CLEARED, this);
     }
@@ -111,6 +113,8 @@ class ResourcePool extends EventDispatcher {
       this.dispatchEvent(ResourcePoolEvents.POOL_DESTROYED, this);
     }
   }
+
+  static events = ResourcePoolEvents;
 }
 
 class DefaultResourcePool extends ResourcePool {

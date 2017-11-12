@@ -1,9 +1,9 @@
 import TARGET_DATA from '../source/utils/TARGET_DATA';
-import { createRequestTarget } from '../source/request/RequestTarget';
-import { applyProxyWithDefaultHandlers } from '../source/request/RequestProxyFactory';
-import { createTargetResource } from '../source/resource/TargetResource';
+import { createRequestTarget } from '../source/request/Target';
+import { applyProxyWithDefaultHandlers } from '../source/request/ProxyFactory';
+import { createResource } from '../source/resource/Resource';
 
-export const __createRequestTargetData = () => ({
+export const __createRequestData = () => ({
   [TARGET_DATA]: {
     id: '1111',
     type: 'target-object',
@@ -12,21 +12,21 @@ export const __createRequestTargetData = () => ({
 });
 
 export const __createDataResolvedPromise = () => (
-  Promise.resolve(__createRequestTargetData())
+  Promise.resolve(__createRequestData())
 );
 
-export const __createRequestTarget = (promise) => (
+export const __createRequest = (promise) => (
   createRequestTarget(promise !== undefined ? promise : __createDataResolvedPromise(), {})
 );
 
-export const __createRequestTargetProxy = (promise) => (
+export const __createRequestProxy = (promise) => (
   applyProxyWithDefaultHandlers(createRequestTarget(
     promise !== undefined ? promise : __createDataResolvedPromise(),
     {},
   ))
 );
 
-export const __createTargetResourceData = () => ({
+export const __createResourceData = () => ({
   [TARGET_DATA]: {
     id: '2222222',
     type: 'target-type',
@@ -34,6 +34,6 @@ export const __createTargetResourceData = () => ({
   },
 });
 
-export const __createTargetResource = (resource) => (
-  createTargetResource({ id: '111111' }, resource || {}, 'target-type', '2222222')
+export const __createResource = (resource) => (
+  createResource({ id: '111111' }, resource || {}, 'target-type', '2222222')
 );

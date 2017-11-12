@@ -7,11 +7,11 @@ import ResourcePool, {
   createResourcePool,
   defaultResourcePool,
 } from './ResourcePool';
-import TargetResource from './TargetResource';
+import Resource from './Resource';
 import {
-  __createRequestTarget,
-  __createRequestTargetProxy,
-  __createTargetResource,
+  __createRequest,
+  __createRequestProxy,
+  __createResource,
 } from '../../tests/stubs';
 
 describe('ResourcePool', () => {
@@ -56,8 +56,8 @@ describe('ResourcePool', () => {
         result = pool.set(target);
       });
 
-      it('should return instance of TargetResource', () => {
-        expect(result).to.be.an.instanceof(TargetResource);
+      it('should return instance of Resource', () => {
+        expect(result).to.be.an.instanceof(Resource);
       });
 
       it(`should fire event "${ResourcePoolEvents.RESOURCE_ADDED}"`, () => {
@@ -93,7 +93,7 @@ describe('ResourcePool', () => {
           nextResult = pool.set(target);
         });
 
-        it('should return same TargetResource instance', () => {
+        it('should return same Resource instance', () => {
           expect(nextResult).to.be.equal(result);
         });
 
@@ -103,17 +103,17 @@ describe('ResourcePool', () => {
       });
 
       describe('When adding Resource type', () => {
-        it('should not store to pool RequestTarget', () => {
-          expect(pool.set(__createRequestTarget())).to.be.null;
+        it('should not store to pool Target', () => {
+          expect(pool.set(__createRequest())).to.be.null;
         });
 
-        it('should not store to pool RequestTarget wrapped with Proxy', () => {
-          expect(pool.set(__createRequestTargetProxy())).to.be.null;
+        it('should not store to pool Target wrapped with Proxy', () => {
+          expect(pool.set(__createRequestProxy())).to.be.null;
 
         });
 
-        it('should not store to pool TargetResource', () => {
-          expect(pool.set(__createTargetResource())).to.be.null;
+        it('should not store to pool Resource', () => {
+          expect(pool.set(__createResource())).to.be.null;
         });
 
         it('should not store to pool RAW resource', () => {

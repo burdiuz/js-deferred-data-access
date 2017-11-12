@@ -10,7 +10,7 @@ DataAccessInterface.create({
     cmdHandler: function(){}
   },
   myClass1: [
-    CommandDescriptor.create(...)
+    Descriptor.create(...)
   ]
 });
 ```
@@ -18,7 +18,8 @@ DataAccessInterface.create({
 3. type specific handlers always should fallback to defaults if not exists
 4. when applying handlers first should be applied default and then type-specific, default might be overwritten in case of name collision
 5. default handlers applied on RequestType creation and type-specific when its resolved.
-6. introduce CommandDescriptor.resourceType for supposed resource type. Can be string or function that results in a string.  
+6. introduce Descriptor.resourceType for supposed resource type. Can be string or function that results in a string.
+7. Add WeakMap ResourcePool
 
 [![Coverage Status](https://coveralls.io/repos/github/burdiuz/js-deferred-data-access/badge.svg?branch=master)](https://coveralls.io/github/burdiuz/js-deferred-data-access?branch=master)
 [![Build Status](https://travis-ci.org/burdiuz/js-deferred-data-access.svg?branch=master)](https://travis-ci.org/burdiuz/js-deferred-data-access)
@@ -128,7 +129,7 @@ var reference = result.data;
 var resource = api.parse(reference);
 resource.call('parameter');
 ```
-Now we created DataAccessInterface instance passing object with command handler. Each command internally represented by `DataAccessInterface.CommandDescriptor` object. Passing object with handlers will create descriptors with command types equal to property names, that's why `resource` received new `call` method.
+Now we created DataAccessInterface instance passing object with command handler. Each command internally represented by `DataAccessInterface.Descriptor` object. Passing object with handlers will create descriptors with command types equal to property names, that's why `resource` received new `call` method.
 
 To start using Deferred Data Access you should instantiate DataAccessInterface and tell it, what type of 
 commands it may apply to received resources. 
@@ -147,10 +148,10 @@ var commands = {
 This code will create a command that will be available via "trace" name and calling command will execute `commands.trace()` function. 
 As you can see, handler function receives some arguments and it must support this signature, also ot should resolve or reject Promise 
 via `deferred.resolve()` and `deferred.reject()` when command finished execution. 
-Deferred Data Access library has special class `CommandDescriptor` that represents commands and can be used to describe them.
+Deferred Data Access library has special class `Descriptor` that represents commands and can be used to describe them.
 ```javascript
 var commands = [
-    CommandDescriptor.create(
+    Descriptor.create(
       'trace', 
       function(parentRequest, data, deferred, resultRequest) {
         console.log(data);
@@ -159,8 +160,8 @@ var commands = [
     );
 ];
 ```
-This is equivalent to code above just using CommandDescriptor instance to describe command. 
-With CommandDescriptor you can define more settings for command, like property name or are received resources cacheable.  
+This is equivalent to code above just using Descriptor instance to describe command.
+With Descriptor you can define more settings for command, like property name or are received resources cacheable.
 
 After getting all commands you want to execute on remote resources, you are ready to create DataAccessInterface.
 ```javascript

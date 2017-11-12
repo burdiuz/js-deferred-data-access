@@ -1,12 +1,12 @@
-import CommandDescriptor, { createCommandDescriptor } from '../commands/CommandDescriptor';
-import Reserved from '../commands/Reserved';
+import Descriptor, { createDescriptor } from '../command/Descriptor';
+import Reserved from '../command/Reserved';
 
 
 /**
- * Checks for CommandDescriptor uniqueness and reserved words usage.
- * @param {DataAccessInterface.CommandDescriptor} descriptor
- * @param {Object.<string, DataAccessInterface.CommandDescriptor>} descriptors
- * @param {Array.<number, DataAccessInterface.CommandDescriptor>} properties
+ * Checks for Descriptor uniqueness and reserved words usage.
+ * @param {DataAccessInterface.Descriptor} descriptor
+ * @param {Object.<string, DataAccessInterface.Descriptor>} descriptors
+ * @param {Array.<number, DataAccessInterface.Descriptor>} properties
  * @private
  */
 const applyDescriptor = (descriptor, descriptors, properties) => {
@@ -16,7 +16,7 @@ const applyDescriptor = (descriptor, descriptors, properties) => {
   }
   if (
     Object.prototype.hasOwnProperty.call(descriptors, name)
-    && descriptors[name] instanceof CommandDescriptor
+    && descriptors[name] instanceof Descriptor
   ) {
     throw new Error(`Field names should be unique, "${String(name)}" field has duplicates.`);
   }
@@ -33,7 +33,7 @@ const applyDescriptor = (descriptor, descriptors, properties) => {
  */
 const filterArray = (handlers, descriptors, properties) => {
   handlers.forEach((value) => {
-    if (value instanceof CommandDescriptor) {
+    if (value instanceof Descriptor) {
       applyDescriptor(value, descriptors, properties);
     }
   });
@@ -41,8 +41,8 @@ const filterArray = (handlers, descriptors, properties) => {
 
 /**
  * @param {Object} handlers
- * @param {Object.<string, DataAccessInterface.CommandDescriptor>} descriptors
- * @param {Array.<number, DataAccessInterface.CommandDescriptor>} properties
+ * @param {Object.<string, DataAccessInterface.Descriptor>} descriptors
+ * @param {Array.<number, DataAccessInterface.Descriptor>} properties
  * @private
  */
 const filterHash = (handlers, descriptors, properties) => {
@@ -53,19 +53,19 @@ const filterHash = (handlers, descriptors, properties) => {
   ]).forEach((name) => {
     let value = handlers[name];
     if (typeof value === 'function') {
-      value = createCommandDescriptor(name, value);
+      value = createDescriptor(name, value);
     }
-    if (value instanceof CommandDescriptor) {
+    if (value instanceof Descriptor) {
       applyDescriptor(value, descriptors, properties);
     }
   });
 };
 
 /**
- * @method RequestHandlers.filterHandlers
+ * @method Handlers.filterHandlers
  * @param {Array|Object} handlers
- * @param {Object.<string, DataAccessInterface.CommandDescriptor>} descriptors
- * @param {Array.<number, DataAccessInterface.CommandDescriptor>} properties
+ * @param {Object.<string, DataAccessInterface.Descriptor>} descriptors
+ * @param {Array.<number, DataAccessInterface.Descriptor>} properties
  */
 export default (handlers, descriptors, properties) => {
   if (handlers instanceof Array) {

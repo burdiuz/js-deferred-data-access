@@ -31,8 +31,8 @@
 
 /**
  * @typedef {Object} ICacheImpl
- * @property {ICacheImpl~get} get Retrieve from cache RequestTarget instance by property name and command data
- * @property {ICacheImpl~set} set Store to cache RequestTarget instance by property name and command data
+ * @property {ICacheImpl~get} get Retrieve from cache Target instance by property name and command data
+ * @property {ICacheImpl~set} set Store to cache Target instance by property name and command data
  * @interface
  */
 
@@ -45,7 +45,7 @@
 
 /**
  * @callback ICacheImpl~set
- * @param {RequestTarget} request RequestTarget that should be stored
+ * @param {RequestTarget} request Target that should be stored
  * @param {string} propertyName Command property name
  * @param {CommandDataPack} pack Command data pack
  */

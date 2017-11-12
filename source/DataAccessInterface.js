@@ -6,12 +6,12 @@ import areProxiesAvailable from './utils/areProxiesAvailable';
 import isResource from './utils/isResource';
 import getResourcePoolId from './utils/getResourcePoolId';
 import getResourceId from './utils/getResourceId';
-import { createRequestHandlers } from './request/RequestHandlers';
-import { createRequestProxyFactory } from './request/RequestProxyFactory';
-import { createRequestFactory } from './request/RequestFactory';
+import { createHandlers } from './request/Handlers';
+import { createProxyFactory } from './request/ProxyFactory';
+import { createRequestFactory } from './request/Factory';
 import { defaultResourcePool, ResourcePoolEvents } from './resource/ResourcePool';
-import { createResourceConverter } from './resource/ResourceConverter';
-import { createResourcePoolRegistry } from './resource/ResourcePoolRegistry';
+import { createResourceConverter } from './resource/Converter';
+import { createPoolRegistry } from './resource/PoolRegistry';
 
 class DataAccessInterface {
 
@@ -20,7 +20,7 @@ class DataAccessInterface {
    * @classdesc Facade of Deferred Data Access library, it holds all
    * of public API -- objects like ResourcePool and methods to work
    * with resources.
-   * @param {CommandDescriptor[]|Object.<string, Function|CommandDescriptor>} descriptors
+   * @param {Descriptor[]|Object.<string, Function|Descriptor>} descriptors
    * @param {boolean} [proxyEnabled=false]
    * @param {ResourcePoolRegistry} [poolRegistry]
    * @param {ResourcePool} [pool]
@@ -44,7 +44,7 @@ class DataAccessInterface {
       throw new Error('Proxies are not available in this environment');
     }
 
-    this.handlers = createRequestHandlers(proxyEnabled);
+    this.handlers = createHandlers(proxyEnabled);
     this.resourceConverter = createResourceConverter(
       this.factory,
       this.poolRegistry,
@@ -53,13 +53,13 @@ class DataAccessInterface {
     );
 
     if (proxyEnabled) {
-      this.factory = createRequestProxyFactory(this.handlers, this.cache);
+      this.factory = createProxyFactory(this.handlers, this.cache);
     } else {
       this.factory = createRequestFactory(this.handlers, this.cache);
     }
 
     if (!this.poolRegistry) {
-      this.poolRegistry = createResourcePoolRegistry();
+      this.poolRegistry = createPoolRegistry();
     }
 
     if (this.pool) {

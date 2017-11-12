@@ -2,38 +2,38 @@ import TARGET_DATA from './TARGET_DATA';
 import getResourcePoolId from './getResourcePoolId';
 import {
   __createDataResolvedPromise,
-  __createRequestTarget,
-  __createTargetResource,
-  __createRequestTargetData,
-  __createRequestTargetProxy,
+  __createRequest,
+  __createResource,
+  __createRequestData,
+  __createRequestProxy,
 } from '../../tests/stubs';
 
 describe('getResourcePoolId()', () => {
-  it('should return poolId for RequestTarget', () => {
+  it('should return poolId for Target', () => {
     const promise = __createDataResolvedPromise();
-    const resource = __createRequestTarget(promise);
+    const resource = __createRequest(promise);
     return promise.then(() => {
       expect(getResourcePoolId(resource))
-        .to.be.equal(__createRequestTargetData()[TARGET_DATA].poolId);
+        .to.be.equal(__createRequestData()[TARGET_DATA].poolId);
     });
   });
 
-  it('should return poolId for RequestTarget wrapped with Proxy', () => {
+  it('should return poolId for Target wrapped with Proxy', () => {
     const promise = __createDataResolvedPromise();
-    const resource = __createRequestTargetProxy();
+    const resource = __createRequestProxy();
     return promise.then(() => {
       expect(getResourcePoolId(resource))
-        .to.be.equal(__createRequestTargetData()[TARGET_DATA].poolId);
+        .to.be.equal(__createRequestData()[TARGET_DATA].poolId);
     });
   });
 
-  it('should return poolId for TargetResource', () => {
-    const resource = __createTargetResource();
+  it('should return poolId for Resource', () => {
+    const resource = __createResource();
     expect(getResourcePoolId(resource)).to.be.equal(resource.poolId);
   });
 
   it('should return poolId for RAW resource', () => {
-    const resource = __createRequestTargetData();
+    const resource = __createRequestData();
     expect(getResourcePoolId(resource)).to.be.equal(resource[TARGET_DATA].poolId);
   });
 
