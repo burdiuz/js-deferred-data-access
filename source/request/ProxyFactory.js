@@ -1,4 +1,4 @@
-import Factory, { createRequestFactory } from './Factory';
+import Factory, { NO_INIT, createRequestFactory } from './Factory';
 import { ProxyCommandFields } from '../command/internal/ProxyCommands';
 
 const EXCLUSIONS = {
@@ -109,7 +109,7 @@ const PROXY_HANDLERS = createProxyHandlers();
 
 class ProxyFactory extends Factory {
   constructor(handlers, cacheImpl) {
-    super(null, null, true);
+    super(NO_INIT);
 
     this.handlers = handlers;
     this.factory = createRequestFactory(handlers, cacheImpl);

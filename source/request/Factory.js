@@ -1,6 +1,8 @@
 import { createDecorator } from './Decorator';
 import { createRequestTarget } from './Target';
 
+export const NO_INIT = {};
+
 class Factory {
   /*
    function DummyCacheImpl() {
@@ -12,14 +14,13 @@ class Factory {
    };
    }
    */
-  constructor(handlers, cacheImpl = null, noInit = false) {
-    if (noInit) {
-      return;
-    }
-
+  constructor(handlers, cacheImpl = null) {
     this.cache = cacheImpl;
     this.handlers = handlers;
-    this.decorator = createDecorator(this, handlers);
+
+    if (handlers !== NO_INIT) {
+      this.decorator = createDecorator(this, handlers);
+    }
   }
 
   create(promise) {

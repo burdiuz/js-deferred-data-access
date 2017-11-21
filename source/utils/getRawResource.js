@@ -1,7 +1,7 @@
 import TARGET_INTERNALS from './TARGET_INTERNALS';
 import IConvertible from './IConvertible';
 import isResource from './isResource';
-import { toJSON } from '../request/Target';
+import toJSON from '../request/target/toJSON';
 import { defaultResourcePool } from '../resource/ResourcePool';
 import Resource from '../resource/Resource';
 

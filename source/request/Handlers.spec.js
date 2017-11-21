@@ -1,8 +1,8 @@
 import Descriptor, { createDescriptor } from '../command/Descriptor';
-import { createDescriptors } from '../command/internal/ProxyCommands';
+import { createDescriptors, ProxyCommandFields } from '../command/internal/ProxyCommands';
 import { createDeferred } from '../utils/Deferred';
-import filterHandlers from '../utils/filterRequestHandlers';
 import Handlers, * as utils from './Handlers';
+import { areProxyHandlersAvailable } from "./Handlers";
 
 // const requestHandlersInjector = require('inject-loader!./Handlers');
 const { createHandlers } = utils;
@@ -113,53 +113,6 @@ describe('Handlers', () => {
       });
     });
   });
-  /*
-    describe('Iterator', () => {
-      let handlers;
-
-      beforeEach(() => {
-        handlers = createHandlers();
-        handlers.setHandlers({
-          hndl1: () => {
-          },
-          hndl2: () => {
-          },
-          // adding virtual descriptor should not change iterator sequesnce, since it ignores virtual
-          virtualProperty: createDescriptor(
-            'command',
-            () => null,
-            'property',
-            null,
-            false,
-            true,
-          ),
-        });
-      });
-
-      it('should be able to generate Iterators', () => {
-        const iterator = handlers[Symbol.iterator]();
-        expect(iterator).to.be.an('object');
-        expect(iterator.next).to.be.a('function');
-      });
-
-      it('Iterator should go through all handlers', () => {
-        const iterator = handlers[Symbol.iterator]();
-        let item = iterator.next();
-        expect(item.value).to.be.an.instanceof(Descriptor);
-        expect(item.done).to.be.false;
-        item = iterator.next();
-        expect(item.value).to.be.an.instanceof(Descriptor);
-        expect(item.done).to.be.false;
-        item = iterator.next();
-        expect(item.done).to.be.true;
-      });
-
-      it('should be iterator for itself', () => {
-        const iterator = handlers[Symbol.iterator]();
-        expect(iterator[Symbol.iterator]()).to.be.equal(iterator);
-      });
-    });
-    */
 
   describe('When created with Proxies enabled', () => {
     beforeEach(() => {
@@ -202,24 +155,10 @@ describe('Handlers', () => {
       expect(handlers.hasHandler('property1')).to.be.true;
       expect(handlers.hasHandler('property2')).to.be.true;
     });
-
-    // FIXME if we need these methods, they can be easily restored from "properties" list
-    /*
-        it('getHandlerNames() should return all descriptors', () => {
-          expect(handlers.getHandlerNames()).to.contain('property1');
-          expect(handlers.getHandlerNames()).to.contain('property2');
-        });
-    */
     it('getHandlers() should contain all descriptors', () => {
       expect(handlers.getHandlers().property1).to.be.an.instanceof(Descriptor);
       expect(handlers.getHandlers().property2).to.be.an.instanceof(Descriptor);
     });
-    /*
-        it('getPropertyNames() should return non-virtual descriptors', () => {
-          expect(handlers.getPropertyNames()).to.contain('property1');
-          expect(handlers.getPropertyNames()).to.not.contain('property2');
-        });
-        */
   });
 
   describe('handle()', () => {
@@ -292,8 +231,6 @@ describe('Handlers', () => {
             expect(commandHandler).to.be.calledOnce;
           });
         });
-
-
       });
 
       describe('When no pending promises found', () => {
@@ -311,100 +248,6 @@ describe('Handlers', () => {
           expect(commandHandler).to.be.calledOnce;
         });
       });
-
-    });
-
-  });
-
-  describe('filterHandlers()', () => {
-    let descriptors;
-    let properties;
-    beforeEach(() => {
-      descriptors = {};
-      properties = [];
-    });
-    it('should handle empty values', () => {
-      expect(() => {
-        filterHandlers(null, descriptors, properties);
-        filterHandlers([], descriptors, properties);
-        filterHandlers({ some: 'thing' }, descriptors, properties);
-      }).to.not.throw(Error);
-    });
-    describe('When object passed', () => {
-      let source;
-      beforeEach(() => {
-        source = {
-          one: 'one',
-          two: () => {
-          },
-          tree: 3,
-        };
-
-        filterHandlers(source, descriptors, properties);
-      });
-      it('should find all functions', () => {
-        expect(Object.getOwnPropertyNames(descriptors)).to.have.length(1);
-        expect(descriptors.two).to.be.an.instanceof(Descriptor);
-        expect(descriptors.two.name).to.be.equal('two');
-        expect(descriptors.two.type).to.be.equal('two');
-      });
-    });
-    describe('When object contains Descriptor', () => {
-      let source;
-      beforeEach(() => {
-        source = {
-          one: 'one',
-          two: new Descriptor('command', () => {
-          }, 'name'),
-          tree: 3,
-        };
-
-        filterHandlers(source, descriptors, properties);
-      });
-      it('should keep it unchanged', () => {
-        expect(descriptors.two).to.not.be.ok;
-        expect(descriptors.name.name).to.be.equal('name');
-        expect(descriptors.name.type).to.be.equal('command');
-      });
-    });
-    describe('When array passed', () => {
-      let source;
-      beforeEach(() => {
-        source = ['one', new Descriptor('command', () => {
-        }, 'name'), () => {
-        }, 3];
-        filterHandlers(source, descriptors, properties);
-      });
-      it('should store Descriptor\'s in result', () => {
-        expect(Object.getOwnPropertyNames(descriptors)).to.have.length(1);
-        expect(descriptors.name.name).to.be.equal('name');
-        expect(descriptors.name.type).to.be.equal('command');
-      });
-    });
-    describe('When using reserved words', () => {
-      it('should throw error when reserved word used for property name', () => {
-        expect(() => {
-          filterHandlers([
-            'one',
-            new Descriptor('command1', () => {
-            }, 'then'),
-          ], descriptors, properties);
-        }).to.throw(Error);
-      });
-    });
-    describe('When using dupes', () => {
-      it('should throw error when duplicated property name is found', () => {
-        expect(() => {
-          filterHandlers([
-            'one',
-            new Descriptor('command1', () => {
-            }, 'name'),
-            new Descriptor('command2', () => {
-            }, 'name'),
-            3,
-          ], descriptors, properties);
-        }).to.throw(Error);
-      });
     });
   });
 
@@ -415,5 +258,43 @@ describe('Handlers', () => {
       expect(result).to.not.be.equal(handlers);
     });
   });
+});
 
+describe('areProxyHandlersAvailable()', () => {
+  describe('When all handlers are available', () => {
+    let target;
+
+    beforeEach(() => {
+      target = {
+        [ProxyCommandFields.get]: () => null,
+        [ProxyCommandFields.set]: () => null,
+        [ProxyCommandFields.apply]: () => null,
+      };
+    });
+
+    it('should result with true', () => {
+      expect(areProxyHandlersAvailable(target)).to.be.true;
+    });
+  });
+
+  describe('When some handlers are not available', () => {
+    let target;
+
+    beforeEach(() => {
+      target = {
+        [ProxyCommandFields.get]: () => null,
+        [ProxyCommandFields.set]: () => null,
+      };
+    });
+
+    it('should result with false', () => {
+      expect(areProxyHandlersAvailable(target)).to.be.false;
+    });
+
+    it('should result with error if enabled', () => {
+      expect(() => {
+        areProxyHandlersAvailable(target, true);
+      }).to.throw();
+    });
+  });
 });

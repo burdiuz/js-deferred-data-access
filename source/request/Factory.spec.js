@@ -16,7 +16,7 @@ describe('RequestFactory', () => {
     };
     sandbox = sinon.sandbox.create();
     decorator = {
-      apply: sinon.spy(),
+      apply: sandbox.spy(),
     };
     resource = {};
   });
@@ -41,6 +41,16 @@ describe('RequestFactory', () => {
     sandbox.restore();
   });
 
+  describe('When noInit passed', () => {
+    beforeEach(() => {
+      factory = new module.default(module.NO_INIT);
+    });
+
+    it('should not create decorator', () => {
+      expect(factory.decorator).to.be.undefined;
+    });
+  });
+
   describe('When no cache implementation provided', () => {
     beforeEach(() => {
       factory = module.createRequestFactory(handlers);
@@ -53,24 +63,42 @@ describe('RequestFactory', () => {
     describe('create()', () => {
       let result;
 
-      beforeEach(() => {
-        result = factory.create(Promise.reject());
+      describe('When handlers are available', () => {
+        beforeEach(() => {
+          result = factory.create(Promise.reject());
+        });
+
+        it('should create Target', () => {
+          expect(requestTargetModule.createRequestTarget).to.be.calledOnce;
+          expect(result).to.be.equal(resource);
+        });
+
+        it('should pass promise and handlers to request', () => {
+          const { args } = requestTargetModule.createRequestTarget.getCall(0);
+          expect(args[0]).to.be.an.instanceof(Promise);
+          expect(args[1]).to.be.equal(handlers);
+        });
+
+        it('should call decorator', () => {
+          expect(decorator.apply).to.be.calledOnce;
+          expect(decorator.apply.getCall(0).args[0]).to.be.equal(result);
+        });
       });
 
-      it('should create Target', () => {
-        expect(requestTargetModule.createRequestTarget).to.be.calledOnce;
-        expect(result).to.be.equal(resource);
-      });
+      describe('When handlers are not available', () => {
+        beforeEach(() => {
+          handlers.available = false;
+          result = factory.create(Promise.reject());
+        });
 
-      it('should pass promise and handlers to request', () => {
-        const { args } = requestTargetModule.createRequestTarget.getCall(0);
-        expect(args[0]).to.be.an.instanceof(Promise);
-        expect(args[1]).to.be.equal(handlers);
-      });
+        it('should create Target', () => {
+          expect(requestTargetModule.createRequestTarget).to.be.calledOnce;
+          expect(result).to.be.equal(resource);
+        });
 
-      it('should call decorator', () => {
-        expect(decorator.apply).to.be.calledOnce;
-        expect(decorator.apply.getCall(0).args[0]).to.be.equal(result);
+        it('should not call decorator', () => {
+          expect(decorator.apply).not.to.be.called;
+        });
       });
     });
 

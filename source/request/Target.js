@@ -1,11 +1,11 @@
 import TARGET_INTERNALS from '../utils/TARGET_INTERNALS';
-import TargetStatus from '../utils/TargetStatus';
 import isResource from '../utils/isResource';
+import PROMISE_FIELD from './target/PROMISE_FIELD';
 import Internals from './target/Internals';
 
-const PROMISE_FIELD = Symbol('request.target::promise');
-
 const getRequestPromise = (request) => (request[TARGET_INTERNALS] || request[PROMISE_FIELD]);
+
+export const getChildRequests = (target) => (target && target[TARGET_INTERNALS] || null);
 
 /**
  * The object that will be available on other side
@@ -37,89 +37,6 @@ class Target {
     return target.catch(...args);
   }
 }
-
-export const isActive = (target) => (
-  target
-  && target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].isActive() : false
-);
-
-export const canBeDestroyed = (target) => (
-  target
-  && target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].canBeDestroyed() : false
-);
-
-export const destroy = (target) => (
-  target &&
-  target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].destroy() : null
-);
-
-export const toJSON = (target) => (
-  target
-  && target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].toJSON() : null
-);
-
-export const isTemporary = (target) => (
-  target
-  && target[TARGET_INTERNALS] && target[TARGET_INTERNALS].temporary
-);
-
-export const setTemporary = (target, value) => {
-  if (target && target[TARGET_INTERNALS]) {
-    target[TARGET_INTERNALS].temporary = Boolean(value);
-  }
-};
-
-export const getStatus = (target) => (
-  target &&
-  target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].status : null
-);
-
-export const isPending = (value) => (
-  getStatus(value) === TargetStatus.PENDING
-);
-
-export const getQueueLength = (target) => {
-  const queue = target && target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].queue : null;
-  return queue ? queue.length : 0;
-};
-
-export const getQueueCommands = (target) => {
-  const queue = target && target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].queue : null;
-  return queue ? queue.getCommands() : [];
-};
-
-export const hadChildPromises = (target) => Boolean(
-  target
-  && target[TARGET_INTERNALS]
-  && target[TARGET_INTERNALS].hadChildPromises
-);
-
-export const getRawPromise = (target) => (
-  target
-  && target[TARGET_INTERNALS] ? target[TARGET_INTERNALS].promise : null
-);
-
-const getChildRequests = (target) => (
-  target
-  && target[TARGET_INTERNALS]
-  && target[TARGET_INTERNALS].children
-  || null
-);
-
-export const getChildren = (target) => {
-  const children = getChildRequests(target);
-  return children ? children.getList() : [];
-};
-
-export const getLastChild = (target) => {
-  const children = getChildRequests(target);
-  return children.lastItem;
-};
-
-export const getChildrenCount = (target) => {
-  const children = getChildRequests(target);
-  return children ? children.length : 0;
-};
 
 export const createRequestTarget = (promise, requestHandlers) => (
   new Target(promise, requestHandlers)

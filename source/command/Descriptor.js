@@ -1,7 +1,7 @@
-export const DEFAULT_IS_TEMPORARY = () => false;
+export const DEFAULT_IS_TEMPORARY = () => true;
 
 class Descriptor {
-  constructor(type, handler, name) {
+  constructor(type, handler, name = undefined) {
     this.name = name !== undefined ? name : type;
     this.type = type;
     this.handler = handler;
@@ -13,23 +13,18 @@ class Descriptor {
     this.virtual = false;
     this.resourceType = null;
   }
-
-  toString() {
-    return `[Command Descriptor(name="${String(this.name)}", ` +
-      `type="${String(this.type)}", virtual="${this.virtual}")]`;
-  }
 }
 
 export const createDescriptor = (
-  command,
+  type,
   handler,
   name,
-  isTemporary = undefined,
+  isTemporary = DEFAULT_IS_TEMPORARY,
   resourceType = null,
   cacheable = true,
   virtual = false,
 ) => {
-  const descriptor = new Descriptor(command, handler, name);
+  const descriptor = new Descriptor(type, handler, name);
   descriptor.resourceType = resourceType;
   descriptor.cacheable = cacheable;
   descriptor.virtual = virtual;
@@ -48,7 +43,7 @@ export const addDescriptorTo = (descriptor, target) => {
   }
 };
 
-export const descriptorGeneratorFactory = (command, name) =>
+export const descriptorGeneratorFactory = (type, name) =>
   (
     handler,
     target,
@@ -58,7 +53,7 @@ export const descriptorGeneratorFactory = (command, name) =>
     virtual = false,
   ) => {
     const descriptor = createDescriptor(
-      command,
+      type,
       handler,
       name,
       isTemporary,

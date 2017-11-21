@@ -10,10 +10,16 @@ class Queue {
       deferred,
       child,
     });
+
+    return deferred.promise;
   }
 
   get length() {
     return this.list.length;
+  }
+
+  getList() {
+    return [...this.list];
   }
 
   getCommands() {
@@ -31,12 +37,16 @@ class Queue {
       pack.target = id;
       callback(name, pack, deferred, child);
     });
+    this.list = [];
   }
 
   reject(message) {
     const error = new Error(message || 'This request was rejected before sending.');
     this.list.forEach(({ deferred }) => deferred.reject(error));
+    this.list = [];
   }
 }
+
+export const createQueue = (list = []) => new Queue(list);
 
 export default Queue;

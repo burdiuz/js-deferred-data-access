@@ -243,4 +243,18 @@ describe('createDescriptors()', () => {
       expect(target[ProxyCommandFields.apply]).to.be.an.instanceof(Descriptor);
     });
   });
+
+  describe('When target is not what expected', () => {
+    beforeEach(() => {
+      target = createDescriptors({
+        get: getHandler,
+        set: setHandler,
+        apply: applyHandler,
+      }, null);
+    });
+
+    it('should not create target object', () => {
+      expect(target).to.be.null;
+    });
+  });
 });

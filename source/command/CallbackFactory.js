@@ -1,7 +1,7 @@
 import TARGET_INTERNALS from '../utils/TARGET_INTERNALS';
 import { createDeferred } from '../utils/Deferred';
 import createRequestPackage from '../utils/createRequestPackage';
-import { setTemporary } from '../request/Target';
+import setTemporary from '../request/target/setTemporary';
 
 const createHandlerFor = (
   factoryWrapper,
@@ -25,13 +25,11 @@ const createHandlerFor = (
       const request = getChildRequest(propertyName, pack, cacheable);
       result = request.child;
       if (request.deferred) {
-        promise = this[TARGET_INTERNALS].sendRequest(propertyName, pack, request.deferred, result);
+        promise = this[TARGET_INTERNALS].send(propertyName, pack, request.deferred, result);
         if (promise) {
-          if (isTemporary) {
-            // FIXME isTemporary must be called before `result` was resolved
-            // FIXME remove default `isTemporary`, if not defined just skip
-            checkState(promise, isTemporary, this, result, pack);
-          }
+          // FIXME isTemporary must be called before `result` was resolved
+          // FIXME remove default `isTemporary`, if not defined just skip
+          checkState(promise, isTemporary, this, result, pack);
         } else {
           result = null;
           promise = Promise.reject(new Error('Initial request failed and didn\'t result in promise.'));
@@ -99,12 +97,10 @@ class CallbackFactory {
   };
 
   checkState = (promise, isTemporaryFn, parentRequest, childRequest, pack) => {
-    if (promise) {
-      promise.then((data) => {
-        const isTemporary = Boolean(isTemporaryFn(parentRequest, childRequest, pack, data));
-        setTemporary(childRequest, isTemporary);
-      });
-    }
+    promise.then((data) => {
+      const isTemporary = Boolean(isTemporaryFn(parentRequest, childRequest, pack, data));
+      setTemporary(childRequest, isTemporary);
+    });
   };
 
   setFactory(factory) {

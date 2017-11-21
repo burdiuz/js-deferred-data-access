@@ -10,17 +10,20 @@ import RequestCommands, {
   RequestCommandNames,
   RequestCommandFields,
 } from '../../command/internal/RequestCommands';
-import Internals from './Internals';
-import Queue from './Queue';
-import Children from './Children';
 import {
   __createRequest,
   __createRequestData,
 } from '../../../tests/stubs';
 
+const internalsInjector = require('inject-loader!./Internals');
+
 describe('Internals', () => {
+  let sandbox;
+  let module;
+  let Internals;
+  let SubTargets;
   let deferred;
-  let target;
+  let internals;
   let requestTarget;
   let handlers;
   let isTemporaryResult;
@@ -29,109 +32,96 @@ describe('Internals', () => {
   let hasHandler;
 
   beforeEach(() => {
+    sandbox = sinon.sandbox.create();
+
+    class SubTargetsSpy {
+      constructor() {
+        this.parentResolved = sandbox.spy();
+        this.parentRejected = sandbox.spy();
+        this.register = sandbox.spy();
+        this.send = sandbox.spy();
+        this.hasQueue = sandbox.spy();
+        this.setParent = sandbox.spy();
+      }
+    }
+
+    SubTargets = SubTargetsSpy;
+
+    module = internalsInjector({
+      './SubTargets': {
+        default: SubTargetsSpy,
+        createSubTargets: () => new SubTargetsSpy(),
+        __esModule: true,
+      },
+    });
+    Internals = module.default;
+  });
+
+  beforeEach(() => {
     requestTarget = {};
     hasHandler = true;
     handlers = {
-      handle: sinon.spy((a, b, c, deferred) => {
+      handle: sandbox.spy((a, b, c, deferred) => {
         deferred.resolve(handleResult);
       }),
-      hasHandler: sinon.spy(() => hasHandler),
-      isTemporary: sinon.spy(() => isTemporaryResult),
+      hasHandler: sandbox.spy(() => hasHandler),
+      isTemporary: sandbox.spy(() => isTemporaryResult),
     };
     deferred = createDeferred();
-    target = new Internals(requestTarget, deferred.promise, handlers);
+    internals = new Internals(requestTarget, deferred.promise, handlers);
   });
 
-  it('should contain instance of Queue', () => {
-    expect(target.queue).to.be.an.instanceof(Queue);
+  afterEach(() => {
+    sandbox.restore();
   });
 
-  it('should contain instance of Children', () => {
-    expect(target.children).to.be.an.instanceof(Children);
+  it('should be an instance of SubTargets', () => {
+    expect(internals).to.be.an.instanceof(SubTargets);
   });
 
   describe('When created, pending', () => {
     it('should store construction arguments', () => {
-      expect(target.target).to.be.equal(requestTarget);
-      expect(target.handlers).to.be.equal(handlers);
+      expect(internals.target).to.be.equal(requestTarget);
+      expect(internals.handlers).to.be.equal(handlers);
     });
 
     it('should initialize internals', () => {
-      expect(target.queue).to.be.an.instanceof(Queue);
-      expect(target.hadChildPromises).to.be.false;
-      expect(target.status).to.be.equal(TargetStatus.PENDING);
-      expect(target.link).to.be.an('object');
+      expect(internals.hadChildPromises).to.be.false;
+      expect(internals.status).to.be.equal(TargetStatus.PENDING);
+      expect(internals.link).to.be.an('object');
     });
 
     it('should have NULL data', () => {
-      expect(target.id).to.be.null;
-      expect(target.type).to.be.null;
-      expect(target.poolId).to.be.null;
+      expect(internals.id).to.be.null;
+      expect(internals.type).to.be.null;
+      expect(internals.poolId).to.be.null;
     });
 
     it('should create child promise from passed', () => {
-      expect(target.promise).to.be.an.instanceof(Promise);
-      expect(target.promise).to.not.be.equal(deferred.promise);
+      expect(internals.promise).to.be.an.instanceof(Promise);
+      expect(internals.promise).to.not.be.equal(deferred.promise);
     });
 
     it('should be active', () => {
-      expect(target.isActive()).to.be.true;
+      expect(internals.isActive()).to.be.true;
     });
 
     it('should not be destroyable', () => {
-      expect(target.canBeDestroyed()).to.be.false;
+      expect(internals.canBeDestroyed()).to.be.false;
     });
 
-    it('should reject destruction with error', () => target.destroy()
+    it('should reject destruction with error', () => internals.destroy()
       .then(() => assert(false, 'should not resolve'))
       .catch((result) => assert(result instanceof Error, 'result should be Error')));
 
-    describe('When making child request', () => { // add to queue
-      let result;
-
-      beforeEach(() => {
-        handleResult = 'hi :)';
-        result = target.sendRequest('command', {
-          type: 'do-something',
-          cmd: 'with-this',
-          value: 'thanks',
-        });
-      });
-
-      it('should have recorded request in queue', () => {
-        expect(target.queue).to.have.length(1);
-      });
-
-      it('should not send request immediately', () => {
-        expect(handlers.handle).to.not.be.called;
-      });
-
-      it('result of call should be a Promise', () => {
-        expect(result).to.be.an.instanceof(Promise);
-      });
-
-      describe('When destroyed', () => {
-        let promise;
-        beforeEach(() => {
-          promise = target.destroy();
-        });
-
-        // they are all pending since parent is not resolved
-        it('should reject destruction with error', () => promise
-          .then(() => assert(false, 'should not resolve'))
-          .catch((data) => expect(data).to.be.an.instanceof(Error)));
-      });
-
-    });
-
     describe('When subscribing to promise', () => { // mark child promises created
       beforeEach(() => {
-        target.then(() => {
+        internals.then(() => {
         });
       });
 
       it('should record that promise chain continues', () => {
-        expect(target.hadChildPromises).to.be.true;
+        expect(internals.hadChildPromises).to.be.true;
       });
     });
 
@@ -146,32 +136,28 @@ describe('Internals', () => {
     });
 
     it('should have proper data', () => {
-      expect(target.id).to.be.equal(linkData[TARGET_DATA].id);
-      expect(target.type).to.be.equal(linkData[TARGET_DATA].type);
-      expect(target.poolId).to.be.equal(linkData[TARGET_DATA].poolId);
+      expect(internals.id).to.be.equal(linkData[TARGET_DATA].id);
+      expect(internals.type).to.be.equal(linkData[TARGET_DATA].type);
+      expect(internals.poolId).to.be.equal(linkData[TARGET_DATA].poolId);
     });
 
     it('should change state to resolved', () => {
-      expect(target.status).to.be.equal(TargetStatus.RESOLVED);
-    });
-
-    it('should destroy queue list', () => {
-      expect(target.queue).to.be.null;
+      expect(internals.status).to.be.equal(TargetStatus.RESOLVED);
     });
 
     it('should be active', () => {
-      expect(target.isActive()).to.be.true;
+      expect(internals.isActive()).to.be.true;
     });
 
     it('should be destroyable after resolution', () => {
-      expect(target.canBeDestroyed()).to.be.true;
+      expect(internals.canBeDestroyed()).to.be.true;
     });
 
     describe('When subscribing to the promise', () => {
       let subscriber;
       beforeEach(() => {
-        subscriber = sinon.spy();
-        return target.then(subscriber);
+        subscriber = sandbox.spy();
+        return internals.then(subscriber);
       });
 
       it('should resolve promises', () => {
@@ -179,7 +165,7 @@ describe('Internals', () => {
       });
 
       it('should count subscriber', () => {
-        expect(target.hadChildPromises).to.be.true;
+        expect(internals.hadChildPromises).to.be.true;
       });
 
       /*
@@ -200,48 +186,16 @@ describe('Internals', () => {
       });
     });
 
-    describe('When making child request', () => { // handle immediately
-      let result;
-      beforeEach(() => {
-        handleResult = 'nope';
-        result = target.sendRequest('name', {
-          type: 'type',
-          cmd: 'command',
-          value: 'way-lue',
-          target: target.id,
-        });
-      });
-
-      it('should not use queue', () => {
-        expect(target.queue).to.be.null;
-      });
-
-      it('should handle request immediately', () => {
-        expect(handlers.handle).to.be.calledOnce;
-        const { args } = handlers.handle.getCall(0);
-        expect(args[0]).to.be.equal(requestTarget);
-        expect(args[1]).to.be.equal('name');
-        expect(args[2]).to.be.eql({
-          type: 'type',
-          cmd: 'command',
-          value: 'way-lue',
-          target: target.id,
-        });
-        expect(args[3]).to.be.an.instanceof(Deferred);
-      });
-    });
-
     describe('When destroying', () => {
       beforeEach(() => {
-        sinon.stub(target, 'sendRequest');
-        target.destroy();
+        internals.destroy();
       });
 
       it('should send "destroy" request', () => {
-        expect(target.sendRequest).to.be.calledOnce;
-        expect(target.sendRequest.getCall(0).args[0])
+        expect(internals.send).to.be.calledOnce;
+        expect(internals.send.getCall(0).args[0])
           .to.be.equal(RequestCommandFields.DESTROY);
-        expect(target.sendRequest.getCall(0).args[1].type)
+        expect(internals.send.getCall(0).args[1].type)
           .to.be.equal(RequestCommandNames.DESTROY);
       });
     });
@@ -252,67 +206,28 @@ describe('Internals', () => {
     beforeEach(() => {
       linkData = __createRequestData();
       deferred.resolve(linkData);
-      target.temporary = true;
-      sinon.spy(target, 'sendRequest');
+      internals.temporary = true;
       return deferred.promise;
     });
 
     it('should have "destroyed" status', () => {
-      expect(target.status).to.be.equal(TargetStatus.DESTROYED);
+      expect(internals.status).to.be.equal(TargetStatus.DESTROYED);
     });
 
     it('should send "destroy" request', () => {
-      expect(target.sendRequest).to.be.calledOnce;
-      expect(target.sendRequest.getCall(0).args[0])
+      expect(internals.send).to.be.calledOnce;
+      expect(internals.send.getCall(0).args[0])
         .to.be.equal(RequestCommandFields.DESTROY);
-      expect(target.sendRequest.getCall(0).args[1].type)
+      expect(internals.send.getCall(0).args[1].type)
         .to.be.equal(RequestCommandNames.DESTROY);
     });
-  });
-
-  describe('When fulfilled with pending queue', () => {
-    beforeEach(() => {
-      target.sendRequest('name', { type: 'type', cmd: 'command', value: 'way-lue' });
-      target.sendRequest('no-name', { type: 'no-type', cmd: 'no-command', value: 'no-way-lue' });
-      linkData = __createRequestData();
-      deferred.resolve(linkData);
-      return deferred.promise;
-    });
-
-    it('should change state to resolved', () => {
-      expect(target.status).to.be.equal(TargetStatus.RESOLVED);
-    });
-
-    it('should send queued requests', () => {
-      expect(handlers.handle).to.be.calledTwice;
-      expect(handlers.handle).to.be.calledWith(requestTarget, 'name');
-      expect(handlers.handle).to.be.calledWith(requestTarget, 'no-name');
-    });
-
-    it('should destroy queue list', () => {
-      expect(target.queue).to.be.null;
-    });
-  });
-
-  describe('When fulfilled with not-a-Resource value', () => {
-    let promise;
-    beforeEach(() => {
-      promise = target.sendRequest('1', { type: 'one' });
-      deferred.resolve(1983);
-      return deferred.promise;
-    });
-
-    it('should reject queued requests', () => promise
-      .then(() => assert(false, 'should be rejected'))
-      .catch((data) => expect(data).to.be.an.instanceof(Error)));
-
   });
 
   describe('When rejected', () => {
     let child;
 
     beforeEach(() => {
-      child = target.sendRequest('1', 'one');
+      child = internals.send('1', 'one');
       linkData = {
         message: 'you screwed!',
       };
@@ -324,53 +239,29 @@ describe('Internals', () => {
     });
 
     it('should set status to rejected', () => {
-      expect(target.status).to.be.equal(TargetStatus.REJECTED);
+      expect(internals.status).to.be.equal(TargetStatus.REJECTED);
     });
 
     it('should not be active', () => {
-      expect(target.isActive()).to.be.false;
+      expect(internals.isActive()).to.be.false;
     });
 
     it('should be destroyable after resolution', () => {
-      expect(target.canBeDestroyed()).to.be.true;
-    });
-
-    it('should reject queue', () => child
-      .then(() => assert(false, 'should be rejected'))
-      .catch((data) => expect(data).to.be.an.instanceof(Error)));
-
-    describe('When making child request', () => { // reject immediately
-      let result;
-      beforeEach(() => {
-        result = target.sendRequest('any-name', {
-          type: 'any-type',
-          cmd: 'any-command',
-          value: 'any-way-lue',
-        });
-      });
-
-      it('promise should be rejected', () => result
-        .then(() => assert(false, 'should be rejected'))
-        .catch((data) => {
-          assert(data instanceof Error, 'promise result must be an error instance');
-        }));
-      it('should handle request internally', () => {
-        expect(handlers.handle).to.not.be.called;
-      });
+      expect(internals.canBeDestroyed()).to.be.true;
     });
 
     describe('When subscribing to the promise', () => {
       let subscriber;
       beforeEach(() => {
-        subscriber = sinon.spy();
+        subscriber = sandbox.spy();
 
-        return target
+        return internals
           .then(() => assert(false, 'should be rejected'))
           .catch(subscriber);
       });
 
       it('should count subscriber', () => {
-        expect(target.hadChildPromises).to.be.true;
+        expect(internals.hadChildPromises).to.be.true;
       });
 
       it('should resolve promises', () => {
@@ -386,7 +277,7 @@ describe('Internals', () => {
     describe('When destroying', () => {
       let result;
       beforeEach(() => {
-        result = target.destroy();
+        result = internals.destroy();
       });
 
       it('should resolve destruction', () => result.then((result) => assert(!result, 'result should be empty')));
@@ -394,124 +285,40 @@ describe('Internals', () => {
 
   });
 
+  describe('When making child request', () => { // add to queue
+    let result;
+
+    beforeEach(() => {
+      handleResult = 'hi :)';
+      result = internals.send('command', {
+        type: 'do-something',
+        cmd: 'with-this',
+        value: 'thanks',
+      });
+    });
+
+    describe('When destroyed', () => {
+      let promise;
+      beforeEach(() => {
+        promise = internals.destroy();
+      });
+
+      // they are all pending since parent is not resolved
+      it('should reject destruction with error', () => promise
+        .then(() => assert(false, 'should not resolve'))
+        .catch((data) => expect(data).to.be.an.instanceof(Error)));
+    });
+  });
+
   describe('When destroyed', () => {
     beforeEach(() => {
       linkData = __createRequestData();
       deferred.resolve(linkData);
-      return deferred.promise.then(() => target.destroy());
+      return deferred.promise.then(() => internals.destroy());
     });
 
     it('should not be active', () => {
-      expect(target.isActive()).to.be.false;
-    });
-
-    describe('When making child request', () => { // reject immediately
-      let result;
-      beforeEach(() => {
-        handlers.handle.reset();
-        result = target.sendRequest('any-name', {
-          type: 'any-type',
-          cmd: 'any-command',
-          value: 'any-way-lue',
-        });
-      });
-
-      it('promise should be rejected', () => result.catch((data) => {
-        assert(data instanceof Error, 'promise result must be an error instance');
-      }));
-
-      it('should handle request internally', () => {
-        expect(handlers.handle).to.not.be.called;
-      });
+      expect(internals.isActive()).to.be.false;
     });
   });
-
-  describe('When registering children', () => {
-    let child;
-
-    describe('When registered child is fulfilled', () => {
-      beforeEach(() => {
-        linkData = __createRequestData();
-        deferred.resolve(linkData);
-        return deferred.promise.then(() => {
-          child = __createRequest();
-          target.registerChild(child);
-        });
-      });
-
-      it('should add pending child to the list', () => {
-        expect(target.children).to.have.length(1);
-        expect(target.children.getList()).to.contain(child);
-      });
-
-      it('should remove child from the list when its resolved', () => {
-        return child.then(() => {
-          expect(target.children.getList()).to.not.contain(child);
-        })
-      });
-    });
-
-    describe('When registered child is rejected', () => {
-      let childPromise;
-
-      beforeEach(() => {
-        linkData = __createRequestData();
-        deferred.resolve(linkData);
-        return deferred.promise.then(() => {
-          const promise = Promise.reject('bad child');
-          child = __createRequest(promise);
-          childPromise = target.registerChild(child);
-        });
-      });
-
-      it('should add pending child to the list', () => {
-        expect(target.children).to.have.length(1);
-        expect(target.children.getList()).to.contain(child);
-      });
-
-      it('should remove child from the list when its rejected', () => {
-        return childPromise
-          .then(() => assert(false, 'should be rejected'))
-          .catch(() => {
-            expect(target.children.getList()).to.not.contain(child);
-          });
-      });
-    });
-  });
-
-  describe('When sending request', () => {
-    describe('When target was fulfilled', () => {
-      beforeEach(() => {
-        linkData = __createRequestData();
-        deferred.resolve(linkData);
-        return deferred.promise.then(() => {
-          hasHandler = false;
-        });
-      });
-
-      it('should immediately throw error on not existent handler', () => {
-        expect(() => {
-          target.sendRequest('any', { type: 'thing' });
-        }).to.throw(Error);
-      });
-
-      describe('When passing child request', () => {
-        let child;
-
-        beforeEach(() => {
-          child = __createRequest();
-          hasHandler = true;
-          sinon.spy(target, 'registerChild');
-          target.sendRequest('any', {}, null, child);
-        });
-
-        it('should register child', () => {
-          expect(target.registerChild).to.be.calledOnce;
-          expect(target.registerChild).to.be.calledWith(child);
-        });
-      });
-
-    });
-  });
-
 });

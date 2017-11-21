@@ -4,7 +4,7 @@ import getResourceId from '../utils/getResourceId';
 import isResource from '../utils/isResource';
 import isResourceConvertible from '../utils/isResourceConvertible';
 import getRawResource from '../utils/getRawResource';
-import { isPending } from '../request/Target';
+import isPending from '../request/target/isPending';
 
 export const ConverterEvents = Object.freeze({
   RESOURCE_CREATED: 'resourceCreated',

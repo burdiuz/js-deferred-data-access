@@ -1,4 +1,5 @@
 import TARGET_DATA from '../source/utils/TARGET_DATA';
+import TARGET_INTERNALS from '../source/utils/TARGET_INTERNALS';
 import { createRequestTarget } from '../source/request/Target';
 import { applyProxyWithDefaultHandlers } from '../source/request/ProxyFactory';
 import { createResource } from '../source/resource/Resource';

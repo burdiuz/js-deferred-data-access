@@ -1,4 +1,4 @@
-import { getRawPromise } from '../Target';
+import getRawPromise from './getRawPromise';
 
 class Children {
   constructor(list = []) {
@@ -14,6 +14,8 @@ class Children {
     };
 
     this.list.push(child);
+    // getRawPromise() is needed to capture promise resolution directly,
+    // otherwise this .then() call will be counted in child.hadChildPromises.
     return getRawPromise(child).then(handler, handler);
   }
 

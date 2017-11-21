@@ -21,7 +21,7 @@ describe('CallbackFactory', () => {
   function __createSendCommandRequest() {
     const resource = {};
     resource[TARGET_INTERNALS] = {
-      sendRequest: sandbox.spy((propertyName, pack, deferred) => {
+      send: sandbox.spy((propertyName, pack, deferred) => {
         if (resolveRequest) {
           deferred.resolve(requestData);
         } else {
@@ -146,14 +146,14 @@ describe('CallbackFactory', () => {
       });
 
       it('should not send request', () => {
-        expect(resource[TARGET_INTERNALS].sendRequest).to.not.be.called;
+        expect(resource[TARGET_INTERNALS].send).to.not.be.called;
       });
     });
 
     const sharedTestCases = () => {
       it('should send request', () => {
-        expect(resource[TARGET_INTERNALS].sendRequest).to.be.calledOnce;
-        expect(resource[TARGET_INTERNALS].sendRequest).to.be.calledWith(
+        expect(resource[TARGET_INTERNALS].send).to.be.calledOnce;
+        expect(resource[TARGET_INTERNALS].send).to.be.calledWith(
           'property',
           sinon.match({
             type: 'commandType',
@@ -170,7 +170,7 @@ describe('CallbackFactory', () => {
         expect(child).to.be.equal(createResult);
       });
 
-      it('should call isTemporary when fulfilled', () => resource[TARGET_INTERNALS].sendRequest.getCall(0).returnValue.then(() => {
+      it('should call isTemporary when fulfilled', () => resource[TARGET_INTERNALS].send.getCall(0).returnValue.then(() => {
         expect(descriptor.isTemporary).to.be.calledOnce;
         expect(descriptor.isTemporary).to.be.calledWith(
           resource,
@@ -185,7 +185,7 @@ describe('CallbackFactory', () => {
         );
       }));
 
-      it('should subscribe to request resolution', () => resource[TARGET_INTERNALS].sendRequest.getCall(0).returnValue.then(() => {
+      it('should subscribe to request resolution', () => resource[TARGET_INTERNALS].send.getCall(0).returnValue.then(() => {
         expect(child[TARGET_INTERNALS].temporary).to.be.equal(isTemporaryResult);
       }));
     };
@@ -244,7 +244,7 @@ describe('CallbackFactory', () => {
       beforeEach(() => {
         createResult = __createSendCommandRequest();
         resource.method = factory.get(descriptor);
-        resource[TARGET_INTERNALS].sendRequest = sinon.spy(() => null);
+        resource[TARGET_INTERNALS].send = sinon.spy(() => null);
         resourceFactory.create = sandbox.spy((promise) => promise);
         child = resource.method('command', 'value');
       });

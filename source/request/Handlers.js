@@ -10,7 +10,7 @@ import getResourceType from '../utils/getResourceType';
  */
 const DEFAULT_KEY = '';
 
-export const areProxyHandlersAvailable = (handlers, throwError) => {
+export const areProxyHandlersAvailable = (handlers, throwError = false) => {
   let result = true;
   ProxyCommands.required.forEach((name) => {
     if (!(ProxyCommandFields[name] in handlers)) {
@@ -74,9 +74,9 @@ class Handlers {
 
   hasHandler(name, type) {
     return (
-      this.descriptors[type]
+        this.descriptors[type]
         && Object.prototype.hasOwnProperty.call(this.descriptors[type], name)
-    )
+      )
       || (
         this.descriptors[DEFAULT_KEY]
         && Object.prototype.hasOwnProperty.call(this.descriptors[DEFAULT_KEY], name)
@@ -113,9 +113,9 @@ class Handlers {
 
   getHandler(name, type) {
     const handler = (
-      this.descriptors[type]
+        this.descriptors[type]
         && this.descriptors[type][name]
-    )
+      )
       || (
         this.descriptors[DEFAULT_KEY]
         && this.descriptors[DEFAULT_KEY][name]
