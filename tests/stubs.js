@@ -1,14 +1,13 @@
 import TARGET_DATA from '../source/utils/TARGET_DATA';
-import TARGET_INTERNALS from '../source/utils/TARGET_INTERNALS';
 import { createRequestTarget } from '../source/request/Target';
 import { applyProxyWithDefaultHandlers } from '../source/request/ProxyFactory';
 import { createResource } from '../source/resource/Resource';
 
 export const __createRequestData = () => ({
   [TARGET_DATA]: {
-    id: '1111',
-    type: 'target-object',
-    poolId: '22222',
+    $id: '1111',
+    $type: 'target-object',
+    $poolId: '22222',
   },
 });
 
@@ -29,9 +28,9 @@ export const __createRequestProxy = (promise) => (
 
 export const __createResourceData = () => ({
   [TARGET_DATA]: {
-    id: '2222222',
-    type: 'target-type',
-    poolId: '111111',
+    $id: '2222222',
+    $type: 'target-type',
+    $poolId: '111111',
   },
 });
 

@@ -1,17 +1,31 @@
 import TARGET_INTERNALS from './TARGET_INTERNALS';
 import TARGET_DATA from './TARGET_DATA';
+/* in case of circular dependency make empty base classes
+   for both Target and Resource and check for them:
+
+   Target will have:
+s    class Target extends TargetBase {
+
+   this function will have:
+    object instanceof TargetBase
+ */
 import Target from '../request/Target';
 import Resource from '../resource/Resource';
 
-export default (object) => object instanceof Resource ||
-  object instanceof Target ||
-  (object && (
-    // this case for Targets and Resources which contain
-    // data in TARGET_INTERNALS Symbol
-    // We check for their types above but in cases when Proxies are enabled
-    // their type will be Function and verification will come to this case
-    typeof object[TARGET_INTERNALS] === 'object' ||
+export default (object) => {
+  if (
+    object instanceof Resource
     // this case for RAW resources passed via JSON conversion,
-    // look like {'resource::data': {id: '1111', poolId: '22222'}}
-    typeof object[TARGET_DATA] === 'object'
-  ));
+    // look like {'resource::data': {$id: '1111', $poolId: '22222'}}
+    || typeof object[TARGET_DATA] === 'object'
+  ) {
+    return true;
+  } else if (object instanceof Target || typeof object[TARGET_INTERNALS] === 'object') {
+    // now all targets have internals in them, so we have to check if id and poolId are valid
+    // to treat target as resource. In case of Proxy enabled instanceof will be Function,
+    // so we have to check for internals.
+    return object[TARGET_INTERNALS].isResource();
+  }
+
+  return false;
+};

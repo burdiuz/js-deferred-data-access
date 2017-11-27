@@ -35,7 +35,7 @@ describe('getQueueCommands()', () => {
     expect(result).to.be.eql(['command1', 'command2', 'command3', 'command4']);
   });
 
-  it('should return empty list for non-Resource target', () => {
-    expect(getQueueCommands({})).to.be.empty;
+  it('should result with undefined for not a Request target', () => {
+    expect(getQueueCommands({})).to.be.undefined;
   });
 });

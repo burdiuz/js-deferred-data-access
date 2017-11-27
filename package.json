@@ -58,7 +58,8 @@
     "websocket-server": "git://github.com/burdiuz/js-websocket-server.git"
   },
   "scripts": {
-    "start": "webpack",
+    "start": "webpack --progress --colors",
+    "build:watch": "webpack --progress --colors --watch",
     "lint": "./node_modules/.bin/eslint \"source/**/!(*.spec).js\"",
     "lint:spec": "./node_modules/.bin/eslint -c eslintrc.spec.json \"source/**/*.spec.js\" \"tests/**/*.js\"",
     "flow": "./node_modules/.bin/flow",

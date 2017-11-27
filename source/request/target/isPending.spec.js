@@ -23,7 +23,7 @@ describe('isPending()', () => {
     expect(result).to.be.true;
   });
 
-  it('should be false for non-Resource target', () => {
-    expect(isPending({})).to.be.false;
+  it('should result with undefined for not a Request target', () => {
+    expect(isPending({})).to.be.undefined;
   });
 });

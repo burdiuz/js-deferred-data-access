@@ -16,7 +16,12 @@
   "globals": {
     "sinon": true,
     "expect": true,
-    "assert": true
+    "assert": true,
+    "before": true,
+    "after": true,
+    "beforeEach": true,
+    "afterEach": true,
+    "describe": true
   },
   "rules": {
     "linebreak-style": 0,

@@ -3,7 +3,5 @@ import createRequestPackage from './createRequestPackage';
 
 describe('createRequestPackage()', () => {
 
-  beforeEach(() => {
-
-  });
+  beforeEach(() => null);
 });

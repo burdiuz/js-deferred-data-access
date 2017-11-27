@@ -1,11 +1,5 @@
 import TARGET_INTERNALS from '../utils/TARGET_INTERNALS';
-import isResource from '../utils/isResource';
-import PROMISE_FIELD from './target/PROMISE_FIELD';
 import Internals from './target/Internals';
-
-const getRequestPromise = (request) => (request[TARGET_INTERNALS] || request[PROMISE_FIELD]);
-
-export const getChildRequests = (target) => (target && target[TARGET_INTERNALS] || null);
 
 /**
  * The object that will be available on other side
@@ -16,25 +10,14 @@ export const getChildRequests = (target) => (target && target[TARGET_INTERNALS] 
 class Target {
   constructor(promise, requestHandlers) {
     this[TARGET_INTERNALS] = new Internals(this, promise, requestHandlers);
-
-    const handlePromise = (data) => {
-      if (!isResource(data)) {
-        this[PROMISE_FIELD] = promise;
-        delete this[TARGET_INTERNALS];
-      }
-    };
-
-    promise.then(handlePromise, handlePromise);
   }
 
   then(...args) {
-    const target = getRequestPromise(this);
-    return target.then(...args);
+    return this[TARGET_INTERNALS].then(...args);
   }
 
   catch(...args) {
-    const target = getRequestPromise(this);
-    return target.catch(...args);
+    return this[TARGET_INTERNALS].catch(...args);
   }
 }
 

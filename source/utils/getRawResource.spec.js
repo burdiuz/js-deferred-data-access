@@ -14,23 +14,36 @@ import {
 } from '../../tests/stubs';
 
 describe('getRawResource()', () => {
+  let data;
+  let pool;
+
   after(() => {
     defaultResourcePool.clear();
   });
 
+  const shouldResultInProperRAWData = () => {
+    it('should result in proper RAW data', () => {
+      expect(data[TARGET_DATA].$id).to.be.a('string');
+      expect(data[TARGET_DATA].$type).to.be.a('string');
+      expect(data[TARGET_DATA].$poolId).to.be.a('string');
+    });
+  };
+
   it('should result into raw resource data from Resource', () => {
     const resource = __createResource();
-    const data = {};
-    data[TARGET_DATA] = {
-      id: resource.id,
-      type: resource.type,
-      poolId: resource.poolId,
-    };
-    expect(getRawResource(resource)).to.be.eql(data);
+
+    expect(getRawResource(resource)).to.be.eql({
+      [TARGET_DATA]: {
+        $id: resource.id,
+        $type: resource.type,
+        $poolId: resource.poolId,
+      },
+    });
   });
 
   it('should result into RAW resource data from Target', () => {
     const resource = __createRequest(__createDataResolvedPromise());
+
     return resource.then(() => {
       expect(getRawResource(resource)).to.be.eql(__createRequestData());
     });
@@ -39,18 +52,21 @@ describe('getRawResource()', () => {
   it('should result into RAW resource data from Target wrapped into Proxy', () => {
     const promise = __createDataResolvedPromise();
     const resource = __createRequestProxy();
+
     return promise.then(() => {
       expect(getRawResource(resource)).to.be.eql(__createRequestData());
     });
   });
 
   it('should result into RAW resource data from RAW resource data', () => {
-    const data = {};
-    data[TARGET_DATA] = {
-      id: '12345',
-      type: 'resource.type',
-      poolId: '54321',
+    data = {
+      [TARGET_DATA]: {
+        $id: '12345',
+        $type: 'resource.type',
+        $poolId: '54321',
+      },
     };
+
     expect(getRawResource(data)).to.be.equal(data);
   });
 
@@ -66,19 +82,12 @@ describe('getRawResource()', () => {
     });
 
     describe('When passed with ResourcePool', () => {
-      let pool;
-      let data;
-
       beforeEach(() => {
         pool = createResourcePool();
         data = getRawResource(target, pool);
       });
 
-      it('should result in proper RAW data', () => {
-        expect(data[TARGET_DATA].id).to.be.a('string');
-        expect(data[TARGET_DATA].type).to.be.a('string');
-        expect(data[TARGET_DATA].poolId).to.be.a('string');
-      });
+      shouldResultInProperRAWData();
 
       it('should register target in passed ResourcePool', () => {
         expect(pool.has(target)).to.be.true;
@@ -90,17 +99,12 @@ describe('getRawResource()', () => {
     });
 
     describe('When passed without ResourcePool', () => {
-      let data;
-
       beforeEach(() => {
         data = getRawResource(target);
       });
 
-      it('should result in proper RAW data', () => {
-        expect(data[TARGET_DATA].id).to.be.a('string');
-        expect(data[TARGET_DATA].type).to.be.a('string');
-        expect(data[TARGET_DATA].poolId).to.be.a('string');
-      });
+      shouldResultInProperRAWData();
+
       it('should register target in default ResourcePool', () => {
         expect(defaultResourcePool.has(target)).to.be.true;
       });
@@ -111,24 +115,16 @@ describe('getRawResource()', () => {
     let target;
 
     beforeEach(() => {
-      target = () => {
-      };
+      target = () => null;
     });
 
     describe('When passed with ResourcePool', () => {
-      let pool;
-      let data;
-
       beforeEach(() => {
         pool = createResourcePool();
         data = getRawResource(target, pool);
       });
 
-      it('should result in proper RAW data', () => {
-        expect(data[TARGET_DATA].id).to.be.a('string');
-        expect(data[TARGET_DATA].type).to.be.a('string');
-        expect(data[TARGET_DATA].poolId).to.be.a('string');
-      });
+      shouldResultInProperRAWData();
 
       it('should register target in passed ResourcePool', () => {
         expect(pool.has(target)).to.be.true;
@@ -140,17 +136,11 @@ describe('getRawResource()', () => {
     });
 
     describe('When passed without ResourcePool', () => {
-      let data;
-
       beforeEach(() => {
         data = getRawResource(target);
       });
 
-      it('should result in proper RAW data', () => {
-        expect(data[TARGET_DATA].id).to.be.a('string');
-        expect(data[TARGET_DATA].type).to.be.a('string');
-        expect(data[TARGET_DATA].poolId).to.be.a('string');
-      });
+      shouldResultInProperRAWData();
 
       it('should register target in default ResourcePool', () => {
         expect(defaultResourcePool.has(target)).to.be.true;

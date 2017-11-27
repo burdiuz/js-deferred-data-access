@@ -10,17 +10,18 @@ import Reserved from '../command/Reserved';
  * @private
  */
 const applyDescriptor = (descriptor, descriptors, properties) => {
-  const { name } = descriptor;
-  if (name in Reserved.names) {
-    throw new Error(`Name "${name}" is reserved and cannot be used in descriptor.`);
+  const { propertyName } = descriptor;
+  if (propertyName in Reserved.names) {
+    throw new Error(`Name "${propertyName}" is reserved and cannot be used in descriptor.`);
   }
   if (
-    Object.prototype.hasOwnProperty.call(descriptors, name)
-    && descriptors[name] instanceof Descriptor
+    Object.prototype.hasOwnProperty.call(descriptors, propertyName)
+    && descriptors[propertyName] instanceof Descriptor
   ) {
-    throw new Error(`Field names should be unique, "${String(name)}" field has duplicates.`);
+    throw new Error(`Field names should be unique, "${String(propertyName)}" field has duplicates.`);
   }
-  descriptors[name] = descriptor;
+  descriptors[propertyName] = descriptor;
+  // FIXME Check if new implementation uses virtual commands properly
   if (!descriptor.virtual) {
     properties.push(descriptor);
   }
@@ -50,10 +51,11 @@ const filterHash = (handlers, descriptors, properties) => {
   ([
     ...Object.getOwnPropertyNames(handlers),
     ...Object.getOwnPropertySymbols(handlers),
-  ]).forEach((name) => {
-    let value = handlers[name];
+  ]).forEach((propertyName) => {
+    let value = handlers[propertyName];
+    // FIXME unnecessary typeof(value is defined), could be replaced with instanceof
     if (typeof value === 'function') {
-      value = createDescriptor(name, value);
+      value = createDescriptor(propertyName, value);
     }
     if (value instanceof Descriptor) {
       applyDescriptor(value, descriptors, properties);

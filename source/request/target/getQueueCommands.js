@@ -2,9 +2,14 @@
  * Created by Oleg Galaburda on 16.11.17.
  */
 
-import TARGET_INTERNALS from '../../utils/TARGET_INTERNALS';
+import getInternals from './getInternals';
 
 export default (target) => {
-  const queue = target && target[TARGET_INTERNALS] && target[TARGET_INTERNALS].queue;
-  return queue ? queue.getCommands() : [];
+  const internals = getInternals(target);
+  if (internals) {
+    const { queue } = internals;
+    return queue ? queue.getCommands() : [];
+  }
+
+  return undefined;
 };

@@ -2,14 +2,10 @@
  * Created by Oleg Galaburda on 16.11.17.
  */
 
-import TARGET_INTERNALS from '../../utils/TARGET_INTERNALS';
-import PROMISE_FIELD from './PROMISE_FIELD';
+import getInternals from './getInternals';
 
 export default (target) => {
-  const internals = target[TARGET_INTERNALS];
-  if (internals && internals.promise) {
-    return internals.promise;
-  }
-  return target[PROMISE_FIELD] || null;
+  const internals = getInternals(target);
+  return internals ? internals.promise : undefined;
 };
 

@@ -3,6 +3,7 @@ import Descriptor, {
   DEFAULT_IS_TEMPORARY,
   descriptorGeneratorFactory,
 } from './Descriptor';
+import { __createRequestData } from '../../tests/stubs';
 
 describe('Descriptor', () => {
   describe('When created', () => {
@@ -11,14 +12,13 @@ describe('Descriptor', () => {
       let handler;
 
       beforeEach(() => {
-        handler = () => {
-        };
+        handler = () => null;
         descriptor = new Descriptor('command', handler, 'name');
       });
 
       it('should store arguments as fields', () => {
-        expect(descriptor.name).to.be.equal('name');
-        expect(descriptor.type).to.be.equal('command');
+        expect(descriptor.propertyName).to.be.equal('name');
+        expect(descriptor.command).to.be.equal('command');
         expect(descriptor.handler).to.be.equal(handler);
         expect(descriptor.isTemporary).to.be.a('function');
         expect(descriptor.cacheable).to.be.true;
@@ -28,30 +28,21 @@ describe('Descriptor', () => {
       it('must have isTemporary initialized with default handler', () => {
         expect(descriptor.isTemporary).to.be.equal(DEFAULT_IS_TEMPORARY);
       });
-
-      it('isTemporary must be TRUE by default', () => {
-        expect(DEFAULT_IS_TEMPORARY()).to.be.true;
-      });
     });
 
     describe('Without command', () => {
       let descriptor;
 
       beforeEach(() => {
-        descriptor = new Descriptor('command', () => {
-        });
+        descriptor = new Descriptor('command', () => null);
       });
 
-      it('should use type as "name" value', () => {
-        expect(descriptor.name).to.be.equal(descriptor.type);
+      it('should use command as "propertyName" value', () => {
+        expect(descriptor.propertyName).to.be.equal(descriptor.command);
       });
 
       it('must have isTemporary initialized with default handler', () => {
         expect(descriptor.isTemporary).to.be.equal(DEFAULT_IS_TEMPORARY);
-      });
-
-      it('isTemporary must be TRUE by default', () => {
-        expect(DEFAULT_IS_TEMPORARY()).to.be.true;
       });
     });
 
@@ -76,9 +67,9 @@ describe('createDescriptor()', () => {
     });
 
     it('should apply specified parameters', () => {
-      expect(item.type).to.be.equal('command');
+      expect(item.command).to.be.equal('command');
       expect(item.handler).to.be.equal(handler);
-      expect(item.name).to.be.equal('name');
+      expect(item.propertyName).to.be.equal('name');
       expect(item.isTemporary).to.be.equal(DEFAULT_IS_TEMPORARY);
       expect(item.resourceType).to.be.null;
       expect(item.cacheable).to.be.true;
@@ -106,8 +97,8 @@ describe('createDescriptor()', () => {
     });
 
     it('should apply specified parameters', () => {
-      expect(item.type).to.be.equal('command');
-      expect(item.name).to.be.equal('name');
+      expect(item.command).to.be.equal('command');
+      expect(item.propertyName).to.be.equal('name');
       expect(item.handler).to.be.equal(handler);
       expect(item.isTemporary).to.be.equal(isTemporary);
       expect(item.resourceType).to.be.equal('MyResource');
@@ -117,11 +108,11 @@ describe('createDescriptor()', () => {
 
     it('should freeze results', () => {
       expect(() => {
-        item.name = null;
+        item.propertyName = null;
       }).to.throw(Error);
 
       expect(() => {
-        item.type = null;
+        item.command = null;
       }).to.throw(Error);
 
       expect(() => {
@@ -140,21 +131,19 @@ describe('descriptorGeneratorFactory()', () => {
   describe('When using required arguments', () => {
 
     beforeEach(() => {
-      handler = () => {
-      };
+      handler = () => null;
       factory = descriptorGeneratorFactory('command', 'name');
       item = factory(handler, null);
     });
 
     it('should create new instance of Descriptor', () => {
       expect(item).to.be.an.instanceof(Descriptor);
-      expect(item).to.not.be.equal(factory(() => {
-      }));
+      expect(item).to.not.be.equal(factory(() => null));
     });
 
     it('created descriptor should have all properties set', () => {
-      expect(item.name).to.be.equal('name');
-      expect(item.type).to.be.equal('command');
+      expect(item.propertyName).to.be.equal('name');
+      expect(item.command).to.be.equal('command');
       expect(item.handler).to.be.equal(handler);
       expect(item.isTemporary).to.be.equal(DEFAULT_IS_TEMPORARY);
       expect(item.resourceType).to.be.null;
@@ -167,28 +156,32 @@ describe('descriptorGeneratorFactory()', () => {
     let isTemporary;
 
     beforeEach(() => {
-      handler = () => {
-      };
-      isTemporary = () => {
-      };
+      handler = () => null;
+      isTemporary = () => null;
       factory = descriptorGeneratorFactory('command', 'name');
       item = factory(handler, null, isTemporary, 'MyType', false, false);
     });
 
     it('should create new instance of Descriptor', () => {
       expect(item).to.be.an.instanceof(Descriptor);
-      expect(item).to.not.be.equal(factory(() => {
-      }));
+      expect(item).to.not.be.equal(factory(() => null));
     });
 
     it('created descriptor should have all properties set', () => {
-      expect(item.name).to.be.equal('name');
-      expect(item.type).to.be.equal('command');
+      expect(item.propertyName).to.be.equal('name');
+      expect(item.command).to.be.equal('command');
       expect(item.handler).to.be.equal(handler);
       expect(item.isTemporary).to.be.equal(isTemporary);
       expect(item.resourceType).to.be.equal('MyType');
       expect(item.cacheable).to.be.false;
       expect(item.virtual).to.be.false;
+    });
+  });
+
+  describe('DEFAULT_IS_TEMPORARY()', () => {
+    it('should return TRUE for resources', () => {
+      expect(DEFAULT_IS_TEMPORARY({}, __createRequestData())).to.be.true;
+      expect(DEFAULT_IS_TEMPORARY({}, {})).to.be.false;
     });
   });
 });

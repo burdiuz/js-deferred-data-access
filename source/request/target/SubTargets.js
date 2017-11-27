@@ -30,15 +30,15 @@ class SubTargets extends Children {
     return Boolean(this.queue && this.queue.length);
   }
 
-  send(name, pack, deferred = null, child = null) {
+  send(propertyName, pack, deferred = null, child = null) {
     const { handlers } = this.parent;
     let promise;
 
-    if (!handlers.hasHandler(name)) {
-      return Promise.reject(new Error(`Request handler for "${name}" is not registered.`));
+    if (!handlers.hasCommand(propertyName)) {
+      return Promise.reject(new Error(`Request handler for "${propertyName}" is not registered.`));
     }
 
-    promise = this.handleSend(name, pack, deferred || createDeferred(), child);
+    promise = this.handleSend(propertyName, pack, deferred || createDeferred(), child);
 
     if (child) {
       promise = this.register(child);
@@ -47,7 +47,7 @@ class SubTargets extends Children {
     return promise;
   }
 
-  handleSend(name, pack, deferred, child = null) {
+  handleSend(propertyName, pack, deferred, child = null) {
     const { status } = this.parent;
 
     switch (status) {
@@ -56,28 +56,22 @@ class SubTargets extends Children {
           this.queue = createQueue();
         }
 
-        return this.queue.add(name, pack, deferred, child);
+        return this.queue.add(propertyName, pack, deferred, child);
       case TargetStatus.REJECTED:
-        return Promise.reject(
-          new Error('Target object was rejected and cannot be used for calls.'),
-        );
+        return Promise.reject(new Error('Target object was rejected and cannot be used for calls.'));
       case TargetStatus.DESTROYED:
-        return Promise.reject(
-          new Error('Target object was destroyed and cannot be used for calls.'),
-        );
+        return Promise.reject(new Error('Target object was destroyed and cannot be used for calls.'));
       case TargetStatus.RESOLVED:
-        this.handleSubRequest(name, pack, deferred, child);
+        this.handleSubRequest(propertyName, pack, deferred, child);
         return deferred.promise;
       default:
-        return Promise.reject(
-          new Error(`Target object is in unknown status "${status}".`),
-        );
+        return Promise.reject(new Error(`Target object is in unknown status "${status}".`));
     }
   }
 
-  handleSubRequest = (name, pack, deferred, child) => {
+  handleSubRequest = (propertyName, pack, deferred, child) => {
     const { handlers, target } = this.parent;
-    return handlers.handle(target, name, pack, deferred, child);
+    return handlers.handle(target, propertyName, pack, deferred, child);
   };
 }
 

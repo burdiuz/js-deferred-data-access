@@ -21,7 +21,7 @@ describe('getChildren()', () => {
     expect(result).to.have.length(3);
   });
 
-  it('should be empty list for non-Resource target', () => {
-    expect(getChildren({})).to.be.empty;
+  it('should result with undefined for not a Request target', () => {
+    expect(getChildren({})).to.be.undefined;
   });
 });

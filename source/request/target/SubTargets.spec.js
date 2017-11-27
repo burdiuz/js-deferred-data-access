@@ -5,6 +5,11 @@
 import Deferred from '../../utils/Deferred';
 import TargetStatus from '../../utils/TargetStatus';
 import SubTargets from './SubTargets';
+import {
+  __createRequestData,
+  __createRequest,
+  __createDataResolvedPromise,
+} from '../../../tests/stubs';
 
 describe('SubTargets', () => {
   let sandbox;
@@ -22,7 +27,7 @@ describe('SubTargets', () => {
     hasHandler = true;
     handlers = {
       handle: sandbox.spy((a, b, c, deferred) => deferred.resolve(handleResult)),
-      hasHandler: sandbox.spy(() => hasHandler),
+      hasCommand: sandbox.spy(() => hasHandler),
       isTemporary: sandbox.spy(() => isTemporaryResult),
     };
     parent = {
@@ -30,6 +35,7 @@ describe('SubTargets', () => {
       status: TargetStatus.PENDING,
       target: requestTarget,
       handlers: handlers,
+      toJSON: __createRequestData,
     }
   });
 
@@ -42,13 +48,11 @@ describe('SubTargets', () => {
       instance = new SubTargets();
     });
     describe('When item added', () => {
-      beforeEach(() => {
-      });
+      beforeEach(() => null);
     });
 
     describe('When item removed', () => {
-      beforeEach(() => {
-      });
+      beforeEach(() => null);
     });
   });
 
@@ -101,10 +105,9 @@ describe('SubTargets', () => {
         instance = new SubTargets(parent);
         handleResult = 'nope';
         result = instance.send('name', {
-          type: 'type',
-          cmd: 'command',
-          value: 'way-lue',
-          target: parent.id,
+          command: 'type',
+          args: ['command', 'way-lue'],
+          target: __createRequestData(),
         });
       });
 
@@ -118,13 +121,105 @@ describe('SubTargets', () => {
         expect(args[0]).to.be.equal(requestTarget);
         expect(args[1]).to.be.equal('name');
         expect(args[2]).to.be.eql({
-          type: 'type',
-          cmd: 'command',
-          value: 'way-lue',
-          target: parent.id,
+          command: 'type',
+          args: ['command', 'way-lue'],
+          target: __createRequestData(),
         });
         expect(args[3]).to.be.an.instanceof(Deferred);
       });
+    });
+  });
+
+  describe('When making child request to destroyed parent', () => {
+    let result;
+
+    beforeEach(() => {
+      parent.status = TargetStatus.DESTROYED;
+      instance = new SubTargets(parent);
+      result = instance.send('name', {
+        type: 'type',
+        cmd: 'command',
+        value: 'way-lue',
+        target: parent.id,
+      });
+    });
+
+    it('should result in rejected promise', () => result
+      .then(() => assert(false, 'Promise should be rejected'))
+      .catch((error) => {
+        expect(error).to.be.instanceof(Error);
+      }),
+    );
+  });
+
+  describe('When making child request to parent with unknown status', () => {
+    let result;
+
+    beforeEach(() => {
+      parent.status = 'I am not responsible parent';
+      instance = new SubTargets(parent);
+      result = instance.send('name', {
+        type: 'type',
+        cmd: 'command',
+        value: 'way-lue',
+        target: parent.id,
+      });
+    });
+
+    it('should result in rejected promise', () => result
+      .then(() => assert(false, 'Promise should be rejected'))
+      .catch((error) => {
+        expect(error).to.be.instanceof(Error);
+      }),
+    );
+  });
+
+  describe('When making child request to unknown command', () => {
+    let result;
+
+    beforeEach(() => {
+      parent.status = TargetStatus.RESOLVED;
+      instance = new SubTargets(parent);
+      hasHandler = false;
+      result = instance.send('what a shame', {
+        type: 'type',
+        cmd: 'command',
+        value: 'way-lue',
+        target: parent.id,
+      });
+    });
+
+    it('should result in rejected promise', () => result
+      .then(() => assert(false, 'Promise should be rejected'))
+      .catch((error) => {
+        expect(error).to.be.instanceof(Error);
+      }),
+    );
+  });
+
+  describe('When making child request with child request instance', () => {
+    let child;
+
+    beforeEach(() => {
+      parent.status = TargetStatus.RESOLVED;
+      instance = new SubTargets(parent);
+      child = __createRequest();
+      instance.send(
+        'command',
+        {
+          type: 'type',
+          cmd: 'command',
+          value: 'whole world is gone crazy',
+          target: parent.id,
+        },
+        null,
+        child,
+      );
+    });
+
+    it('should register child', () => {
+      expect(instance.length).to.be.equal(1);
+      expect(instance.getList()).to.contain(child);
     });
   });
 
@@ -177,6 +272,53 @@ describe('SubTargets', () => {
       expect(instance.queue).to.be.null;
     });
   });
+
+  describe('When registering children', () => {
+    let child;
+    let childPromise;
+
+    beforeEach(() => {
+      instance = new SubTargets(parent);
+    });
+
+    describe('When registered child is fulfilled', () => {
+      beforeEach(() => {
+        child = __createRequest();
+        childPromise = instance.register(child);
+      });
+
+      it('should add pending child to the list', () => {
+        expect(instance.length).to.be.equal(1);
+        expect(instance.getList()).to.contain(child);
+      });
+
+      it('should remove child from the list when its resolved', () => {
+        return childPromise.then(() => {
+          expect(instance.getList()).to.not.contain(child);
+        })
+      });
+    });
+
+    describe('When registered child is rejected', () => {
+      beforeEach(() => {
+        child = __createRequest(Promise.reject(new Error('bad child')));
+        childPromise = instance.register(child);
+      });
+
+      it('should add pending child to the list', () => {
+        expect(instance).to.have.length(1);
+        expect(instance.getList()).to.contain(child);
+      });
+
+      it('should remove child from the list when its rejected', () => {
+        return childPromise
+          .then(() => assert(false, 'should be rejected'))
+          .catch(() => {
+            expect(instance.getList()).to.not.contain(child);
+          });
+      });
+    });
+  });
 });
 /*
 // when fulfilled
@@ -214,58 +356,6 @@ describe('SubTargets', () => {
     });
   });
 
-  describe('When registering children', () => {
-    let child;
-
-    describe('When registered child is fulfilled', () => {
-      beforeEach(() => {
-        linkData = __createRequestData();
-        deferred.resolve(linkData);
-        return deferred.promise.then(() => {
-          child = __createRequest();
-          instance.register(child);
-        });
-      });
-
-      it('should add pending child to the list', () => {
-        expect(instance.length).to.be.equal(1);
-        expect(instance.getList()).to.contain(child);
-      });
-
-      it('should remove child from the list when its resolved', () => {
-        return child.then(() => {
-          expect(instance.getList()).to.not.contain(child);
-        })
-      });
-    });
-
-    describe('When registered child is rejected', () => {
-      let childPromise;
-
-      beforeEach(() => {
-        linkData = __createRequestData();
-        deferred.resolve(linkData);
-        return deferred.promise.then(() => {
-          const promise = Promise.reject('bad child');
-          child = __createRequest(promise);
-          childPromise = instance.register(child);
-        });
-      });
-
-      it('should add pending child to the list', () => {
-        expect(instance).to.have.length(1);
-        expect(instance.getList()).to.contain(child);
-      });
-
-      it('should remove child from the list when its rejected', () => {
-        return childPromise
-          .then(() => assert(false, 'should be rejected'))
-          .catch(() => {
-            expect(instance.getList()).to.not.contain(child);
-          });
-      });
-    });
-  });
 
   describe('When sending request', () => {
     describe('When target was fulfilled', () => {

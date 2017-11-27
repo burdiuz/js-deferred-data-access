@@ -6,6 +6,7 @@ import areProxiesAvailable from './utils/areProxiesAvailable';
 import isResource from './utils/isResource';
 import getResourcePoolId from './utils/getResourcePoolId';
 import getResourceId from './utils/getResourceId';
+import createForeignResource from './utils/createForeignResource';
 import { createHandlers } from './request/Handlers';
 import { createProxyFactory } from './request/ProxyFactory';
 import { createRequestFactory } from './request/Factory';
@@ -45,12 +46,6 @@ class DataAccessInterface {
     }
 
     this.handlers = createHandlers(proxyEnabled);
-    this.resourceConverter = createResourceConverter(
-      this.factory,
-      this.poolRegistry,
-      this.pool,
-      this.handlers,
-    );
 
     if (proxyEnabled) {
       this.factory = createProxyFactory(this.handlers, this.cache);
@@ -70,13 +65,20 @@ class DataAccessInterface {
       this.pool = defaultResourcePool;
     }
 
+    this.resourceConverter = createResourceConverter(
+      this.factory,
+      this.poolRegistry,
+      this.pool,
+      this.handlers,
+    );
+
     const poolDestroyedHandler = () => {
       this.pool.removeEventListener(ResourcePoolEvents.POOL_DESTROYED, poolDestroyedHandler);
       this.pool = this.poolRegistry.createPool();
       this.pool.addEventListener(ResourcePoolEvents.POOL_DESTROYED, poolDestroyedHandler);
     };
 
-    this.handlers.setHandlers(descriptors);
+    this.handlers.setCommands(descriptors);
     this.pool.addEventListener(ResourcePoolEvents.POOL_DESTROYED, poolDestroyedHandler);
   }
 
@@ -87,6 +89,10 @@ class DataAccessInterface {
   parse(data) {
     return this.resourceConverter.parse(data);
   }
+
+  dummy() {
+    return this.parse(createForeignResource());
+  };
 
   toJSON(data) {
     return this.resourceConverter.toJSON(data);
@@ -105,13 +111,8 @@ class DataAccessInterface {
   }
 }
 
-export const create = (handlers, proxyEnabled, poolRegistry, pool, cacheImpl) =>
+export const create = (handlers, proxyEnabled = true, poolRegistry = null, pool = null, cacheImpl = null) =>
   new DataAccessInterface(handlers, proxyEnabled, poolRegistry, pool, cacheImpl);
-
-export const dummy = (handlers, proxyEnabled, poolRegistry, pool, cacheImpl) => {
-  const api = new DataAccessInterface(handlers, proxyEnabled, poolRegistry, pool, cacheImpl);
-  return api.parse(handlers());
-};
 
 export default DataAccessInterface;
 

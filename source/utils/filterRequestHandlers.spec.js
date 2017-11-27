@@ -31,8 +31,8 @@ describe('filterRequestHandlers()', () => {
     it('should find all functions', () => {
       expect(Object.getOwnPropertyNames(descriptors)).to.have.length(1);
       expect(descriptors.two).to.be.an.instanceof(Descriptor);
-      expect(descriptors.two.name).to.be.equal('two');
-      expect(descriptors.two.type).to.be.equal('two');
+      expect(descriptors.two.propertyName).to.be.equal('two');
+      expect(descriptors.two.command).to.be.equal('two');
     });
   });
   describe('When object contains Descriptor', () => {
@@ -48,8 +48,8 @@ describe('filterRequestHandlers()', () => {
     });
     it('should keep it unchanged', () => {
       expect(descriptors.two).to.not.be.ok;
-      expect(descriptors.name.name).to.be.equal('name');
-      expect(descriptors.name.type).to.be.equal('command');
+      expect(descriptors.name.propertyName).to.be.equal('name');
+      expect(descriptors.name.command).to.be.equal('command');
     });
   });
   describe('When array passed', () => {
@@ -60,8 +60,8 @@ describe('filterRequestHandlers()', () => {
     });
     it('should store Descriptor\'s in result', () => {
       expect(Object.getOwnPropertyNames(descriptors)).to.have.length(1);
-      expect(descriptors.name.name).to.be.equal('name');
-      expect(descriptors.name.type).to.be.equal('command');
+      expect(descriptors.name.propertyName).to.be.equal('name');
+      expect(descriptors.name.command).to.be.equal('command');
     });
   });
   describe('When using reserved words', () => {

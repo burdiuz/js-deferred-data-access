@@ -31,7 +31,6 @@ describe('isResourceConvertible()', () => {
   });
 
   it('should return true for function', () => {
-    expect(isResourceConvertible(() => {
-    })).to.be.true;
+    expect(isResourceConvertible(() => null)).to.be.true;
   });
 });

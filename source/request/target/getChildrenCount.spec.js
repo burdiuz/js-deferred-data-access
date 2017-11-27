@@ -21,7 +21,7 @@ describe('getChildrenCount()', () => {
     expect(result).to.be.equal(3);
   });
 
-  it('should be 0 for non-Resource target', () => {
-    expect(getChildrenCount({})).to.be.equal(0);
+  it('should result with undefined for not a Request target', () => {
+    expect(getChildrenCount({})).to.be.undefined;
   });
 });

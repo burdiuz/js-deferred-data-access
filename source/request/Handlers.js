@@ -31,8 +31,8 @@ export const HandlersEvents = Object.freeze({
 class Handlers {
   constructor(proxyEnabled = false) {
     // named collection of Descriptor lists that may be applied
-    this.properties = {};
-    this.descriptors = {};
+    this.properties = { [DEFAULT_KEY]: [] };
+    this.descriptors = { [DEFAULT_KEY]: [] };
     this.proxyEnabled = Boolean(proxyEnabled);
     this.converter = null;
   }
@@ -49,13 +49,13 @@ class Handlers {
     this.converter = converter;
   }
 
-  setHandlers(handlers) {
-    this.setHandlersByType(DEFAULT_KEY, handlers);
+  setCommands(handlers) {
+    this.setCommandsByType(DEFAULT_KEY, handlers);
 
     Object.keys(handlers).forEach((name) => {
-      const type = handlers[name];
-      if (type && (type.constructor === Object || type instanceof Array)) {
-        this.setHandlersByType(name, type);
+      const handler = handlers[name];
+      if (handler && (handler.constructor === Object || handler instanceof Array)) {
+        this.setCommandsByType(name, handler);
       }
     });
 
@@ -64,7 +64,7 @@ class Handlers {
     }
   }
 
-  setHandlersByType(type, handlers) {
+  setCommandsByType(type, handlers) {
     const descrs = {};
     const props = [];
     filterHandlers(handlers, descrs, props);
@@ -72,79 +72,71 @@ class Handlers {
     this.properties[type] = props;
   }
 
-  hasHandler(name, type) {
+  hasCommand(propertyName, type = DEFAULT_KEY) {
     return (
         this.descriptors[type]
-        && Object.prototype.hasOwnProperty.call(this.descriptors[type], name)
+        && Object.prototype.hasOwnProperty.call(this.descriptors[type], propertyName)
       )
       || (
         this.descriptors[DEFAULT_KEY]
-        && Object.prototype.hasOwnProperty.call(this.descriptors[DEFAULT_KEY], name)
+        && Object.prototype.hasOwnProperty.call(this.descriptors[DEFAULT_KEY], propertyName)
       );
   }
 
-  getPropertyHandlers(type) {
-    let list = this.properties[type];
-    if (!list) {
-      type = DEFAULT_KEY;
-      list = this.properties[type];
-    }
-
-    return list ? [...list] : [];
+  getPropertyCommands(type = '') {
+    const list = this.properties[type || DEFAULT_KEY] || [];
+    return [...list];
   }
 
-  getPropertyNames(type) {
-    return this.getPropertyNames(type)
-      .map((descriptor) => descriptor.name);
+  getPropertyNames(type = '') {
+    return this.getPropertyCommands(type)
+      .map((descriptor) => descriptor.propertyName);
   }
 
-  getHandlers(type) {
-    if (this.descriptors[type]) {
+  getCommands(type = DEFAULT_KEY) {
+    if (type && this.descriptors[type]) {
       return {
-        ...this.descriptors[type],
         ...this.descriptors[DEFAULT_KEY],
+        ...this.descriptors[type],
       };
     }
 
-    return {
-      ...this.descriptors[DEFAULT_KEY],
-    };
+    return this.descriptors[DEFAULT_KEY];
   }
 
-  getHandler(name, type) {
-    const handler = (
+  getCommand(propertyName, type = DEFAULT_KEY) {
+    const descriptor = (
         this.descriptors[type]
-        && this.descriptors[type][name]
+        && this.descriptors[type][propertyName]
       )
       || (
         this.descriptors[DEFAULT_KEY]
-        && this.descriptors[DEFAULT_KEY][name]
+        && this.descriptors[DEFAULT_KEY][propertyName]
       );
 
-    return handler || null;
+    return descriptor || null;
   }
 
-  handle(parentRequest, name, pack, deferred, resultRequest) {
+  handle(parentRequest, propertyName, pack, deferred, resultRequest) {
+    // FIXME what is done here, what is the purpose of this line, what is value here?
     const list = this.converter ? this.converter.lookupForPending(pack.value) : null;
     if (list && list.length) {
-      // FIXME Need to test on all platforms: In other browsers this might not work
-      // because may need list of Promise objects, not Targets
+      // FIXME Need to test on all platforms: might not work because may need list of
+      // Promise objects, not Targets
       Promise.all(list).then(() => {
-        this.handleImmediately(parentRequest, name, pack, deferred, resultRequest);
+        this.handleImmediately(parentRequest, propertyName, pack, deferred, resultRequest);
       });
     } else {
-      this.handleImmediately(parentRequest, name, pack, deferred, resultRequest);
+      this.handleImmediately(parentRequest, propertyName, pack, deferred, resultRequest);
     }
   }
 
-  handleImmediately(parentRequest, name, data, deferred, resultRequest) {
-    /**
-     * @type {DataAccessInterface.Descriptor|null}
-     */
-    const handler = this.getHandler(name, getResourceType(parentRequest));
-    if (handler instanceof Descriptor) {
+  handleImmediately(parentRequest, name, pack, deferred, resultRequest) {
+    const descriptor = this.getCommand(name, getResourceType(parentRequest));
+    if (descriptor instanceof Descriptor) {
       // INFO result should be applied to deferred.resolve() or deferred.reject()
-      handler.handler(parentRequest, data, deferred, resultRequest);
+      // FIXME change pack to {command, args} object
+      descriptor.handler(parentRequest, pack, deferred, resultRequest);
     } else {
       throw new Error(`Command descriptor for "${name}" was not found.`);
     }

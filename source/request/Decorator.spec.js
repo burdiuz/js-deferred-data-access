@@ -43,7 +43,7 @@ describe('Decorator', () => {
     resource = {};
     resolveRequest = true;
     handlers = createHandlers();
-    handlers.setHandlers({
+    handlers.setCommands({
       action: sandbox.spy(),
       type: sandbox.spy(),
       property: createDescriptor('command', () => null, 'property', null, null, false, true),
@@ -82,7 +82,7 @@ describe('Decorator', () => {
 
   describe('When handlers are not available', () => {
     beforeEach(() => {
-      handlers.setHandlers({});
+      handlers.setCommands({});
     });
     it('should work as expected', () => {
       expect(() => {
@@ -124,7 +124,7 @@ describe('Decorator', () => {
 
     describe('When handlers changed', () => {
       beforeEach(() => {
-        handlers.setHandlers({
+        handlers.setCommands({
           updated: sandbox.spy(),
         });
 

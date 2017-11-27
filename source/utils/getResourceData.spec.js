@@ -28,9 +28,9 @@ describe('getResourceData()', () => {
   it('should return raw data for Resource', () => {
     const resource = __createResource();
     const data = {
-      id: resource.id,
-      type: resource.type,
-      poolId: resource.poolId,
+      $id: resource.id,
+      $type: resource.type,
+      $poolId: resource.poolId,
     };
     expect(getResourceData(resource)).to.be.eql(data);
   });

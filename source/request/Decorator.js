@@ -12,9 +12,9 @@ class Decorator {
       return request;
     }
 
-    const descriptors = this.handlers.getPropertyHandlers(getResourceType(request));
+    const descriptors = this.handlers.getPropertyCommands(getResourceType(request));
     return descriptors.forEach((descriptor) => {
-      request[descriptor.name] = this.members.get(descriptor);
+      request[descriptor.propertyName] = this.members.get(descriptor);
     });
   }
 

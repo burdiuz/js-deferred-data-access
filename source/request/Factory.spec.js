@@ -1,3 +1,5 @@
+import { __createRequestData } from '../../tests/stubs';
+
 const requestFactoryInjector = require('inject-loader!./Factory');
 
 describe('RequestFactory', () => {
@@ -105,10 +107,6 @@ describe('RequestFactory', () => {
     it('getCached() should return null', () => {
       expect(factory.getCached('property', {})).to.be.null;
     });
-
-    it('createCached() should return null', () => {
-      expect(factory.createCached(Promise.reject(), 'property', {})).to.be.null;
-    });
   });
 
   describe('When cache implementation provided', () => {
@@ -120,10 +118,9 @@ describe('RequestFactory', () => {
     beforeEach(() => {
       cachedResource = {};
       pack = {
-        type: 'type',
-        cmd: 'command',
-        value: 'vaalue',
-        target: '1111',
+        command: 'type',
+        args: ['command', 'vaalue'],
+        target: __createRequestData(),
       };
       cache = {
         get: sandbox.spy(() => cachedResource),
@@ -131,6 +128,7 @@ describe('RequestFactory', () => {
       };
       factory = module.createRequestFactory(handlers, cache);
     });
+
     describe('getCached()', () => {
       beforeEach(() => {
         result = factory.getCached('property', pack);
@@ -145,19 +143,14 @@ describe('RequestFactory', () => {
         expect(result).to.be.equal(cachedResource);
       });
     });
-    describe('createCached()', () => {
-      let resource;
 
+    describe('create() with cacheable', () => {
       beforeEach(() => {
-        resource = {};
-        sandbox.stub(factory, 'create').returns(resource);
-        result = factory.createCached(Promise.reject(), 'property', pack);
+        result = factory.create(Promise.reject(), 'property', pack, true);
       });
 
       it('should create new resource', () => {
-        expect(factory.create).to.be.calledOnce;
-        expect(factory.create).to.be.calledWith(sinon.match.instanceOf(Promise));
-        expect(factory.create).to.be.calledBefore(cache.set);
+        expect(result).to.be.equal(resource);
       });
 
       it('should cache created resource', () => {

@@ -7,7 +7,7 @@ export default (object) => {
   if (typeof object[TARGET_INTERNALS] === 'object') {
     return object[TARGET_INTERNALS].id;
   } else if (isResource(object)) {
-    return object[TARGET_DATA].id;
+    return object[TARGET_DATA].$id;
   }
 
   return null;

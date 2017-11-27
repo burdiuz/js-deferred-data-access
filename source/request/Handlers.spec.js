@@ -2,10 +2,9 @@ import Descriptor, { createDescriptor } from '../command/Descriptor';
 import { createDescriptors, ProxyCommandFields } from '../command/internal/ProxyCommands';
 import { createDeferred } from '../utils/Deferred';
 import Handlers, * as utils from './Handlers';
-import { areProxyHandlersAvailable } from "./Handlers";
 
 // const requestHandlersInjector = require('inject-loader!./Handlers');
-const { createHandlers } = utils;
+const { areProxyHandlersAvailable, createHandlers } = utils;
 
 describe('Handlers', () => {
   let handlers;
@@ -47,70 +46,147 @@ describe('Handlers', () => {
       let hndlrII;
 
       beforeEach(() => {
-        hndlr = () => {
-        };
-        hndlrII = () => {
-        };
-        handlers.setHandlers({
-          hndlr,
-          hndlrII,
-          fakeHandler: 'anything',
-          fakeHandlerII: {},
+        hndlr = () => null;
+        hndlrII = () => null;
+      });
+
+      describe('When adding default handlers', () => {
+        beforeEach(() => {
+          handlers.setCommands({
+            hndlr,
+            hndlrII,
+            fakeHandler: 'anything',
+            fakeHandlerII: {},
+          });
+        });
+
+        it('should become available', () => {
+          expect(handlers.available).to.be.true;
+        });
+
+        it('should not check handlers for compatibility with proxies', () => {
+          expect(utils.areProxyHandlersAvailable).to.not.be.called;
+        });
+
+        it('should accept passed handlers', () => {
+          expect(handlers.hasCommand('hndlr')).to.be.true;
+        });
+
+        it('should return false for non-existent handlers', () => {
+          expect(handlers.hasCommand('fakeHandler')).to.be.false;
+        });
+
+        it('should return null when accessing non-existent handlers', () => {
+          expect(handlers.getCommand('hijKLNM')).to.be.null;
+        });
+
+        it('handlers should be available', () => {
+          expect(handlers.getCommand('hndlr')).to.be.an.instanceof(Descriptor);
+          const allHandlers = handlers.getCommands();
+          expect(allHandlers.hndlr).to.be.an.instanceof(Descriptor);
+          expect(allHandlers.hndlrII).to.be.an.instanceof(Descriptor);
+        });
+
+        it('handlers names should be listed', () => {
+          expect(handlers.getPropertyNames()).to.contain('hndlr');
+          expect(handlers.getPropertyNames()).to.contain('hndlrII');
+        });
+
+        it('handlers should be listed', () => {
+          const handlerList = handlers.getPropertyCommands().map((item) => item.handler);
+          expect(handlerList).to.contain(hndlr);
+          expect(handlerList).to.contain(hndlrII);
+        });
+
+        it('should filter functions only', () => {
+          expect(handlers.hasCommand('fakeHandler')).to.be.false;
+          expect(handlers.hasCommand('fakeHandlerII')).to.be.false;
         });
       });
 
-      it('should throw an Error for handler of type named with reserved word', () => {
-        expect(() => {
-          handlers.setHandlers({
-            then: () => {
-            },
+      describe('When handler name is a reserved word', () => {
+        it('should throw an Error', () => {
+          expect(() => {
+            handlers.setCommands({
+              then: () => null,
+            });
+          }).to.throw(Error);
+        });
+
+        it('should skip if property not of handler type(function/object)', () => {
+          expect(() => {
+            handlers.setCommands({
+              catch: 'not - a - type',
+            });
+          }).to.not.throw(Error);
+        });
+      });
+
+      describe('When adding type-specific handlers', () => {
+        let type;
+
+        beforeEach(() => {
+          type = 'my-type';
+          handlers.setCommands({ [type]: { hndlr }, hndlrII });
+        });
+
+        it('type-specific handlers should be available only for type', () => {
+          expect(handlers.hasCommand('hndlr')).to.be.false;
+          expect(handlers.hasCommand('hndlrII')).to.be.true;
+          expect(handlers.getCommand('hndlr')).to.be.null;
+        });
+
+        it('global handlers should be available for all', () => {
+          expect(handlers.hasCommand('hndlr', type)).to.be.true;
+          expect(handlers.hasCommand('hndlrII', type)).to.be.true;
+          expect(handlers.getCommand('hndlr', type).handler).to.be.equal(hndlr);
+        });
+
+        it('handlers names should be listed', () => {
+          expect(handlers.getPropertyNames(type)).to.contain('hndlr');
+          expect(handlers.getPropertyNames(type)).to.not.contain('hndlrII');
+
+          expect(handlers.getPropertyNames()).to.be.eql(['hndlrII']);
+        });
+
+        it('handlers should be listed', () => {
+          expect(handlers.getPropertyCommands(type)).to.have.length(1);
+          expect(handlers.getPropertyCommands(type)[0].handler).to.be.equal(hndlr);
+
+          expect(handlers.getPropertyCommands()).to.have.length(1);
+          expect(handlers.getPropertyCommands()[0].handler).to.be.eql(hndlrII);
+        });
+
+        describe('When requesting handlers', () => {
+          let commands;
+
+          describe('When requesting type-specific', () => {
+            beforeEach(() => {
+              commands = handlers.getCommands(type);
+            });
+
+            it('should return type-specific and global handlers', () => {
+              expect(commands.hndlr.handler).to.be.equal(hndlr);
+              expect(commands.hndlrII.handler).to.be.equal(hndlrII);
+            });
           });
-        }).to.throw(Error);
-        expect(() => {
-          handlers.setHandlers({
-            catch: 'not - a - type',
+
+          describe('When requesting default', () => {
+            beforeEach(() => {
+              commands = handlers.getCommands();
+            });
+
+            it('should return only global handlers', () => {
+              expect(commands.hndlr).to.be.undefined;
+              expect(commands.hndlrII.handler).to.be.equal(hndlrII);
+            });
           });
-        }).to.not.throw(Error);
+        });
       });
+    });
 
-      it('should become available', () => {
-        expect(handlers.available).to.be.true;
-      });
+    describe('setHandlersByType()', () => {
 
-      it('should not check handlers for compatibility with proxies', () => {
-        expect(utils.areProxyHandlersAvailable).to.not.be.called;
-      });
-
-      it('should accept passed handlers', () => {
-        expect(handlers.hasHandler('hndlr')).to.be.true;
-      });
-
-      it('should return false for non-existent handlers', () => {
-        expect(handlers.hasHandler('abcdEFG')).to.be.false;
-      });
-
-      it('should return null when accessing non-existent handlers', () => {
-        expect(handlers.getHandler('hijKLNM')).to.be.null;
-      });
-
-      it('handlers should be available', () => {
-        expect(handlers.getHandler('hndlr')).to.be.an.instanceof(Descriptor);
-        const allHandlers = handlers.getHandlers();
-        expect(allHandlers.hndlr).to.be.an.instanceof(Descriptor);
-        expect(allHandlers.hndlrII).to.be.an.instanceof(Descriptor);
-      });
-
-      /*
-      it('handlers names should be listed', () => {
-        expect(handlers.getHandlerNames()).to.contain('hndlr');
-        expect(handlers.getHandlerNames()).to.contain('hndlrII');
-      });
-      */
-
-      it('should filter functions only', () => {
-        expect(handlers.hasHandler('fakeHandler')).to.be.false;
-        expect(handlers.hasHandler('fakeHandlerII')).to.be.false;
-      });
     });
   });
 
@@ -122,16 +198,15 @@ describe('Handlers', () => {
     describe('setHandlers()', () => {
       it('should throw for incompatible handlers', () => {
         expect(() => {
-          handlers.setHandlers({
-            hndlr: () => {
-            },
+          handlers.setCommands({
+            hndlr: () => null,
           });
         }).to.throw(Error);
       });
 
       it('should accept compatible handlers', () => {
         expect(() => {
-          handlers.setHandlers(__createProxyCommandHandlers());
+          handlers.setCommands(__createProxyCommandHandlers());
         }).to.not.throw(Error);
       });
 
@@ -143,21 +218,19 @@ describe('Handlers', () => {
 
     beforeEach(() => {
       list = [
-        createDescriptor('command1', () => {
-        }, 'property1', null, false, false),
-        createDescriptor('command2', () => {
-        }, 'property2', null, false, true),
+        createDescriptor('command1', () => null, 'property1', null, false, false),
+        createDescriptor('command2', () => null, 'property2', null, false, true),
       ];
-      handlers.setHandlers(list);
+      handlers.setCommands(list);
     });
 
     it('should add both descriptors', () => {
-      expect(handlers.hasHandler('property1')).to.be.true;
-      expect(handlers.hasHandler('property2')).to.be.true;
+      expect(handlers.hasCommand('property1')).to.be.true;
+      expect(handlers.hasCommand('property2')).to.be.true;
     });
     it('getHandlers() should contain all descriptors', () => {
-      expect(handlers.getHandlers().property1).to.be.an.instanceof(Descriptor);
-      expect(handlers.getHandlers().property2).to.be.an.instanceof(Descriptor);
+      expect(handlers.getCommands().property1).to.be.an.instanceof(Descriptor);
+      expect(handlers.getCommands().property2).to.be.an.instanceof(Descriptor);
     });
   });
 
@@ -176,7 +249,7 @@ describe('Handlers', () => {
         type: 'type',
       };
       deferred = createDeferred();
-      handlers.setHandlers({
+      handlers.setCommands({
         type: commandHandler,
       });
     });

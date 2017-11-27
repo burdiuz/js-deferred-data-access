@@ -34,7 +34,7 @@ class Children {
   get lastItem() {
     const { length } = this.list;
     return length ? this.list[length - 1] : null;
-  };
+  }
 }
 
 export default Children;

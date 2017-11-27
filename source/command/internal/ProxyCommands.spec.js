@@ -30,19 +30,17 @@ describe('ProxyCommands', () => {
     let isTemporary;
 
     beforeEach(() => {
-      handler = () => {
-      };
-      isTemporary = () => {
-      };
+      handler = () => null;
+      isTemporary = () => null;
       descriptor = ProxyCommands.createGETDescriptor(handler, null, isTemporary);
     });
 
     it('should contain Proxy GET property name', () => {
-      expect(descriptor.name).to.be.equal(ProxyCommandFields.get);
+      expect(descriptor.propertyName).to.be.equal(ProxyCommandFields.get);
     });
 
     it('should contain Proxy GET commant type', () => {
-      expect(descriptor.type).to.be.equal(ProxyCommandNames.GET);
+      expect(descriptor.command).to.be.equal(ProxyCommandNames.GET);
     });
 
     it('should contain handler function', () => {
@@ -95,19 +93,17 @@ describe('ProxyCommands', () => {
     let isTemporary;
 
     beforeEach(() => {
-      handler = () => {
-      };
-      isTemporary = () => {
-      };
+      handler = () => null;
+      isTemporary = () => null;
       descriptor = ProxyCommands.createSETDescriptor(handler, null, isTemporary);
     });
 
     it('should contain Proxy SET property name', () => {
-      expect(descriptor.name).to.be.equal(ProxyCommandFields.set);
+      expect(descriptor.propertyName).to.be.equal(ProxyCommandFields.set);
     });
 
     it('should contain Proxy SET command type', () => {
-      expect(descriptor.type).to.be.equal(ProxyCommandNames.SET);
+      expect(descriptor.command).to.be.equal(ProxyCommandNames.SET);
     });
 
     it('should contain handler function', () => {
@@ -129,17 +125,15 @@ describe('ProxyCommands', () => {
     let isTemporary;
 
     beforeEach(() => {
-      handler = () => {
-      };
-      isTemporary = () => {
-      };
+      handler = () => null;
+      isTemporary = () => null;
       descriptor = ProxyCommands.createAPPLYDescriptor(handler, null, isTemporary);
     });
     it('should contain Proxy APPLY property name', () => {
-      expect(descriptor.name).to.be.equal(ProxyCommandFields.apply);
+      expect(descriptor.propertyName).to.be.equal(ProxyCommandFields.apply);
     });
     it('should contain Proxy APPLY command type', () => {
-      expect(descriptor.type).to.be.equal(ProxyCommandNames.APPLY);
+      expect(descriptor.command).to.be.equal(ProxyCommandNames.APPLY);
     });
     it('should contain handler function', () => {
       expect(descriptor.handler).to.be.equal(handler);
@@ -161,14 +155,10 @@ describe('createDescriptors()', () => {
   let isTemporary;
 
   beforeEach(() => {
-    getHandler = () => {
-    };
-    setHandler = () => {
-    };
-    applyHandler = () => {
-    };
-    isTemporary = () => {
-    };
+    getHandler = () => null;
+    setHandler = () => null;
+    applyHandler = () => null;
+    isTemporary = () => null;
   });
 
   describe('When no target supplied', () => {

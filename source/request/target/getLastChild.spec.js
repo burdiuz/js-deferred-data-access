@@ -22,4 +22,8 @@ describe('getLastChild()', () => {
   it('should result with last item from children', () => {
     expect(result).to.be.equal(lastItem);
   });
+
+  it('should result with undefined for not a Request target', () => {
+    expect(getLastChild({})).to.be.undefined;
+  });
 });

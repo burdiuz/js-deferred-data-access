@@ -26,10 +26,8 @@ describe('Internals', () => {
   let internals;
   let requestTarget;
   let handlers;
-  let isTemporaryResult;
   let handleResult;
   let linkData;
-  let hasHandler;
 
   beforeEach(() => {
     sandbox = sinon.sandbox.create();
@@ -50,7 +48,6 @@ describe('Internals', () => {
     module = internalsInjector({
       './SubTargets': {
         default: SubTargetsSpy,
-        createSubTargets: () => new SubTargetsSpy(),
         __esModule: true,
       },
     });
@@ -59,14 +56,7 @@ describe('Internals', () => {
 
   beforeEach(() => {
     requestTarget = {};
-    hasHandler = true;
-    handlers = {
-      handle: sandbox.spy((a, b, c, deferred) => {
-        deferred.resolve(handleResult);
-      }),
-      hasHandler: sandbox.spy(() => hasHandler),
-      isTemporary: sandbox.spy(() => isTemporaryResult),
-    };
+    handlers = {};
     deferred = createDeferred();
     internals = new Internals(requestTarget, deferred.promise, handlers);
   });
@@ -79,6 +69,11 @@ describe('Internals', () => {
     expect(internals).to.be.an.instanceof(SubTargets);
   });
 
+  it('should set parent for SubTargets', () => {
+    expect(internals.setParent).to.be.calledOnce;
+    expect(internals.setParent).to.be.calledWith(internals);
+  });
+
   describe('When created, pending', () => {
     it('should store construction arguments', () => {
       expect(internals.target).to.be.equal(requestTarget);
@@ -88,7 +83,7 @@ describe('Internals', () => {
     it('should initialize internals', () => {
       expect(internals.hadChildPromises).to.be.false;
       expect(internals.status).to.be.equal(TargetStatus.PENDING);
-      expect(internals.link).to.be.an('object');
+      expect(internals.data).to.be.undefined;
     });
 
     it('should have NULL data', () => {
@@ -116,8 +111,7 @@ describe('Internals', () => {
 
     describe('When subscribing to promise', () => { // mark child promises created
       beforeEach(() => {
-        internals.then(() => {
-        });
+        internals.then(() => null);
       });
 
       it('should record that promise chain continues', () => {
@@ -136,9 +130,9 @@ describe('Internals', () => {
     });
 
     it('should have proper data', () => {
-      expect(internals.id).to.be.equal(linkData[TARGET_DATA].id);
-      expect(internals.type).to.be.equal(linkData[TARGET_DATA].type);
-      expect(internals.poolId).to.be.equal(linkData[TARGET_DATA].poolId);
+      expect(internals.id).to.be.equal(linkData[TARGET_DATA].$id);
+      expect(internals.type).to.be.equal(linkData[TARGET_DATA].$type);
+      expect(internals.poolId).to.be.equal(linkData[TARGET_DATA].$poolId);
     });
 
     it('should change state to resolved', () => {
@@ -147,6 +141,11 @@ describe('Internals', () => {
 
     it('should be active', () => {
       expect(internals.isActive()).to.be.true;
+    });
+
+    it('should report to sub-targets', () => {
+      expect(internals.parentResolved).to.be.calledOnce;
+      expect(internals.parentRejected).not.to.be.called;
     });
 
     it('should be destroyable after resolution', () => {
@@ -195,7 +194,7 @@ describe('Internals', () => {
         expect(internals.send).to.be.calledOnce;
         expect(internals.send.getCall(0).args[0])
           .to.be.equal(RequestCommandFields.DESTROY);
-        expect(internals.send.getCall(0).args[1].type)
+        expect(internals.send.getCall(0).args[1].command)
           .to.be.equal(RequestCommandNames.DESTROY);
       });
     });
@@ -218,7 +217,7 @@ describe('Internals', () => {
       expect(internals.send).to.be.calledOnce;
       expect(internals.send.getCall(0).args[0])
         .to.be.equal(RequestCommandFields.DESTROY);
-      expect(internals.send.getCall(0).args[1].type)
+      expect(internals.send.getCall(0).args[1].command)
         .to.be.equal(RequestCommandNames.DESTROY);
     });
   });
@@ -246,6 +245,11 @@ describe('Internals', () => {
       expect(internals.isActive()).to.be.false;
     });
 
+    it('should report to sub-targets', () => {
+      expect(internals.parentResolved).not.to.be.called;
+      expect(internals.parentRejected).to.be.calledOnce;
+    });
+
     it('should be destroyable after resolution', () => {
       expect(internals.canBeDestroyed()).to.be.true;
     });
@@ -255,9 +259,7 @@ describe('Internals', () => {
       beforeEach(() => {
         subscriber = sandbox.spy();
 
-        return internals
-          .then(() => assert(false, 'should be rejected'))
-          .catch(subscriber);
+        return internals.catch(subscriber);
       });
 
       it('should count subscriber', () => {

@@ -1,25 +1,5 @@
-/*
-import Target, {
-  isTemporary,
-  setTemporary,
-  getStatus,
-  isPending,
-  getQueueLength,
-  getQueueCommands,
-  hadChildPromises,
-  getRawPromise,
-  getChildren,
-  getLastChild,
-  getChildrenCount,
-  createRequestTarget,
-} from './RequestTarget';
-import Internals from './Internals';
-*/
 import Deferred from '../utils/Deferred';
 import TARGET_INTERNALS from '../utils/TARGET_INTERNALS';
-import TargetStatus from '../utils/TargetStatus';
-import Queue from './target/Queue';
-import Children from './target/Children';
 import {
   __createRequestData,
 } from '../../tests/stubs';
@@ -27,27 +7,28 @@ import {
 const requestTargetInjector = require('inject-loader!./Target');
 
 describe('RequestTarget', () => {
-  const requestTargetInternalsModule = {
-    default() {
-      this.then = () => null;
-      this.catch = () => null;
-    },
-    __esModule: true,
-  };
-
+  let requestTargetInternalsModule;
   let sandbox;
   let module;
   let Target;
 
   beforeEach(() => {
+    sandbox = sinon.sandbox.create();
+  });
+
+  beforeEach(() => {
+    requestTargetInternalsModule = {
+      default() {
+        this.then = sandbox.spy(() => Promise.resolve());
+        this.catch = sandbox.spy(() => Promise.reject());
+      },
+      __esModule: true,
+    };
+
     module = requestTargetInjector({
       './target/Internals': requestTargetInternalsModule,
     });
     Target = module.default;
-  });
-
-  beforeEach(() => {
-    sandbox = sinon.sandbox.create();
   });
 
   afterEach(() => {
@@ -79,20 +60,13 @@ describe('RequestTarget', () => {
     });
 
     describe('When subscribe', () => {
-      beforeEach(() => {
-        sandbox.spy(request[TARGET_INTERNALS], 'then');
-        sandbox.spy(request[TARGET_INTERNALS], 'catch');
-      });
-
       it('then() should call internal method', () => {
-        request.then(() => {
-        });
+        request.then(() => null);
         expect(request[TARGET_INTERNALS].then).to.be.calledOnce;
       });
 
       it('catch() should call internal method', () => {
-        request.catch(() => {
-        });
+        request.catch(() => null);
         expect(request[TARGET_INTERNALS].catch).to.be.calledOnce;
       });
     });
@@ -114,13 +88,16 @@ describe('RequestTarget', () => {
         return deferred.promise;
       });
 
-      it('should delete internals', () => {
-        expect(request[TARGET_INTERNALS]).to.not.be.ok;
+      it('should keep internals', () => {
+        expect(request[TARGET_INTERNALS]).to.be.ok;
       });
 
-      it('calling then() should subscribe to original promise', () => request.then((data) => {
-        expect(data).to.be.equal('-data3');
-      }));
+      it('calling then() should subscribe to internals', () => {
+        const handler = () => null;
+        request.then(handler);
+        expect(request[TARGET_INTERNALS].then).to.be.calledOnce;
+        expect(request[TARGET_INTERNALS].then).to.be.calledWith(handler);
+      });
     });
 
     describe('When rejected', () => {
@@ -131,13 +108,16 @@ describe('RequestTarget', () => {
           .catch(() => null);
       });
 
-      it('should delete internals', () => {
-        expect(request[TARGET_INTERNALS]).to.not.be.ok;
+      it('should keep internals', () => {
+        expect(request[TARGET_INTERNALS]).to.be.ok;
       });
 
-      it('calling catch() should subscribe to original promise', () => request
-        .then(() => assert(false, 'should not resolve'))
-        .catch((data) => expect(data).to.be.equal('error data')));
+      it('calling catch() should subscribe to internals promise', () => {
+        const handler = () => null;
+        request.catch(handler);
+        expect(request[TARGET_INTERNALS].catch).to.be.calledOnce;
+        expect(request[TARGET_INTERNALS].catch).to.be.calledWith(handler);
+      });
     });
   });
 

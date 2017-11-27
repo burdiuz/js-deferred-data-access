@@ -21,9 +21,9 @@ describe('setTemporary()', () => {
     expect(target[TARGET_INTERNALS].temporary).to.be.true;
   });
 
-  it('should silently skip for non-Resource', () => {
-    const target = {};
-    setTemporary(target, true);
-    expect(target).to.not.have.property('temporary');
+  it('should throw an error for not a Request target', () => {
+    expect(() => {
+      setTemporary({}, true);
+    }).to.throw();
   });
 });

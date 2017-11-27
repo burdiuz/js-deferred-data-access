@@ -1,3 +1,3 @@
-import DataAccessInterface, * as api from './index';
+const api = require('./index');
 
-module.exports = Object.assign(DataAccessInterface, api);
+module.exports = Object.assign(api.default, api);

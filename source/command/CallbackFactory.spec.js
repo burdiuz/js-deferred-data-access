@@ -5,6 +5,7 @@
 import Deferred from '../utils/Deferred';
 import TARGET_INTERNALS from '../utils/TARGET_INTERNALS';
 import CallbackFactory from './CallbackFactory';
+import { __createRequestData } from '../../tests/stubs';
 
 describe('CallbackFactory', () => {
   let sandbox;
@@ -19,20 +20,20 @@ describe('CallbackFactory', () => {
   let requestData;
 
   function __createSendCommandRequest() {
-    const resource = {};
-    resource[TARGET_INTERNALS] = {
-      send: sandbox.spy((propertyName, pack, deferred) => {
-        if (resolveRequest) {
-          deferred.resolve(requestData);
-        } else {
-          deferred.reject(requestData);
-        }
-        return deferred.promise;
-      }),
-      id: '1111',
+    return {
+      [TARGET_INTERNALS]: {
+        send: sandbox.spy((propertyName, pack, deferred) => {
+          if (resolveRequest) {
+            deferred.resolve(requestData);
+          } else {
+            deferred.reject(requestData);
+          }
+          return deferred.promise;
+        }),
+        id: '1111',
+        toJSON: sandbox.spy(() => __createRequestData()),
+      },
     };
-
-    return resource;
   }
 
   before(() => {
@@ -51,8 +52,8 @@ describe('CallbackFactory', () => {
     };
 
     descriptor = {
-      name: 'property',
-      type: 'commandType',
+      propertyName: 'property',
+      command: 'commandType',
       handle: sandbox.spy(),
       isTemporary: sandbox.spy(() => isTemporaryResult),
       cacheable: false,
@@ -71,9 +72,9 @@ describe('CallbackFactory', () => {
 
     beforeEach(() => {
       result = factory.get({
-        name: 'property',
+        propertyName: 'property',
         handler: sandbox.spy(),
-        type: 'command',
+        command: 'command',
       });
     });
 
@@ -86,9 +87,9 @@ describe('CallbackFactory', () => {
 
       beforeEach(() => {
         secondResult = factory.get({
-          name: 'property',
+          propertyName: 'property',
           handler: sandbox.spy(),
-          type: 'command',
+          command: 'command',
         });
       });
 
@@ -134,10 +135,9 @@ describe('CallbackFactory', () => {
       it('should request cached resource', () => {
         expect(resourceFactory.getCached).to.be.calledOnce;
         expect(resourceFactory.getCached).to.be.calledWith('property', sinon.match({
-          type: 'commandType',
-          cmd: 'command',
-          value: 'value',
-          target: resource[TARGET_INTERNALS].id,
+          command: 'commandType',
+          args: ['command', 'value'],
+          target: __createRequestData(),
         }));
       });
 
@@ -156,10 +156,9 @@ describe('CallbackFactory', () => {
         expect(resource[TARGET_INTERNALS].send).to.be.calledWith(
           'property',
           sinon.match({
-            type: 'commandType',
-            cmd: 'command',
-            value: 'value',
-            target: resource[TARGET_INTERNALS].id,
+            command: 'commandType',
+            args: ['command', 'value'],
+            target: __createRequestData(),
           }),
           sinon.match.instanceOf(Deferred),
           createResult,
@@ -176,10 +175,9 @@ describe('CallbackFactory', () => {
           resource,
           child,
           sinon.match({
-            type: 'commandType',
-            cmd: 'command',
-            value: 'value',
-            target: resource[TARGET_INTERNALS].id,
+            command: 'commandType',
+            args: ['command', 'value'],
+            target: __createRequestData(),
           }),
           requestData,
         );
@@ -204,16 +202,16 @@ describe('CallbackFactory', () => {
       });
 
       it('should create new cached resource', () => {
-        expect(resourceFactory.createCached).to.be.calledOnce;
-        expect(resourceFactory.createCached).to.be.calledWith(
+        expect(resourceFactory.create).to.be.calledOnce;
+        expect(resourceFactory.create).to.be.calledWith(
           sinon.match.instanceOf(Promise),
           'property',
           sinon.match({
-            type: 'commandType',
-            cmd: 'command',
-            value: 'value',
-            target: resource[TARGET_INTERNALS].id,
+            command: 'commandType',
+            args: ['command', 'value'],
+            target: __createRequestData(),
           }),
+          true,
         );
       });
 

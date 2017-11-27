@@ -35,7 +35,9 @@ describe('destroy()', () => {
     expect(result).to.be.an('object');
   });
 
-  it('should return null for non-Resource target', () => {
-    expect(destroy({})).to.be.null;
+  it('should throw an error for not a Request target', () => {
+    expect(() => {
+      destroy({});
+    }).to.throw();
   });
 });

@@ -19,9 +19,10 @@ describe('canBeDestroyed()', () => {
   });
 
   beforeEach(() => {
-    target = {};
-    target[TARGET_INTERNALS] = {
-      canBeDestroyed: sandbox.stub().returns(true),
+    target = {
+      [TARGET_INTERNALS]: {
+        canBeDestroyed: sandbox.stub().returns(true),
+      },
     };
     result = canBeDestroyed(target);
   });
@@ -34,7 +35,7 @@ describe('canBeDestroyed()', () => {
     expect(result).to.be.true;
   });
 
-  it('should be false for non-Resource target', () => {
-    expect(canBeDestroyed({})).to.be.false;
+  it('should result with undefined for not a Request target', () => {
+    expect(canBeDestroyed({})).to.be.undefined;
   });
 });

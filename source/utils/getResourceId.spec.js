@@ -12,7 +12,7 @@ describe('getResourceId()', () => {
   it('should return ID for Target', () => {
     const resource = __createRequest(__createDataResolvedPromise());
     return resource.then(() => {
-      expect(getResourceId(resource)).to.be.equal(__createRequestData()[TARGET_DATA].id);
+      expect(getResourceId(resource)).to.be.equal(__createRequestData()[TARGET_DATA].$id);
     });
   });
 
@@ -20,7 +20,7 @@ describe('getResourceId()', () => {
     const promise = __createDataResolvedPromise();
     const resource = __createRequestProxy();
     return promise.then(() => {
-      expect(getResourceId(resource)).to.be.equal(__createRequestData()[TARGET_DATA].id);
+      expect(getResourceId(resource)).to.be.equal(__createRequestData()[TARGET_DATA].$id);
     });
   });
 
@@ -31,7 +31,7 @@ describe('getResourceId()', () => {
 
   it('should return ID for RAW resource', () => {
     const resource = __createRequestData();
-    expect(getResourceId(resource)).to.be.equal(resource[TARGET_DATA].id);
+    expect(getResourceId(resource)).to.be.equal(resource[TARGET_DATA].$id);
   });
 
   it('should return null if data is not a resource', () => {

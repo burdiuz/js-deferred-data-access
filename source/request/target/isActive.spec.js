@@ -35,7 +35,7 @@ describe('isActive()', () => {
     expect(result).to.be.false;
   });
 
-  it('should be false for non-Resource target', () => {
-    expect(isActive({})).to.be.false;
+  it('should result with undefined for not a Request target', () => {
+    expect(isActive({})).to.be.undefined;
   });
 });

@@ -1,21 +1,19 @@
 import TargetStatus from '../../utils/TargetStatus';
 import TARGET_DATA from '../../utils/TARGET_DATA';
 import createRequestPackage from '../../utils/createRequestPackage';
-import isResource from '../../utils/isResource';
-import getResourceData from '../../utils/getResourceData';
 import {
   RequestCommandFields,
   RequestCommandNames,
 } from '../../command//internal/RequestCommands';
-import SubTargets from "./SubTargets";
+import SubTargets from './SubTargets';
 
 class Internals extends SubTargets {
   constructor(target, promise, handlers) {
     super();
     this.handlers = handlers;
     this.target = target;
-    this.link = {};
     // INFO this should be not initialized i.e. keep it undefined, this will be checked later
+    this.data = undefined;
     this.temporary = undefined;
     this.hadChildPromises = false;
     this.status = TargetStatus.PENDING;
@@ -25,36 +23,47 @@ class Internals extends SubTargets {
     this.setParent(this);
   }
 
+  isResource() {
+    if (typeof this.data === 'object' && this.data[TARGET_DATA]) {
+      const data = this.data[TARGET_DATA];
+      return Boolean(data.$poolId && data.$id);
+    }
+
+    return false;
+  }
+
   get poolId() {
-    return this.link.poolId || null;
+    return this.isResource() ? this.data[TARGET_DATA].$poolId : null;
   }
 
   get type() {
-    return this.link.type || null;
+    return this.isResource() ? this.data[TARGET_DATA].$type : null;
   }
 
   get id() {
-    return this.link.id || null;
+    return this.isResource() ? this.data[TARGET_DATA].$id : null;
   }
 
   handlePromiseResolve = (value) => {
+    const result = { target: this.target, value };
+    this.data = value;
     this.status = TargetStatus.RESOLVED;
-    if (isResource(value)) {
-      this.link = getResourceData(value);
+    if (this.isResource()) {
       /*
        INFO Sending "this" as result of resolve() handler, causes infinite
        loop of this.then(), so I've used wrapper object
       */
-      // FIXME Check if Proxy wrapper will work with promise result, probably not
-      value = { target: this.target };
-      this.parentResolved();
-      if (this.temporary) {
-        this.destroy();
-      }
-    } else { // else { value must be passed as is }
-      this.parentRejected('Target of the call is not a resource and call cannot be sent.');
+      result.value = this.target;
     }
-    return value;
+
+    this.parentResolved();
+
+    // FIXME isTemporary() was not called yet, as solution can move destruction out
+    if (this.temporary) {
+      this.destroy();
+    }
+
+    return result;
   };
 
   handlePromiseReject = (value) => {
@@ -80,8 +89,8 @@ class Internals extends SubTargets {
           RequestCommandFields.DESTROY,
           createRequestPackage(
             RequestCommandNames.DESTROY,
-            [null, null],
-            this.id,
+            [],
+            this.toJSON(),
           ),
         );
       } else {
@@ -91,6 +100,7 @@ class Internals extends SubTargets {
     } else {
       promise = Promise.reject(new Error('Invalid or already destroyed target.'));
     }
+
     return promise;
   }
 
@@ -107,13 +117,7 @@ class Internals extends SubTargets {
   }
 
   toJSON() {
-    return {
-      [TARGET_DATA]: {
-        id: this.link.id,
-        type: this.link.type,
-        poolId: this.link.poolId,
-      },
-    };
+    return this.data;
   }
 }
 

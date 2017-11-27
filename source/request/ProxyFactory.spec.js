@@ -3,6 +3,7 @@
  */
 
 import { ProxyCommandFields } from '../command/internal/ProxyCommands';
+import { __createRequestData } from '../../tests/stubs';
 // import Factory, { createRequestFactory } from './RequestFactory';
 // import ProxyFactory, { createProxyFactory } from './ProxyFactory';
 
@@ -35,14 +36,13 @@ describe('ProxyFactory', () => {
     resource[ProxyCommandFields.deleteProperty] = sandbox.spy();
     baseFactory = {
       getCached: sandbox.spy(() => resource),
-      createCached: sandbox.spy(() => resource),
       create: sandbox.spy(() => resource),
     };
     decorator = {
       setFactory: sandbox.spy(),
     };
     baseFactory.decorator = decorator;
-    Factory = sandbox.spy(() => {});
+    Factory = sandbox.spy(() => null);
     createRequestFactory = sandbox.spy(() => baseFactory);
 
     module = requestProxyFactoryInjector({
@@ -59,10 +59,12 @@ describe('ProxyFactory', () => {
   });
 
   beforeEach(() => {
+    const ProxyFactory = module.default;
     handlers = {
       available: true,
     };
-    factory = new module.default(handlers, cache);
+
+    factory = new ProxyFactory(handlers, cache);
   });
 
   it('should create factory', () => {
@@ -107,10 +109,9 @@ describe('ProxyFactory', () => {
 
     beforeEach(() => {
       pack = {
-        type: 'type',
-        cmd: 'command',
-        value: 'vaalue',
-        target: '1111',
+        command: 'type',
+        args: ['command', 'value'],
+        target: __createRequestData(),
       };
       result = factory.getCached('property', pack);
     });
@@ -121,23 +122,22 @@ describe('ProxyFactory', () => {
     });
   });
 
-  describe('createCached()', () => {
+  describe('create() cached', () => {
     let result;
     let pack;
 
     beforeEach(() => {
       pack = {
-        type: 'type',
-        cmd: 'command',
-        value: 'vaalue',
-        target: '1111',
+        command: 'type',
+        args: ['command', 'value'],
+        target: __createRequestData(),
       };
     });
 
     describe('When handlers are available', () => {
       beforeEach(() => {
         handlers.available = true;
-        result = factory.createCached(Promise.reject(), 'property', pack);
+        result = factory.create(Promise.reject(), 'property', pack, true);
       });
 
       it('should return wrapped resource', () => {
@@ -145,11 +145,12 @@ describe('ProxyFactory', () => {
       });
 
       it('should request base factory', () => {
-        expect(baseFactory.createCached).to.be.calledOnce;
-        expect(baseFactory.createCached).to.be.calledWith(
+        expect(baseFactory.create).to.be.calledOnce;
+        expect(baseFactory.create).to.be.calledWith(
           sinon.match.instanceOf(Promise),
           'property',
           pack,
+          true,
         );
       });
     });
@@ -157,7 +158,7 @@ describe('ProxyFactory', () => {
     describe('When handlers are not available', () => {
       beforeEach(() => {
         handlers.available = false;
-        result = factory.createCached(Promise.reject(), 'property', pack);
+        result = factory.create(Promise.reject(), 'property', pack, true);
       });
 
       it('should return normal resource', () => {
@@ -165,11 +166,12 @@ describe('ProxyFactory', () => {
       });
 
       it('should request base factory', () => {
-        expect(baseFactory.createCached).to.be.calledOnce;
-        expect(baseFactory.createCached).to.be.calledWith(
+        expect(baseFactory.create).to.be.calledOnce;
+        expect(baseFactory.create).to.be.calledWith(
           sinon.match.instanceOf(Promise),
           'property',
           pack,
+          true,
         );
       });
     });
@@ -337,8 +339,7 @@ describe('ProxyFactory', () => {
       });
 
       it('should return descriptor for wrapper function', () => {
-        expect(funcDescr).to.be.eql(Object.getOwnPropertyDescriptor(() => {
-        }, 'prototype'));
+        expect(funcDescr).to.be.eql(Object.getOwnPropertyDescriptor(() => null, 'prototype'));
       });
 
       it('should return descriptor for wrapper function', () => {

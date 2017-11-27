@@ -116,8 +116,7 @@ describe('ResourceConverter', () => {
         let result;
 
         beforeEach(() => {
-          classFunc = () => {
-          };
+          classFunc = () => null;
           source = new classFunc();
           result = converter.toJSON(source);
         });
@@ -159,8 +158,7 @@ describe('ResourceConverter', () => {
         let actualResult;
 
         beforeEach(() => {
-          source = () => {
-          };
+          source = () => null;
           result = { data: 'something' };
           sandbox.stub(converter, 'resourceToObject').returns(result);
           actualResult = converter.toJSON(source);
@@ -435,8 +433,7 @@ describe('ResourceConverter', () => {
       beforeEach(() => {
         source = {
           first: {},
-          second: () => {
-          },
+          second: () => null,
           third: new IConvertible(),
           fourth: {},
           fifth: __createRequest(),
@@ -523,8 +520,7 @@ describe('ResourceConverter', () => {
 
     describe('When passing Function', () => {
       beforeEach(() => {
-        source = () => {
-        };
+        source = () => null;
         targetResource = __createResource();
         referenceResult = __createResourceData();
         result = converter.resourceToObject(source);

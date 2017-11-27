@@ -10,15 +10,12 @@ const EXCLUSIONS = {
   prototype: true,
 };
 
-const toString = () => `[RequestTargetProxy ${String(this.target)}]`;
-
 const createFunctionWrapper = (target) => {
   // INFO Target must be a function so I could use Proxy.call() interceptor.
   function requestTargetProxy() {
   }
 
   requestTargetProxy.target = target;
-  requestTargetProxy.toString = toString;
 
   return requestTargetProxy;
 };
@@ -116,8 +113,8 @@ class ProxyFactory extends Factory {
     this.factory.decorator.setFactory(this);
   }
 
-  create(promise) {
-    const instance = this.factory.create(promise);
+  create(promise, name = null, pack = null, cacheable = false) {
+    const instance = this.factory.create(promise, name, pack, cacheable);
 
     if (this.handlers.available) {
       return wrapWithProxy(instance, PROXY_HANDLERS);
@@ -129,17 +126,6 @@ class ProxyFactory extends Factory {
   getCached(name, pack) {
     return this.factory.getCached(name, pack);
   }
-
-  createCached(promise, name, pack) {
-    const instance = this.factory.createCached(promise, name, pack);
-
-    if (this.handlers.available) {
-      return wrapWithProxy(instance, PROXY_HANDLERS);
-    }
-
-    return instance;
-  }
-
 }
 
 export const applyProxyWithDefaultHandlers = (target) => wrapWithProxy(target, PROXY_HANDLERS);

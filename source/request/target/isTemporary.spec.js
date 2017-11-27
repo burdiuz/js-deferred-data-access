@@ -22,7 +22,7 @@ describe('isTemporary()', () => {
     expect(result).to.be.true;
   });
 
-  it('should be undefined for non-Resource target', () => {
+  it('should result with undefined for not a Request target', () => {
     expect(isTemporary({})).to.be.undefined;
   });
 });

@@ -2,10 +2,6 @@
  * Created by Oleg Galaburda on 16.11.17.
  */
 
-import TARGET_INTERNALS from '../../utils/TARGET_INTERNALS';
+import getInternals from './getInternals';
 
-export default (target, value) => {
-  if (target && target[TARGET_INTERNALS]) {
-    target[TARGET_INTERNALS].temporary = Boolean(value);
-  }
-};
+export default (target, value) => getInternals(target).temporary = Boolean(value);

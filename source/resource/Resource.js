@@ -1,5 +1,6 @@
 import TARGET_DATA from '../utils/TARGET_DATA';
 import TARGET_INTERNALS from '../utils/TARGET_INTERNALS';
+import getInternals from '../request/target/getInternals';
 import getId from '../utils/getId';
 
 const getPoolId = (pool) => (pool ? pool.id : null);
@@ -28,35 +29,35 @@ class Resource {
 
 
   get active() {
-    return Boolean(this[TARGET_INTERNALS].active);
+    return Boolean(getInternals(this).active);
   }
 
   get value() {
-    return this[TARGET_INTERNALS].value;
+    return getInternals(this).value;
   }
 
   get type() {
-    return this[TARGET_INTERNALS].type || typeof this[TARGET_INTERNALS].value;
+    return getInternals(this).type || typeof getInternals(this).value;
   }
 
   get id() {
-    return this[TARGET_INTERNALS].id;
+    return getInternals(this).id;
   }
 
   get poolId() {
-    return this[TARGET_INTERNALS].poolId;
+    return getInternals(this).poolId;
   }
 
   toJSON = () => ({
     [TARGET_DATA]: {
-      id: this.id,
-      type: this.type,
-      poolId: this.poolId,
+      $id: this.id,
+      $type: this.type,
+      $poolId: this.poolId,
     },
   });
 
   destroy() {
-    const internals = this[TARGET_INTERNALS];
+    const internals = getInternals(this);
     const { id, pool } = internals;
 
     if (!internals.active) {

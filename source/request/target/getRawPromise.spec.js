@@ -22,7 +22,7 @@ describe('getRawPromise()', () => {
     expect(result).to.be.equal(target[TARGET_INTERNALS].promise);
   });
 
-  it('should be null for non-Resource target', () => {
-    expect(getRawPromise({})).to.be.null;
+  it('should result with undefined for not a Request target', () => {
+    expect(getRawPromise({})).to.be.undefined;
   });
 });

@@ -1,9 +1,13 @@
-export const DEFAULT_IS_TEMPORARY = () => true;
+import isResource from '../utils/isResource';
+
+// It will make all resources temporary and user must explicitly set resource permanent
+export const DEFAULT_IS_TEMPORARY = (parent, child) => isResource(child);
 
 class Descriptor {
-  constructor(type, handler, name = undefined) {
-    this.name = name !== undefined ? name : type;
-    this.type = type;
+  // FIXME type > command; name > propertyName
+  constructor(command, handler, propertyName = undefined) {
+    this.propertyName = propertyName !== undefined ? propertyName : command;
+    this.command = command;
     this.handler = handler;
     /**
      * @type {function(): boolean}
@@ -16,15 +20,15 @@ class Descriptor {
 }
 
 export const createDescriptor = (
-  type,
+  command,
   handler,
-  name,
+  propertyName,
   isTemporary = DEFAULT_IS_TEMPORARY,
   resourceType = null,
   cacheable = true,
   virtual = false,
 ) => {
-  const descriptor = new Descriptor(type, handler, name);
+  const descriptor = new Descriptor(command, handler, propertyName);
   descriptor.resourceType = resourceType;
   descriptor.cacheable = cacheable;
   descriptor.virtual = virtual;
@@ -39,11 +43,11 @@ export const addDescriptorTo = (descriptor, target) => {
   if (target instanceof Array) {
     target.push(descriptor);
   } else if (target) {
-    target[descriptor.name] = descriptor;
+    target[descriptor.propertyName] = descriptor;
   }
 };
 
-export const descriptorGeneratorFactory = (type, name) =>
+export const descriptorGeneratorFactory = (command, propertyName) =>
   (
     handler,
     target,
@@ -53,9 +57,9 @@ export const descriptorGeneratorFactory = (type, name) =>
     virtual = false,
   ) => {
     const descriptor = createDescriptor(
-      type,
+      command,
       handler,
-      name,
+      propertyName,
       isTemporary,
       resourceType,
       cacheable,

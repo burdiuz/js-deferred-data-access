@@ -22,7 +22,7 @@ describe('getQueueLength()', () => {
     expect(result).to.be.equal(4);
   });
 
-  it('should return 0 for non-Resource target', () => {
-    expect(getQueueLength({})).to.be.equal(0);
+  it('should result with undefined for not a Request target', () => {
+    expect(getQueueLength({})).to.be.undefined;
   });
 });

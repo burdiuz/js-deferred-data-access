@@ -50,15 +50,18 @@ describe('Resource', () => {
     it('should be RAW object', () => {
       expect(data().constructor).to.be.equal(Object);
     });
+
     it('should contain target data', () => {
       expect(data()[TARGET_DATA].constructor).to.be.equal(Object);
     });
+
     it('should contain resource IDs', () => {
-      expect(data()[TARGET_DATA].id).to.be.equal(resource.id);
-      expect(data()[TARGET_DATA].poolId).to.be.equal(pool.id);
+      expect(data()[TARGET_DATA].$id).to.be.equal(resource.id);
+      expect(data()[TARGET_DATA].$poolId).to.be.equal(pool.id);
     });
+
     it('should contain target type', () => {
-      expect(data()[TARGET_DATA].type).to.be.equal(targetType);
+      expect(data()[TARGET_DATA].$type).to.be.equal(targetType);
     });
   }
 

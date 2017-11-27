@@ -35,7 +35,7 @@ describe('toJSON()', () => {
     expect(result).to.be.an('object');
   });
 
-  it('should return null for non-Resource target', () => {
-    expect(toJSON({})).to.be.null;
+  it('should result with undefined for not a Request target', () => {
+    expect(toJSON({})).to.be.undefined;
   });
 });

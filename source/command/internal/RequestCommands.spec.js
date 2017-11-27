@@ -9,14 +9,13 @@ describe('RequestCommands', () => {
     let descriptor;
 
     beforeEach(() => {
-      handler = () => {
-      };
+      handler = () => null;
       descriptor = RequestCommands.createDESTROYDescriptor(handler);
     });
 
     it('should has DESTROY name/type', () => {
-      expect(descriptor.name).to.be.equal(RequestCommandFields.DESTROY);
-      expect(descriptor.type).to.be.equal(RequestCommandNames.DESTROY);
+      expect(descriptor.propertyName).to.be.equal(RequestCommandFields.DESTROY);
+      expect(descriptor.command).to.be.equal(RequestCommandNames.DESTROY);
     });
 
     it('should store handler function ', () => {

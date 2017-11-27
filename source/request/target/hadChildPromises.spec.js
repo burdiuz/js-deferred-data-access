@@ -22,7 +22,7 @@ describe('hadChildPromises()', () => {
     expect(result).to.be.false;
   });
 
-  it('should be undefined for non-Resource target', () => {
-    expect(hadChildPromises({})).to.be.false;
+  it('should result with undefined for not a Request target', () => {
+    expect(hadChildPromises({})).to.be.undefined;
   });
 });

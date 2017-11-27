@@ -23,7 +23,7 @@ describe('getStatus()', () => {
     expect(result).to.be.equal(TargetStatus.DESTROYED);
   });
 
-  it('should return null for non-Resource target', () => {
-    expect(getStatus({})).to.be.null;
+  it('should result with undefined for not a Request target', () => {
+    expect(getStatus({})).to.be.undefined;
   });
 });

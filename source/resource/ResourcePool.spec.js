@@ -313,8 +313,7 @@ describe('ResourcePool', () => {
 
     it('should say valid for stored target types', () => {
       expect(isValidTarget({})).to.be.true;
-      expect(isValidTarget(() => {
-      })).to.be.false;
+      expect(isValidTarget(() => null)).to.be.false;
     });
 
     it('should say valid even if its value falsy', () => {
@@ -335,12 +334,10 @@ describe('ResourcePool', () => {
       expect(isValidTarget({})).to.be.false;
       setValidTargets(['object']);
       expect(isValidTarget({})).to.be.true;
-      expect(isValidTarget(() => {
-      })).to.be.false;
+      expect(isValidTarget(() => null)).to.be.false;
       setValidTargets(['function']);
       expect(isValidTarget({})).to.be.false;
-      expect(isValidTarget(() => {
-      })).to.be.true;
+      expect(isValidTarget(() => null)).to.be.true;
     });
   });
 

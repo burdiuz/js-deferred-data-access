@@ -27,14 +27,14 @@ class Queue {
     return this.list.map(({ name }) => name);
   }
 
-  send(id, callback) {
+  send(targetJSON, callback) {
     this.list.forEach(({
       name,
       pack,
       deferred,
       child,
     }) => {
-      pack.target = id;
+      pack.target = targetJSON;
       callback(name, pack, deferred, child);
     });
     this.list = [];

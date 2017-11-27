@@ -5,6 +5,7 @@
 import getStatus from './getStatus';
 import TargetStatus from '../../utils/TargetStatus';
 
-export default (value) => (
-  getStatus(value) === TargetStatus.PENDING
-);
+export default (value) => {
+  const status = getStatus(value);
+  return status ? status === TargetStatus.PENDING : undefined;
+};
