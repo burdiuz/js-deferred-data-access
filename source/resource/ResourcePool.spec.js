@@ -14,7 +14,7 @@ import {
   __createResource,
 } from '../../tests/stubs';
 
-describe('ResourcePool', () => {
+describe.only('ResourcePool', () => {
   let pool;
   let target1;
   let target2;

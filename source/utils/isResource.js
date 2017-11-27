@@ -13,6 +13,8 @@ import Target from '../request/Target';
 import Resource from '../resource/Resource';
 
 export default (object) => {
+  if (!object) return false;
+
   if (
     object instanceof Resource
     // this case for RAW resources passed via JSON conversion,

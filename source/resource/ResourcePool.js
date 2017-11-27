@@ -2,6 +2,7 @@ import EventDispatcher from 'event-dispatcher';
 import getId from '../utils/getId';
 import isResource from '../utils/isResource';
 import { createResource } from './Resource';
+import isRequest from '../request/target/isRequest';
 
 export const ResourcePoolEvents = Object.freeze({
   RESOURCE_ADDED: 'resourceAdded',
@@ -17,6 +18,7 @@ let validTargets = {};
 
 export const isValidTarget = (target) => (
   !isResource(target)
+  && !isRequest(target)
   && Boolean(validTargets[typeof target])
 );
 
