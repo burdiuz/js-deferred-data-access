@@ -8,19 +8,51 @@ import {
 } from '../../tests/stubs';
 
 describe('isResource()', () => {
-  it('should return true for Resource', () => {
-    expect(isResource(__createResource())).to.be.true;
+  describe('When using Resource', () => {
+    it('should return true for Resource', () => {
+      expect(isResource(__createResource())).to.be.true;
+    });
   });
 
-  it('should return true for Target', () => {
-    expect(isResource(__createRequest())).to.be.true;
+  describe('When using request Target', () => {
+    let target;
+
+    describe('When using proxies', () => {
+      beforeEach(() => {
+        target = __createRequest();
+      });
+
+      it('should return false for unresolved Target', () => {
+        expect(isResource(target)).to.be.false;
+      });
+
+      it('should return true for unresolved Target', () => target
+        .then(() => {
+          expect(isResource(target)).to.be.true;
+        })
+      );
+    });
+
+    describe('When not using proxies', () => {
+      beforeEach(() => {
+        target = __createRequestProxy(__createDataResolvedPromise());
+      });
+
+      it('should return false for unresolved Target', () => {
+        expect(isResource(target)).to.be.false;
+      });
+
+      it('should return true for unresolved Target', () => target
+        .then(() => {
+          expect(isResource(target)).to.be.true;
+        })
+      );
+    });
   });
 
-  it('should return true for Target wrapped into Proxy', () => {
-    expect(isResource(__createRequestProxy(__createDataResolvedPromise()))).to.be.true;
-  });
-
-  it('should return true for RAW resource', () => {
-    expect(isResource(__createRequestData())).to.be.true;
+  describe('When using raw object', () => {
+    it('should return true for RAW resource', () => {
+      expect(isResource(__createRequestData())).to.be.true;
+    });
   });
 });

@@ -19,10 +19,13 @@ export default (object) => {
     object instanceof Resource
     // this case for RAW resources passed via JSON conversion,
     // look like {'resource::data': {$id: '1111', $poolId: '22222'}}
-    || typeof object[TARGET_DATA] === 'object'
+    || object[TARGET_DATA] // (object[TARGET_DATA] && typeof object[TARGET_DATA] === 'object')
   ) {
     return true;
-  } else if (object instanceof Target || typeof object[TARGET_INTERNALS] === 'object') {
+  } else if (
+    object instanceof Target
+    || object[TARGET_INTERNALS] // (object[TARGET_INTERNALS] && typeof object[TARGET_INTERNALS] === 'object')
+  ) {
     // now all targets have internals in them, so we have to check if id and poolId are valid
     // to treat target as resource. In case of Proxy enabled instanceof will be Function,
     // so we have to check for internals.

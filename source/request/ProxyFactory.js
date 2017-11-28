@@ -1,5 +1,6 @@
 import Factory, { NO_INIT, createRequestFactory } from './Factory';
 import { ProxyCommandFields } from '../command/internal/ProxyCommands';
+import Target from "./Target";
 
 const EXCLUSIONS = {
   /*
@@ -86,6 +87,8 @@ const proxyGetOwnPropertyDescriptor = (wrapper, name) => {
   return Object.getOwnPropertyDescriptor(wrapper.target, name);
 };
 
+const proxyGetPrototypeOf = (wrapper) => Object.getPrototypeOf(wrapper.target);
+
 /**
  * Builds proper handlers hash for Proxy
  * @returns {Function}
@@ -99,6 +102,7 @@ export const createProxyHandlers = (handlers = {}) => ({
   ownKeys: proxyOwnKeys,
   enumerate: proxyEnumerate,
   getOwnPropertyDescriptor: proxyGetOwnPropertyDescriptor,
+  getPrototypeOf: proxyGetPrototypeOf,
   ...handlers,
 });
 

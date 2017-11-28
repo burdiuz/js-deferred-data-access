@@ -14,7 +14,7 @@ describe('getResourcePoolId()', () => {
     const resource = __createRequest(promise);
     return promise.then(() => {
       expect(getResourcePoolId(resource))
-        .to.be.equal(__createRequestData()[TARGET_DATA].poolId);
+        .to.be.equal(__createRequestData()[TARGET_DATA].$poolId);
     });
   });
 
@@ -23,7 +23,7 @@ describe('getResourcePoolId()', () => {
     const resource = __createRequestProxy();
     return promise.then(() => {
       expect(getResourcePoolId(resource))
-        .to.be.equal(__createRequestData()[TARGET_DATA].poolId);
+        .to.be.equal(__createRequestData()[TARGET_DATA].$poolId);
     });
   });
 
@@ -34,7 +34,7 @@ describe('getResourcePoolId()', () => {
 
   it('should return poolId for RAW resource', () => {
     const resource = __createRequestData();
-    expect(getResourcePoolId(resource)).to.be.equal(resource[TARGET_DATA].poolId);
+    expect(getResourcePoolId(resource)).to.be.equal(resource[TARGET_DATA].$poolId);
   });
 
   it('should return null if data is not a resource', () => {

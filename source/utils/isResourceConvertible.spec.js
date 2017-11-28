@@ -9,17 +9,46 @@ import {
 } from '../../tests/stubs';
 
 describe('isResourceConvertible()', () => {
-  it('should return true for Resource', () => {
-    expect(isResourceConvertible(__createResource())).to.be.true;
+  describe('When Resource used', () => {
+    it('should return true for Resource', () => {
+      expect(isResourceConvertible(__createResource())).to.be.true;
+    });
   });
 
-  it('should return true for Target', () => {
-    expect(isResourceConvertible(__createRequest())).to.be.true;
-  });
+  describe('When using request Target', () => {
+    let target;
 
-  it('should return true for Target wrapped into Proxy', () => {
-    expect(isResourceConvertible(__createRequestProxy(__createDataResolvedPromise())))
-      .to.be.true;
+    describe('When using proxies', () => {
+      beforeEach(() => {
+        target = __createRequest();
+      });
+
+      it('should return true for unresolved Target', () => {
+        expect(isResourceConvertible(target)).to.be.true;
+      });
+
+      it('should return true for unresolved Target', () => target
+        .then(() => {
+          expect(isResourceConvertible(target)).to.be.true;
+        })
+      );
+    });
+
+    describe('When not using proxies', () => {
+      beforeEach(() => {
+        target = __createRequestProxy(__createDataResolvedPromise());
+      });
+
+      it('should return true for unresolved Target', () => {
+        expect(isResourceConvertible(target)).to.be.true;
+      });
+
+      it('should return true for unresolved Target', () => target
+        .then(() => {
+          expect(isResourceConvertible(target)).to.be.true;
+        })
+      );
+    });
   });
 
   it('should return true for RAW resource', () => {

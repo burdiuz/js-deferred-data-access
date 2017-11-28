@@ -25,11 +25,13 @@ describe('ProxyFactory', () => {
     sandbox = sinon.sandbox.create();
   });
 
+  class FakeTarget {
+  }
+
   beforeEach(() => {
-    resource = {
-      then: sandbox.spy(),
-      catch: sandbox.spy(),
-    };
+    resource = new FakeTarget();
+    resource.then = sandbox.spy();
+    resource.catch = sandbox.spy();
     resource[ProxyCommandFields.get] = sandbox.spy();
     resource[ProxyCommandFields.set] = sandbox.spy();
     resource[ProxyCommandFields.apply] = sandbox.spy();
@@ -276,6 +278,18 @@ describe('ProxyFactory', () => {
           expect(resource.then).to.be.equal('VALUE');
         });
       });
+
+      describe('When no handler registered', () => {
+        beforeEach(() => {
+          delete resource[ProxyCommandFields.set];
+        });
+
+        it('should throw an error', () => {
+          expect(() => {
+            result.anything = 'nothing';
+          }).to.throw();
+        });
+      });
     });
 
     describe('apply', () => {
@@ -374,6 +388,12 @@ describe('ProxyFactory', () => {
         expect(list).to.contain('arguments');
         expect(list).to.contain('caller');
         expect(list).to.contain('prototype');
+      });
+    });
+
+    describe('getPrototypeOf', () => {
+      it('should be instanceof Target', () => {
+        expect(result).to.be.instanceof(FakeTarget);
       });
     });
   });

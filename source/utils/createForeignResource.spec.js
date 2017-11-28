@@ -31,17 +31,17 @@ describe('createForeignResource()', () => {
     });
 
     it('should contain id property', () => {
-      expect(data.id).to.be.a('string');
-      expect(data.id).to.be.ok;
+      expect(data.$id).to.be.a('string');
+      expect(data.$id).to.be.ok;
     });
 
     it('should contain pool id property', () => {
-      expect(data.poolId).to.be.a('string');
-      expect(data.poolId).to.be.ok;
+      expect(data.$poolId).to.be.a('string');
+      expect(data.$poolId).to.be.ok;
     });
 
     it('should contain type property', () => {
-      expect(data.type).to.be.equal('object');
+      expect(data.$type).to.be.equal('object');
     });
   });
 
@@ -51,7 +51,7 @@ describe('createForeignResource()', () => {
     });
 
     it('should use type value in a resource data', () => {
-      expect(resource[TARGET_DATA].type).to.be.equal('my-type');
+      expect(resource[TARGET_DATA].$type).to.be.equal('my-type');
     });
   });
 
@@ -75,7 +75,7 @@ describe('createForeignResource()', () => {
     });
 
     it('should use type value in a resource data', () => {
-      expect(resource[TARGET_DATA].type).to.be.equal('fake-resource');
+      expect(resource[TARGET_DATA].$type).to.be.equal('fake-resource');
     });
 
     it('should keep object type information', () => {

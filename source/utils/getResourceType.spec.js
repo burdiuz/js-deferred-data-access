@@ -14,7 +14,7 @@ describe('getResourceType()', () => {
     const resource = __createRequest(promise);
     return promise.then(() => {
       expect(getResourceType(resource))
-        .to.be.equal(__createRequestData()[TARGET_DATA].type);
+        .to.be.equal(__createRequestData()[TARGET_DATA].$type);
     });
   });
 
@@ -23,7 +23,7 @@ describe('getResourceType()', () => {
     const resource = __createRequestProxy();
     promise.then(() => {
       expect(getResourceType(resource))
-        .to.be.equal(__createRequestData()[TARGET_DATA].type);
+        .to.be.equal(__createRequestData()[TARGET_DATA].$type);
     });
   });
 
@@ -34,7 +34,7 @@ describe('getResourceType()', () => {
 
   it('should return type for RAW resource', () => {
     const resource = __createRequestData();
-    expect(getResourceType(resource)).to.be.equal(resource[TARGET_DATA].type);
+    expect(getResourceType(resource)).to.be.equal(resource[TARGET_DATA].$type);
   });
 
   it('should return null if data is not a resource', () => {

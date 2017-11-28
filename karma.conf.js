@@ -24,12 +24,12 @@ module.exports = (config) => {
       module: {
         rules: [
           {
-            test: /\.spec\.js$/,
+            test: /(\.spec\.js$|stubs\.js$)/,
             use: getBabelLoader(['transform-es2015-modules-commonjs']),
           },
           {
             test: /\.js$/,
-            exclude: /\.spec\.js$/,
+            exclude: /(\.spec\.js$|stubs\.js$)/,
             use: getBabelLoader(['babel-plugin-istanbul', 'transform-es2015-modules-commonjs']),
           },
         ],
