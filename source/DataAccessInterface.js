@@ -86,6 +86,10 @@ class DataAccessInterface {
     return this.handlers.proxyEnabled;
   }
 
+  send(command, args, target = null) {
+    return
+  }
+
   parse(data) {
     return this.resourceConverter.parse(data);
   }

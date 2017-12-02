@@ -1,5 +1,6 @@
 import Descriptor from '../command/Descriptor';
 import ProxyCommands, { ProxyCommandFields } from '../command/internal/ProxyCommands';
+import hasOwnProperty from '../utils/hasOwnProperty';
 import filterHandlers from '../utils/filterRequestHandlers';
 import getResourceType from '../utils/getResourceType';
 
@@ -72,14 +73,16 @@ class Handlers {
     this.properties[type] = props;
   }
 
+  // FIXME Not quite obvious that it checks against property name, not command name
   hasCommand(propertyName, type = DEFAULT_KEY) {
     return (
-        this.descriptors[type]
-        && Object.prototype.hasOwnProperty.call(this.descriptors[type], propertyName)
+        type
+        && this.descriptors[type]
+        && hasOwnProperty(this.descriptors[type], propertyName)
       )
       || (
         this.descriptors[DEFAULT_KEY]
-        && Object.prototype.hasOwnProperty.call(this.descriptors[DEFAULT_KEY], propertyName)
+        && hasOwnProperty(this.descriptors[DEFAULT_KEY], propertyName)
       );
   }
 
@@ -118,16 +121,26 @@ class Handlers {
   }
 
   handle(parentRequest, propertyName, pack, deferred, resultRequest) {
-    // FIXME what is done here, what is the purpose of this line, what is value here?
-    const list = this.converter ? this.converter.lookupForPending(pack.value) : null;
+    // FIXME should it also check for resultRequest to not appear in the list?
+    const list = this.converter ? this.converter.lookupForPending(pack.args) : null;
     if (list && list.length) {
       // FIXME Need to test on all platforms: might not work because may need list of
       // Promise objects, not Targets
-      Promise.all(list).then(() => {
-        this.handleImmediately(parentRequest, propertyName, pack, deferred, resultRequest);
-      });
+      Promise.all(list).then(() => this.handleImmediately(
+        parentRequest,
+        propertyName,
+        pack,
+        deferred,
+        resultRequest,
+      ));
     } else {
-      this.handleImmediately(parentRequest, propertyName, pack, deferred, resultRequest);
+      return this.handleImmediately(
+        parentRequest,
+        propertyName,
+        pack,
+        deferred,
+        resultRequest,
+      );
     }
   }
 
@@ -135,7 +148,11 @@ class Handlers {
     const descriptor = this.getCommand(name, getResourceType(parentRequest));
     if (descriptor instanceof Descriptor) {
       // INFO result should be applied to deferred.resolve() or deferred.reject()
-      // FIXME change pack to {command, args} object
+      /* FIXME IMPORTANT: if I make every command handler to return promise, then I do not
+      need deferred to be passed into handler, also I can set some logic to be executed
+      after child request completed.
+      WARNING: Breaking change.
+       */
       descriptor.handler(parentRequest, pack, deferred, resultRequest);
     } else {
       throw new Error(`Command descriptor for "${name}" was not found.`);

@@ -1,4 +1,5 @@
 import EventDispatcher from 'event-dispatcher';
+import hasOwnProperty from '../utils/hasOwnProperty';
 import ResourcePool, {
   createResourcePool,
   ResourcePoolEvents,
@@ -49,7 +50,7 @@ class PoolRegistry extends EventDispatcher {
    * @param pool {DataAccessInterface.ResourcePool} ResourcePool instance to be registered
    */
   register(pool) {
-    if (Object.prototype.hasOwnProperty.call(this[POOLS_FIELD], pool.id)) return;
+    if (hasOwnProperty(this[POOLS_FIELD], pool.id)) return;
     this[POOLS_FIELD][pool.id] = pool;
     pool.addEventListener(ResourcePoolEvents.POOL_DESTROYED, this.handlePoolDestroyed);
     if (this.hasEventListener(PoolRegistryEvents.RESOURCE_POOL_REGISTERED)) {
@@ -72,7 +73,7 @@ class PoolRegistry extends EventDispatcher {
    * @returns {Boolean}
    */
   isRegistered(pool) {
-    return Object.prototype.hasOwnProperty.call(
+    return hasOwnProperty(
       this[POOLS_FIELD],
       pool instanceof ResourcePool ? pool.id : String(pool),
     );

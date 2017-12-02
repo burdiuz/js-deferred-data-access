@@ -1,3 +1,4 @@
+import reject from '../../utils/reject';
 import { createDeferred } from '../../utils/Deferred';
 import TargetStatus from '../../utils/TargetStatus';
 import { createQueue } from './Queue';
@@ -35,7 +36,7 @@ class SubTargets extends Children {
     let promise;
 
     if (!handlers.hasCommand(propertyName)) {
-      return Promise.reject(new Error(`Request handler for "${propertyName}" is not registered.`));
+      return reject(`Request handler for "${propertyName}" is not registered.`);
     }
 
     promise = this.handleSend(propertyName, pack, deferred || createDeferred(), child);
@@ -58,14 +59,14 @@ class SubTargets extends Children {
 
         return this.queue.add(propertyName, pack, deferred, child);
       case TargetStatus.REJECTED:
-        return Promise.reject(new Error('Target object was rejected and cannot be used for calls.'));
+        return reject('Target object was rejected and cannot be used for calls.');
       case TargetStatus.DESTROYED:
-        return Promise.reject(new Error('Target object was destroyed and cannot be used for calls.'));
+        return reject('Target object was destroyed and cannot be used for calls.');
       case TargetStatus.RESOLVED:
         this.handleSubRequest(propertyName, pack, deferred, child);
         return deferred.promise;
       default:
-        return Promise.reject(new Error(`Target object is in unknown status "${status}".`));
+        return reject(`Target object is in unknown status "${status}".`);
     }
   }
 

@@ -14,6 +14,7 @@ class Descriptor {
      */
     this.isTemporary = DEFAULT_IS_TEMPORARY;
     this.cacheable = true;
+    // FIXME no need to pass virtual, check for propertyName is null -- its virtual then
     this.virtual = false;
     this.resourceType = null;
   }

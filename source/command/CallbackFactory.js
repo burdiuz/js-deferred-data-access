@@ -1,40 +1,26 @@
 import getInternals from '../request/target/getInternals';
 import toJSON from '../request/target/toJSON';
+import reject from '../utils/reject';
 import { createDeferred } from '../utils/Deferred';
 import createRequestPackage from '../utils/createRequestPackage';
 import setTemporary from '../request/target/setTemporary';
 
 const createHandlerFor = (
-  factoryWrapper,
+  callbackFactory,
   propertyName,
   command,
   isTemporary,
   cacheable,
 ) => {
-  const { factory, checkState, getChildRequest } = factoryWrapper;
-
   function commandHandler(...args) {
-    const target = getInternals(this);
-    let child;
-    let promise;
-    // call target must be a request target
-    if (target) {
-      const pack = createRequestPackage(command, propertyName, args, toJSON(this));
-      const request = getChildRequest(propertyName, pack, cacheable);
-      child = request.child;
-      if (request.deferred) {
-        promise = target.send(propertyName, pack, request.deferred, child);
-        if (promise) {
-          checkState(promise, isTemporary, this, child, pack);
-        } else {
-          child = null;
-          promise = Promise.reject(new Error('Initial request failed and didn\'t result with promise.'));
-        }
-      }
-    } else {
-      promise = Promise.reject(new Error('Target object is not a resource, so cannot be used for calls.'));
-    }
-    return child || factory.create(promise);
+    return callbackFactory.processCall(
+      this,
+      propertyName,
+      command,
+      args,
+      isTemporary,
+      cacheable,
+    );
   }
 
   return commandHandler;
@@ -73,28 +59,57 @@ class CallbackFactory {
     return createHandlerFor(this, propertyName, command, isTemporary, cacheable);
   }
 
-  getChildRequest = (propertyName, pack, cacheable = false) => {
-    let child;
-    let deferred;
+  processCall(target, propertyName, command, args, isTemporary, cacheable = false) {
+    const internals = getInternals(target);
 
-    if (cacheable) {
-      child = this.factory.getCached(propertyName, pack);
+    // call target must be a request target
+    if (internals) {
+      const pack = createRequestPackage(command, propertyName, args, toJSON(target));
+
+      if (cacheable) {
+        const child = this.factory.getCached(propertyName, pack);
+
+        if (child) {
+          return child;
+        }
+      }
+
+      return this.makeChildReqest(target, propertyName, pack, isTemporary, cacheable);
     }
 
-    if (!child) {
-      deferred = createDeferred();
-      child = this.factory.create(deferred.promise, propertyName, pack, cacheable);
+    return this.rejectCall();
+  }
+
+  rejectCall() {
+    return this.factory.create(reject(
+      'Target object is not a resource, so cannot be used for calls.',
+    ));
+  }
+
+  makeChildReqest(target, propertyName, pack, isTemporary, cacheable = false) {
+    const internals = getInternals(target);
+    const deferred = createDeferred();
+    const child = this.factory.create(deferred.promise, propertyName, pack, cacheable);
+
+    const promise = internals.send(propertyName, pack, deferred, child);
+
+    if (promise) {
+      this.checkState(promise, isTemporary, target, child, pack);
+    } else {
+      deferred.resolve(reject(
+        'Initial request failed and didn\'t result with promise.',
+      ));
     }
 
-    return { child, deferred };
-  };
+    return child;
+  }
 
-  checkState = (promise, isTemporaryFn, parentRequest, childRequest, pack) => {
-    promise.then((data) => {
+  checkState(promise, isTemporaryFn, parentRequest, childRequest, pack) {
+    return promise.then((data) => {
       const isTemporary = Boolean(isTemporaryFn(parentRequest, childRequest, pack, data));
       setTemporary(childRequest, isTemporary);
     });
-  };
+  }
 
   setFactory(factory) {
     this.factory = factory;

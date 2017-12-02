@@ -1,3 +1,4 @@
+import hasOwnProperty from './hasOwnProperty';
 import Descriptor, { createDescriptor } from '../command/Descriptor';
 import Reserved from '../command/Reserved';
 
@@ -15,7 +16,7 @@ const applyDescriptor = (descriptor, descriptors, properties) => {
     throw new Error(`Name "${propertyName}" is reserved and cannot be used in descriptor.`);
   }
   if (
-    Object.prototype.hasOwnProperty.call(descriptors, propertyName)
+    hasOwnProperty(descriptors, propertyName)
     && descriptors[propertyName] instanceof Descriptor
   ) {
     throw new Error(`Field names should be unique, "${String(propertyName)}" field has duplicates.`);

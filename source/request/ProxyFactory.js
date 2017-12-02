@@ -1,6 +1,6 @@
 import Factory, { NO_INIT, createRequestFactory } from './Factory';
+import hasOwnProperty from '../utils/hasOwnProperty';
 import { ProxyCommandFields } from '../command/internal/ProxyCommands';
-import Target from "./Target";
 
 const EXCLUSIONS = {
   /*
@@ -53,9 +53,7 @@ const proxySet = (wrapper, name, value) => {
   return false;
 };
 
-const proxyHas = (wrapper, name) => (
-  Object.prototype.hasOwnProperty.call(wrapper.target, name)
-);
+const proxyHas = (wrapper, name) => hasOwnProperty(wrapper.target, name);
 
 const proxyDeleteProperty = (wrapper, name) => {
   const { target } = wrapper;
@@ -81,7 +79,7 @@ const proxyEnumerate = (wrapper) => {
 };
 
 const proxyGetOwnPropertyDescriptor = (wrapper, name) => {
-  if (Object.prototype.hasOwnProperty.call(EXCLUSIONS, name)) {
+  if (hasOwnProperty(EXCLUSIONS, name)) {
     return Object.getOwnPropertyDescriptor(wrapper, name);
   }
   return Object.getOwnPropertyDescriptor(wrapper.target, name);

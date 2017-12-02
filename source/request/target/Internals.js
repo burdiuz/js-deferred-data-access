@@ -1,3 +1,4 @@
+import reject from '../../utils/reject';
 import TargetStatus from '../../utils/TargetStatus';
 import TARGET_DATA from '../../utils/TARGET_DATA';
 import createRequestPackage from '../../utils/createRequestPackage';
@@ -98,7 +99,7 @@ class Internals extends SubTargets {
       }
       this.status = TargetStatus.DESTROYED;
     } else {
-      promise = Promise.reject(new Error('Invalid or already destroyed target.'));
+      promise = reject('Invalid or already destroyed target.');
     }
 
     return promise;

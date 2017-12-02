@@ -1,4 +1,5 @@
 import EventDispatcher from 'event-dispatcher';
+import hasOwnProperty from '../utils/hasOwnProperty';
 import getResourcePoolId from '../utils/getResourcePoolId';
 import getResourceId from '../utils/getResourceId';
 import isResource from '../utils/isResource';
@@ -116,7 +117,7 @@ class Converter extends EventDispatcher {
   lookupObject(data, linkConvertHandler) {
     return Object.getOwnPropertyNames(data)
       .reduce((result, name) => {
-        if (Object.prototype.hasOwnProperty.call(data, name)) {
+        if (hasOwnProperty(data, name)) {
           result[name] = linkConvertHandler.call(this, data[name]);
         }
 
@@ -175,6 +176,7 @@ class Converter extends EventDispatcher {
    * @param {*} data
    * @returns {Array}
    */
+  // FIXME for now data is always array
   lookupForPending(data) {
     const result = [];
 
