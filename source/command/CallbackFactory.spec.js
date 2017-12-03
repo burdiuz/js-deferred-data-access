@@ -247,6 +247,7 @@ describe('CallbackFactory', () => {
         child = resource.method('command', 'value');
       });
 
+      // FIXME it should not generate resource twice for same request
       it('should regenerate child resource', () => {
         expect(resourceFactory.create).to.be.calledTwice;
         expect(resourceFactory.create.getCall(1).args[0]).to.be.an.instanceof(Promise);

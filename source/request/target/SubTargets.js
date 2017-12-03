@@ -17,7 +17,7 @@ class SubTargets extends Children {
 
   parentResolved() {
     if (this.hasQueue()) {
-      this.queue.send(this.parent.id, this.handleSubRequest);
+      this.queue.send(this.parent, this.handleSubRequest);
       this.queue = null;
     }
   }
@@ -31,7 +31,8 @@ class SubTargets extends Children {
     return Boolean(this.queue && this.queue.length);
   }
 
-  send(propertyName, pack, deferred = null, child = null) {
+  send(pack, child = null) {
+    const { propertyName } = pack;
     const { handlers } = this.parent;
     let promise;
 
@@ -39,7 +40,7 @@ class SubTargets extends Children {
       return reject(`Request handler for "${propertyName}" is not registered.`);
     }
 
-    promise = this.handleSend(propertyName, pack, deferred || createDeferred(), child);
+    promise = this.handleSend(pack, child);
 
     if (child) {
       promise = this.register(child);
@@ -48,7 +49,7 @@ class SubTargets extends Children {
     return promise;
   }
 
-  handleSend(propertyName, pack, deferred, child = null) {
+  handleSend(pack, child = null) {
     const { status } = this.parent;
 
     switch (status) {
@@ -57,22 +58,21 @@ class SubTargets extends Children {
           this.queue = createQueue();
         }
 
-        return this.queue.add(propertyName, pack, deferred, child);
+        return this.queue.add(pack, child);
       case TargetStatus.REJECTED:
         return reject('Target object was rejected and cannot be used for calls.');
       case TargetStatus.DESTROYED:
         return reject('Target object was destroyed and cannot be used for calls.');
       case TargetStatus.RESOLVED:
-        this.handleSubRequest(propertyName, pack, deferred, child);
-        return deferred.promise;
+        return this.handleSubRequest(pack, child);
       default:
         return reject(`Target object is in unknown status "${status}".`);
     }
   }
 
-  handleSubRequest = (propertyName, pack, deferred, child) => {
+  handleSubRequest = (pack, child) => {
     const { handlers, target } = this.parent;
-    return handlers.handle(target, propertyName, pack, deferred, child);
+    return handlers.handle(target, pack, child);
   };
 }
 

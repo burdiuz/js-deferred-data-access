@@ -6,13 +6,9 @@
  * @param target JSON object representing resource or target, its raw value
  * @returns {{command: *, args: *, target: *}}
  */
-export default (command, propertyName, args, target) => {
-  const result = {
-    command,
-    propertyName,
-    args,
-    target,
-  };
-
-  return result;
-};
+export default (propertyName, command, args, target) => ({
+  propertyName,
+  command,
+  args,
+  target,
+});

@@ -120,43 +120,30 @@ class Handlers {
     return descriptor || null;
   }
 
-  handle(parentRequest, propertyName, pack, deferred, resultRequest) {
+  call(parentRequest, pack, resultRequest) {
     // FIXME should it also check for resultRequest to not appear in the list?
     const list = this.converter ? this.converter.lookupForPending(pack.args) : null;
+
     if (list && list.length) {
       // FIXME Need to test on all platforms: might not work because may need list of
       // Promise objects, not Targets
-      Promise.all(list).then(() => this.handleImmediately(
-        parentRequest,
-        propertyName,
-        pack,
-        deferred,
-        resultRequest,
-      ));
-    } else {
-      return this.handleImmediately(
-        parentRequest,
-        propertyName,
-        pack,
-        deferred,
-        resultRequest,
-      );
+      return Promise.all(list)
+        .then(() => this.callImmediately(parentRequest, pack, resultRequest));
     }
+
+    return this.callImmediately(parentRequest, pack, resultRequest);
   }
 
-  handleImmediately(parentRequest, name, pack, deferred, resultRequest) {
-    const descriptor = this.getCommand(name, getResourceType(parentRequest));
+  callImmediately(parentRequest, pack, resultRequest) {
+    const { propertyName } = pack;
+    const descriptor = this.getCommand(propertyName, getResourceType(parentRequest));
     if (descriptor instanceof Descriptor) {
-      // INFO result should be applied to deferred.resolve() or deferred.reject()
-      /* FIXME IMPORTANT: if I make every command handler to return promise, then I do not
-      need deferred to be passed into handler, also I can set some logic to be executed
-      after child request completed.
-      WARNING: Breaking change.
-       */
-      descriptor.handler(parentRequest, pack, deferred, resultRequest);
-    } else {
-      throw new Error(`Command descriptor for "${name}" was not found.`);
+      return new Promise((resolve) => {
+        resolve(descriptor.handler(parentRequest, pack, resultRequest));
+      });
     }
+
+    return reject(`Command descriptor for "${name}" was not found.`);
   }
 
   static events = HandlersEvents;

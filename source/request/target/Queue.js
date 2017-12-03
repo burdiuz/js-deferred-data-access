@@ -1,11 +1,14 @@
+import { createDeferred } from '../../utils/Deferred';
+import toJSON from './toJSON';
+
 class Queue {
   constructor(list = []) {
     this.list = list;
   }
 
-  add(name, pack, deferred, child) {
+  add(pack, child) {
+    const deferred = createDeferred();
     this.list.push({
-      name,
       pack,
       deferred,
       child,
@@ -24,18 +27,20 @@ class Queue {
 
   getCommands() {
     // return this.list.map(([name, pack]) => pack.type);
-    return this.list.map(({ name }) => name);
+    return this.list.map(({ pack: { propertyName } }) => propertyName);
   }
 
-  send(targetJSON, callback) {
+  send(target, callback) {
+    // target reset is needed because, when request was made, target probably was in
+    // pending mode and may be didn't have proper data
+    const targetJSON = toJSON(target);
     this.list.forEach(({
-      name,
       pack,
       deferred,
       child,
     }) => {
       pack.target = targetJSON;
-      callback(name, pack, deferred, child);
+      deferred.resolve(callback(pack, child));
     });
     this.list = [];
   }

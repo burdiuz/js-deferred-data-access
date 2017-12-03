@@ -70,7 +70,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	__webpack_require__.p = "http://localhost:8081/dist/";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 26);
+/******/ 	return __webpack_require__(__webpack_require__.s = 28);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -82,23 +82,38 @@ return /******/ (function(modules) { // webpackBootstrap
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__TARGET_DATA__ = __webpack_require__(2);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__request_Target__ = __webpack_require__(6);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__resource_Resource__ = __webpack_require__(12);
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
 
+/* in case of circular dependency make empty base classes
+   for both Target and Resource and check for them:
 
+   Target will have:
+s    class Target extends TargetBase {
+
+   this function will have:
+    object instanceof TargetBase
+ */
 
 
 
 /* harmony default export */ __webpack_exports__["a"] = (function (object) {
-  return object instanceof __WEBPACK_IMPORTED_MODULE_3__resource_Resource__["b" /* default */] || object instanceof __WEBPACK_IMPORTED_MODULE_2__request_Target__["b" /* default */] || object && (
-  // this case for Targets and Resources which contain
-  // data in TARGET_INTERNALS Symbol
-  // We check for their types above but in cases when Proxies are enabled
-  // their type will be Function and verification will come to this case
-  _typeof(object[__WEBPACK_IMPORTED_MODULE_0__TARGET_INTERNALS__["a" /* default */]]) === 'object' ||
+  if (!object) return false;
+
+  if (object instanceof __WEBPACK_IMPORTED_MODULE_3__resource_Resource__["b" /* default */]
   // this case for RAW resources passed via JSON conversion,
-  // look like {'resource::data': {id: '1111', poolId: '22222'}}
-  _typeof(object[__WEBPACK_IMPORTED_MODULE_1__TARGET_DATA__["a" /* default */]]) === 'object');
+  // look like {'resource::data': {$id: '1111', $poolId: '22222'}}
+  || object[__WEBPACK_IMPORTED_MODULE_1__TARGET_DATA__["a" /* default */]] // (object[TARGET_DATA] && typeof object[TARGET_DATA] === 'object')
+  ) {
+      return true;
+    } else if (object instanceof __WEBPACK_IMPORTED_MODULE_2__request_Target__["b" /* default */] || object[__WEBPACK_IMPORTED_MODULE_0__TARGET_INTERNALS__["a" /* default */]] // (object[TARGET_INTERNALS] && typeof object[TARGET_INTERNALS] === 'object')
+  ) {
+      // now all targets have internals in them, so we have to check if id and poolId are valid
+      // to treat target as resource. In case of Proxy enabled instanceof will be Function,
+      // so we have to check for internals.
+      return object[__WEBPACK_IMPORTED_MODULE_0__TARGET_INTERNALS__["a" /* default */]].isResource();
+    }
+
+  return false;
 });
 
 /***/ }),
@@ -122,13 +137,13 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 "use strict";
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__utils_TARGET_INTERNALS__ = __webpack_require__(1);
 /**
- * Created by Oleg Galaburda on 24.11.17.
+ * Created by Oleg Galaburda on 16.11.17.
  */
 
 
 
 /* harmony default export */ __webpack_exports__["a"] = (function (target) {
-  return target && target[__WEBPACK_IMPORTED_MODULE_0__utils_TARGET_INTERNALS__["a" /* default */]] || null;
+  return target[__WEBPACK_IMPORTED_MODULE_0__utils_TARGET_INTERNALS__["a" /* default */]];
 });
 
 /***/ }),
@@ -140,36 +155,43 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "b", function() { return createDescriptor; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return addDescriptorTo; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "d", function() { return descriptorGeneratorFactory; });
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__utils_isResource__ = __webpack_require__(0);
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var DEFAULT_IS_TEMPORARY = function DEFAULT_IS_TEMPORARY() {
-  return true;
+
+
+// It will make all resources temporary and user must explicitly set resource permanent
+var DEFAULT_IS_TEMPORARY = function DEFAULT_IS_TEMPORARY(parent, child) {
+  return Object(__WEBPACK_IMPORTED_MODULE_0__utils_isResource__["a" /* default */])(child);
 };
 
-var Descriptor = function Descriptor(type, handler) {
-  var name = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : undefined;
+var Descriptor =
+// FIXME type > command; name > propertyName
+function Descriptor(command, handler) {
+  var propertyName = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : undefined;
 
   _classCallCheck(this, Descriptor);
 
-  this.name = name !== undefined ? name : type;
-  this.type = type;
+  this.propertyName = propertyName !== undefined ? propertyName : command;
+  this.command = command;
   this.handler = handler;
   /**
    * @type {function(): boolean}
    */
   this.isTemporary = DEFAULT_IS_TEMPORARY;
   this.cacheable = true;
+  // FIXME no need to pass virtual, check for propertyName is null -- its virtual then
   this.virtual = false;
   this.resourceType = null;
 };
 
-var createDescriptor = function createDescriptor(type, handler, name) {
+var createDescriptor = function createDescriptor(command, handler, propertyName) {
   var isTemporary = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : DEFAULT_IS_TEMPORARY;
   var resourceType = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : null;
   var cacheable = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : true;
   var virtual = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : false;
 
-  var descriptor = new Descriptor(type, handler, name);
+  var descriptor = new Descriptor(command, handler, propertyName);
   descriptor.resourceType = resourceType;
   descriptor.cacheable = cacheable;
   descriptor.virtual = virtual;
@@ -184,18 +206,18 @@ var addDescriptorTo = function addDescriptorTo(descriptor, target) {
   if (target instanceof Array) {
     target.push(descriptor);
   } else if (target) {
-    target[descriptor.name] = descriptor;
+    target[descriptor.propertyName] = descriptor;
   }
 };
 
-var descriptorGeneratorFactory = function descriptorGeneratorFactory(type, name) {
+var descriptorGeneratorFactory = function descriptorGeneratorFactory(command, propertyName) {
   return function (handler, target) {
     var isTemporary = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : DEFAULT_IS_TEMPORARY;
     var resourceType = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
     var cacheable = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : true;
     var virtual = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : false;
 
-    var descriptor = createDescriptor(type, handler, name, isTemporary, resourceType, cacheable, virtual);
+    var descriptor = createDescriptor(command, handler, propertyName, isTemporary, resourceType, cacheable, virtual);
     addDescriptorTo(descriptor, target);
     return Object.freeze(descriptor);
   };
@@ -208,6 +230,71 @@ var descriptorGeneratorFactory = function descriptorGeneratorFactory(type, name)
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
+/* harmony default export */ __webpack_exports__["a"] = ((function (hasOwnProperty) {
+  return function (target, property) {
+    return hasOwnProperty.call(target, property);
+  };
+})(Object.prototype.hasOwnProperty));
+
+/***/ }),
+/* 6 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return createRequestTarget; });
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__utils_TARGET_INTERNALS__ = __webpack_require__(1);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__target_Internals__ = __webpack_require__(31);
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+
+
+
+/**
+ * The object that will be available on other side
+ * @class DataAccessInterface.RequestTarget
+ * @param _promise {Promise}
+ * @param _requestHandlers {Handlers}
+ */
+
+var Target = function () {
+  function Target(promise, requestHandlers) {
+    _classCallCheck(this, Target);
+
+    this[__WEBPACK_IMPORTED_MODULE_0__utils_TARGET_INTERNALS__["a" /* default */]] = new __WEBPACK_IMPORTED_MODULE_1__target_Internals__["a" /* default */](this, promise, requestHandlers);
+  }
+
+  _createClass(Target, [{
+    key: 'then',
+    value: function then() {
+      var _TARGET_INTERNALS;
+
+      return (_TARGET_INTERNALS = this[__WEBPACK_IMPORTED_MODULE_0__utils_TARGET_INTERNALS__["a" /* default */]]).then.apply(_TARGET_INTERNALS, arguments);
+    }
+  }, {
+    key: 'catch',
+    value: function _catch() {
+      var _TARGET_INTERNALS2;
+
+      return (_TARGET_INTERNALS2 = this[__WEBPACK_IMPORTED_MODULE_0__utils_TARGET_INTERNALS__["a" /* default */]]).catch.apply(_TARGET_INTERNALS2, arguments);
+    }
+  }]);
+
+  return Target;
+}();
+
+var createRequestTarget = function createRequestTarget(promise, requestHandlers) {
+  return new Target(promise, requestHandlers);
+};
+
+/* harmony default export */ __webpack_exports__["b"] = (Target);
+
+/***/ }),
+/* 7 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return ResourcePoolEvents; });
 /* unused harmony export MAP_FIELD */
 /* unused harmony export isValidTarget */
@@ -215,11 +302,12 @@ var descriptorGeneratorFactory = function descriptorGeneratorFactory(type, name)
 /* unused harmony export getDefaultValidTargets */
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "d", function() { return defaultResourcePool; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "b", function() { return createResourcePool; });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_event_dispatcher__ = __webpack_require__(10);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_event_dispatcher__ = __webpack_require__(18);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_event_dispatcher___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_event_dispatcher__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__utils_getId__ = __webpack_require__(11);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__utils_getId__ = __webpack_require__(13);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__utils_isResource__ = __webpack_require__(0);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__Resource__ = __webpack_require__(12);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__request_target_isRequest__ = __webpack_require__(45);
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -231,6 +319,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
 
 
 
@@ -250,7 +339,7 @@ var MAP_FIELD = Symbol('ResourcePool::map');
 var validTargets = {};
 
 var isValidTarget = function isValidTarget(target) {
-  return !Object(__WEBPACK_IMPORTED_MODULE_2__utils_isResource__["a" /* default */])(target) && Boolean(validTargets[typeof target === 'undefined' ? 'undefined' : _typeof(target)]);
+  return !Object(__WEBPACK_IMPORTED_MODULE_2__utils_isResource__["a" /* default */])(target) && !Object(__WEBPACK_IMPORTED_MODULE_4__request_target_isRequest__["a" /* default */])(target) && Boolean(validTargets[typeof target === 'undefined' ? 'undefined' : _typeof(target)]);
 };
 
 var setValidTargets = function setValidTargets(list) {
@@ -429,78 +518,16 @@ setValidTargets(getDefaultValidTargets());
 /* harmony default export */ __webpack_exports__["c"] = (ResourcePool);
 
 /***/ }),
-/* 6 */
+/* 8 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return createRequestTarget; });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__utils_TARGET_INTERNALS__ = __webpack_require__(1);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__utils_isResource__ = __webpack_require__(0);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__target_PROMISE_FIELD__ = __webpack_require__(44);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__target_Internals__ = __webpack_require__(45);
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-
-
-
-
-
-var getRequestPromise = function getRequestPromise(request) {
-  return request[__WEBPACK_IMPORTED_MODULE_0__utils_TARGET_INTERNALS__["a" /* default */]] || request[__WEBPACK_IMPORTED_MODULE_2__target_PROMISE_FIELD__["a" /* default */]];
-};
-
-/**
- * The object that will be available on other side
- * @class DataAccessInterface.RequestTarget
- * @param _promise {Promise}
- * @param _requestHandlers {Handlers}
- */
-
-var Target = function () {
-  function Target(promise, requestHandlers) {
-    var _this = this;
-
-    _classCallCheck(this, Target);
-
-    this[__WEBPACK_IMPORTED_MODULE_0__utils_TARGET_INTERNALS__["a" /* default */]] = new __WEBPACK_IMPORTED_MODULE_3__target_Internals__["a" /* default */](this, promise, requestHandlers);
-
-    var handlePromise = function handlePromise(data) {
-      if (!Object(__WEBPACK_IMPORTED_MODULE_1__utils_isResource__["a" /* default */])(data)) {
-        _this[__WEBPACK_IMPORTED_MODULE_2__target_PROMISE_FIELD__["a" /* default */]] = promise;
-        delete _this[__WEBPACK_IMPORTED_MODULE_0__utils_TARGET_INTERNALS__["a" /* default */]];
-      }
-    };
-
-    promise.then(handlePromise, handlePromise);
-  }
-
-  _createClass(Target, [{
-    key: 'then',
-    value: function then() {
-      var target = getRequestPromise(this);
-      return target.then.apply(target, arguments);
-    }
-  }, {
-    key: 'catch',
-    value: function _catch() {
-      var target = getRequestPromise(this);
-      return target.catch.apply(target, arguments);
-    }
-  }]);
-
-  return Target;
-}();
-
-var createRequestTarget = function createRequestTarget(promise, requestHandlers) {
-  return new Target(promise, requestHandlers);
-};
-
-/* harmony default export */ __webpack_exports__["b"] = (Target);
+/* harmony default export */ __webpack_exports__["a"] = (function (message) {
+  return Promise.reject(new Error(message));
+});
 
 /***/ }),
-/* 7 */
+/* 9 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -512,60 +539,337 @@ var createRequestTarget = function createRequestTarget(promise, requestHandlers)
 }));
 
 /***/ }),
-/* 8 */
+/* 10 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return createDeferred; });
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var Deferred = function Deferred() {
+  var _this = this;
+
+  _classCallCheck(this, Deferred);
+
+  this.promise = new Promise(function (resolve, reject) {
+    _this.resolve = resolve;
+    _this.reject = reject;
+  });
+};
+
+var createDeferred = function createDeferred() {
+  return new Deferred();
+};
+/* harmony default export */ __webpack_exports__["b"] = (Deferred);
+
+/***/ }),
+/* 11 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__getInternals__ = __webpack_require__(3);
+/**
+ * Created by Oleg Galaburda on 16.11.17.
+ */
+
+
+
+/* harmony default export */ __webpack_exports__["a"] = (function (target) {
+  var internals = Object(__WEBPACK_IMPORTED_MODULE_0__getInternals__["a" /* default */])(target);
+  return internals ? internals.toJSON() : undefined;
+});
+
+/***/ }),
+/* 12 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return createResource; });
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__utils_TARGET_DATA__ = __webpack_require__(2);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__utils_TARGET_INTERNALS__ = __webpack_require__(1);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__request_target_getInternals__ = __webpack_require__(3);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__utils_getId__ = __webpack_require__(13);
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+
+
+
+
+
+var getPoolId = function getPoolId(pool) {
+  return pool ? pool.id : null;
+};
+
+/**
+ * @exports Resource
+ */
+
+var Resource = function () {
+  function Resource(pool, value, type, id) {
+    var _this = this,
+        _Object$definePropert;
+
+    _classCallCheck(this, Resource);
+
+    this.toJSON = function () {
+      return _defineProperty({}, __WEBPACK_IMPORTED_MODULE_0__utils_TARGET_DATA__["a" /* default */], {
+        $id: _this.id,
+        $type: _this.type,
+        $poolId: _this.poolId
+      });
+    };
+
+    Object.defineProperties(this, (_Object$definePropert = {}, _defineProperty(_Object$definePropert, __WEBPACK_IMPORTED_MODULE_1__utils_TARGET_INTERNALS__["a" /* default */], {
+      value: {
+        pool: pool,
+        value: value,
+        type: type,
+        id: id,
+        active: true,
+        poolId: getPoolId(pool)
+      }
+    }), _defineProperty(_Object$definePropert, __WEBPACK_IMPORTED_MODULE_0__utils_TARGET_DATA__["a" /* default */], {
+      get: this.toJSON
+    }), _Object$definePropert));
+  }
+
+  _createClass(Resource, [{
+    key: 'destroy',
+    value: function destroy() {
+      var internals = Object(__WEBPACK_IMPORTED_MODULE_2__request_target_getInternals__["a" /* default */])(this);
+      var id = internals.id,
+          pool = internals.pool;
+
+
+      if (!internals.active) {
+        return;
+      }
+
+      internals.active = false;
+      pool.remove(id);
+
+      Object.keys(internals).map(function (name) {
+        return delete internals[name];
+      });
+    }
+  }, {
+    key: 'active',
+    get: function get() {
+      return Boolean(Object(__WEBPACK_IMPORTED_MODULE_2__request_target_getInternals__["a" /* default */])(this).active);
+    }
+  }, {
+    key: 'value',
+    get: function get() {
+      return Object(__WEBPACK_IMPORTED_MODULE_2__request_target_getInternals__["a" /* default */])(this).value;
+    }
+  }, {
+    key: 'type',
+    get: function get() {
+      return Object(__WEBPACK_IMPORTED_MODULE_2__request_target_getInternals__["a" /* default */])(this).type || _typeof(Object(__WEBPACK_IMPORTED_MODULE_2__request_target_getInternals__["a" /* default */])(this).value);
+    }
+  }, {
+    key: 'id',
+    get: function get() {
+      return Object(__WEBPACK_IMPORTED_MODULE_2__request_target_getInternals__["a" /* default */])(this).id;
+    }
+  }, {
+    key: 'poolId',
+    get: function get() {
+      return Object(__WEBPACK_IMPORTED_MODULE_2__request_target_getInternals__["a" /* default */])(this).poolId;
+    }
+  }]);
+
+  return Resource;
+}();
+
+var createResource = function createResource(pool, value, resourceType) {
+  var id = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
+  return new Resource(pool, value, resourceType, id || Object(__WEBPACK_IMPORTED_MODULE_3__utils_getId__["a" /* default */])());
+};
+
+/* harmony default export */ __webpack_exports__["b"] = (Resource);
+
+/***/ }),
+/* 13 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+var base = "DA/" + Date.now() + "/";
+var index = 0;
+/* harmony default export */ __webpack_exports__["a"] = (function () {
+  return "" + base + ++index + "/" + Date.now();
+});
+
+/***/ }),
+/* 14 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__TARGET_INTERNALS__ = __webpack_require__(1);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__IConvertible__ = __webpack_require__(9);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__TARGET_DATA__ = __webpack_require__(2);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__isResource__ = __webpack_require__(0);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__request_target_toJSON__ = __webpack_require__(29);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__resource_ResourcePool__ = __webpack_require__(5);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__resource_Resource__ = __webpack_require__(12);
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
 
 
 
 
-
-
-
-/* harmony default export */ __webpack_exports__["a"] = (function (object, pool) {
-  pool = pool || __WEBPACK_IMPORTED_MODULE_4__resource_ResourcePool__["d" /* defaultResourcePool */];
-
-  if (object instanceof __WEBPACK_IMPORTED_MODULE_5__resource_Resource__["b" /* default */]) {
-    return object.toJSON();
-  } else if (_typeof(object[__WEBPACK_IMPORTED_MODULE_0__TARGET_INTERNALS__["a" /* default */]]) === 'object') {
-    return Object(__WEBPACK_IMPORTED_MODULE_3__request_target_toJSON__["a" /* default */])(object);
-  } else if (object instanceof __WEBPACK_IMPORTED_MODULE_1__IConvertible__["a" /* default */] || typeof object === 'function') {
-    return pool.set(object).toJSON();
+/* harmony default export */ __webpack_exports__["a"] = (function (object) {
+  if (_typeof(object[__WEBPACK_IMPORTED_MODULE_0__TARGET_INTERNALS__["a" /* default */]]) === 'object') {
+    return object[__WEBPACK_IMPORTED_MODULE_0__TARGET_INTERNALS__["a" /* default */]].poolId;
   } else if (Object(__WEBPACK_IMPORTED_MODULE_2__isResource__["a" /* default */])(object)) {
-    return object;
+    return object[__WEBPACK_IMPORTED_MODULE_1__TARGET_DATA__["a" /* default */]].$poolId;
+  }
+  return null;
+});
+
+/***/ }),
+/* 15 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__TARGET_INTERNALS__ = __webpack_require__(1);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__TARGET_DATA__ = __webpack_require__(2);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__isResource__ = __webpack_require__(0);
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+
+
+
+
+/* harmony default export */ __webpack_exports__["a"] = (function (object) {
+  // if (object instanceof Resource || object instanceof Target) {
+  if (_typeof(object[__WEBPACK_IMPORTED_MODULE_0__TARGET_INTERNALS__["a" /* default */]]) === 'object') {
+    return object[__WEBPACK_IMPORTED_MODULE_0__TARGET_INTERNALS__["a" /* default */]].id;
+  } else if (Object(__WEBPACK_IMPORTED_MODULE_2__isResource__["a" /* default */])(object)) {
+    return object[__WEBPACK_IMPORTED_MODULE_1__TARGET_DATA__["a" /* default */]].$id;
   }
 
   return null;
 });
 
 /***/ }),
-/* 9 */
+/* 16 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
+/* unused harmony export ProxyCommandNames */
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return ProxyCommandFields; });
+/* unused harmony export createDescriptors */
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Descriptor__ = __webpack_require__(4);
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-/**
- * Interface for all resource types, these will be treated as resources automatically
- * @interface
- */
-var IConvertible = function IConvertible() {
-  _classCallCheck(this, IConvertible);
+
+
+var ProxyCommandNames = Object.freeze({
+  GET: 'get',
+  SET: 'set',
+  APPLY: 'apply',
+  DELETE_PROPERTY: 'deleteProperty'
+});
+
+var ProxyCommandFields = Object.freeze({
+  get: Symbol('proxy.commands::get'),
+  set: Symbol('proxy.commands::set'),
+  apply: Symbol('proxy.commands::apply'),
+  deleteProperty: Symbol('proxy.commands::deleteProperty')
+});
+
+var ProxyCommandsClass = function () {
+  function ProxyCommandsClass() {
+    _classCallCheck(this, ProxyCommandsClass);
+
+    this.names = ProxyCommandNames;
+    this.fields = ProxyCommandFields;
+    this.createGETDescriptor = Object(__WEBPACK_IMPORTED_MODULE_0__Descriptor__["d" /* descriptorGeneratorFactory */])(ProxyCommandNames.GET, ProxyCommandFields.get);
+    this.createSETDescriptor = Object(__WEBPACK_IMPORTED_MODULE_0__Descriptor__["d" /* descriptorGeneratorFactory */])(ProxyCommandNames.SET, ProxyCommandFields.set);
+    this.createAPPLYDescriptor = Object(__WEBPACK_IMPORTED_MODULE_0__Descriptor__["d" /* descriptorGeneratorFactory */])(ProxyCommandNames.APPLY, ProxyCommandFields.apply);
+
+    Object.freeze(this);
+  }
+
+  _createClass(ProxyCommandsClass, [{
+    key: 'list',
+    get: function get() {
+      return [ProxyCommandNames.GET, ProxyCommandNames.SET, ProxyCommandNames.APPLY, ProxyCommandNames.DELETE_PROPERTY];
+    }
+  }, {
+    key: 'required',
+    get: function get() {
+      return [ProxyCommandNames.GET, ProxyCommandNames.SET, ProxyCommandNames.APPLY];
+    }
+  }]);
+
+  return ProxyCommandsClass;
+}();
+
+var ProxyCommands = new ProxyCommandsClass();
+
+var createDescriptors = function createDescriptors(handlers) {
+  var target = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+  var isTemporary = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : undefined;
+  var resourceType = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
+  var cacheable = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : true;
+  var virtual = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : false;
+
+  var args = [isTemporary, resourceType, cacheable, virtual];
+  ProxyCommands.list.forEach(function (name) {
+    var handler = handlers[name];
+    var field = ProxyCommandFields[name];
+
+    if (handler instanceof Function) {
+      var descriptor = __WEBPACK_IMPORTED_MODULE_0__Descriptor__["b" /* createDescriptor */].apply(undefined, [name, handler, field].concat(args));
+      descriptor = Object.freeze(descriptor);
+
+      if (target instanceof Array) {
+        target.push(descriptor);
+      } else if (target) {
+        target[field] = descriptor;
+      }
+    }
+  });
+
+  return target;
 };
 
-/* harmony default export */ __webpack_exports__["a"] = (IConvertible);
+/* harmony default export */ __webpack_exports__["b"] = (ProxyCommands);
 
 /***/ }),
-/* 10 */
+/* 17 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__TARGET_INTERNALS__ = __webpack_require__(1);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__TARGET_DATA__ = __webpack_require__(2);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__isResource__ = __webpack_require__(0);
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+
+
+
+
+var getResourceType = function getResourceType(object) {
+  if (_typeof(object[__WEBPACK_IMPORTED_MODULE_0__TARGET_INTERNALS__["a" /* default */]]) === 'object') {
+    return object[__WEBPACK_IMPORTED_MODULE_0__TARGET_INTERNALS__["a" /* default */]].type;
+  } else if (Object(__WEBPACK_IMPORTED_MODULE_2__isResource__["a" /* default */])(object)) {
+    return object[__WEBPACK_IMPORTED_MODULE_1__TARGET_DATA__["a" /* default */]].$type;
+  }
+
+  return null;
+};
+
+/* harmony default export */ __webpack_exports__["a"] = (getResourceType);
+
+/***/ }),
+/* 18 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(module) {var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;var _typeof2 = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
@@ -1051,355 +1355,85 @@ var IConvertible = function IConvertible() {
   );
 });
 //# sourceMappingURL=event-dispatcher.js.map
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(30)(module)))
-
-/***/ }),
-/* 11 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-var base = "DA/" + Date.now() + "/";
-var index = 0;
-/* harmony default export */ __webpack_exports__["a"] = (function () {
-  return "" + base + ++index + "/" + Date.now();
-});
-
-/***/ }),
-/* 12 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return createResource; });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__utils_TARGET_DATA__ = __webpack_require__(2);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__utils_TARGET_INTERNALS__ = __webpack_require__(1);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__request_target_getInternals__ = __webpack_require__(3);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__utils_getId__ = __webpack_require__(11);
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-
-
-
-
-
-var getPoolId = function getPoolId(pool) {
-  return pool ? pool.id : null;
-};
-
-/**
- * @exports Resource
- */
-
-var Resource = function () {
-  function Resource(pool, value, type, id) {
-    var _this = this,
-        _Object$definePropert;
-
-    _classCallCheck(this, Resource);
-
-    this.toJSON = function () {
-      return _defineProperty({}, __WEBPACK_IMPORTED_MODULE_0__utils_TARGET_DATA__["a" /* default */], {
-        id: _this.id,
-        type: _this.type,
-        poolId: _this.poolId
-      });
-    };
-
-    Object.defineProperties(this, (_Object$definePropert = {}, _defineProperty(_Object$definePropert, __WEBPACK_IMPORTED_MODULE_1__utils_TARGET_INTERNALS__["a" /* default */], {
-      value: {
-        pool: pool,
-        value: value,
-        type: type,
-        id: id,
-        active: true,
-        poolId: getPoolId(pool)
-      }
-    }), _defineProperty(_Object$definePropert, __WEBPACK_IMPORTED_MODULE_0__utils_TARGET_DATA__["a" /* default */], {
-      get: this.toJSON
-    }), _Object$definePropert));
-  }
-
-  _createClass(Resource, [{
-    key: 'destroy',
-    value: function destroy() {
-      var internals = Object(__WEBPACK_IMPORTED_MODULE_2__request_target_getInternals__["a" /* default */])(this);
-      var id = internals.id,
-          pool = internals.pool;
-
-
-      if (!internals.active) {
-        return;
-      }
-
-      internals.active = false;
-      pool.remove(id);
-
-      Object.keys(internals).map(function (name) {
-        return delete internals[name];
-      });
-    }
-  }, {
-    key: 'active',
-    get: function get() {
-      return Boolean(Object(__WEBPACK_IMPORTED_MODULE_2__request_target_getInternals__["a" /* default */])(this).active);
-    }
-  }, {
-    key: 'value',
-    get: function get() {
-      return Object(__WEBPACK_IMPORTED_MODULE_2__request_target_getInternals__["a" /* default */])(this).value;
-    }
-  }, {
-    key: 'type',
-    get: function get() {
-      return Object(__WEBPACK_IMPORTED_MODULE_2__request_target_getInternals__["a" /* default */])(this).type || _typeof(Object(__WEBPACK_IMPORTED_MODULE_2__request_target_getInternals__["a" /* default */])(this).value);
-    }
-  }, {
-    key: 'id',
-    get: function get() {
-      return Object(__WEBPACK_IMPORTED_MODULE_2__request_target_getInternals__["a" /* default */])(this).id;
-    }
-  }, {
-    key: 'poolId',
-    get: function get() {
-      return Object(__WEBPACK_IMPORTED_MODULE_2__request_target_getInternals__["a" /* default */])(this).poolId;
-    }
-  }]);
-
-  return Resource;
-}();
-
-var createResource = function createResource(pool, value, resourceType) {
-  var id = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
-  return new Resource(pool, value, resourceType, id || Object(__WEBPACK_IMPORTED_MODULE_3__utils_getId__["a" /* default */])());
-};
-
-/* harmony default export */ __webpack_exports__["b"] = (Resource);
-
-/***/ }),
-/* 13 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return createDeferred; });
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var Deferred = function Deferred() {
-  var _this = this;
-
-  _classCallCheck(this, Deferred);
-
-  this.promise = new Promise(function (resolve, reject) {
-    _this.resolve = resolve;
-    _this.reject = reject;
-  });
-};
-
-var createDeferred = function createDeferred() {
-  return new Deferred();
-};
-/* harmony default export */ __webpack_exports__["b"] = (Deferred);
-
-/***/ }),
-/* 14 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__TARGET_INTERNALS__ = __webpack_require__(1);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__TARGET_DATA__ = __webpack_require__(2);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__isResource__ = __webpack_require__(0);
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
-
-
-
-
-
-/* harmony default export */ __webpack_exports__["a"] = (function (object) {
-  if (_typeof(object[__WEBPACK_IMPORTED_MODULE_0__TARGET_INTERNALS__["a" /* default */]]) === 'object') {
-    return object[__WEBPACK_IMPORTED_MODULE_0__TARGET_INTERNALS__["a" /* default */]].poolId;
-  } else if (Object(__WEBPACK_IMPORTED_MODULE_2__isResource__["a" /* default */])(object)) {
-    return object[__WEBPACK_IMPORTED_MODULE_1__TARGET_DATA__["a" /* default */]].poolId;
-  }
-  return null;
-});
-
-/***/ }),
-/* 15 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__TARGET_INTERNALS__ = __webpack_require__(1);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__TARGET_DATA__ = __webpack_require__(2);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__isResource__ = __webpack_require__(0);
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
-
-
-
-
-
-/* harmony default export */ __webpack_exports__["a"] = (function (object) {
-  // if (object instanceof Resource || object instanceof Target) {
-  if (_typeof(object[__WEBPACK_IMPORTED_MODULE_0__TARGET_INTERNALS__["a" /* default */]]) === 'object') {
-    return object[__WEBPACK_IMPORTED_MODULE_0__TARGET_INTERNALS__["a" /* default */]].id;
-  } else if (Object(__WEBPACK_IMPORTED_MODULE_2__isResource__["a" /* default */])(object)) {
-    return object[__WEBPACK_IMPORTED_MODULE_1__TARGET_DATA__["a" /* default */]].id;
-  }
-
-  return null;
-});
-
-/***/ }),
-/* 16 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-/* unused harmony export ProxyCommandNames */
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return ProxyCommandFields; });
-/* unused harmony export createDescriptors */
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Descriptor__ = __webpack_require__(4);
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-
-
-var ProxyCommandNames = Object.freeze({
-  GET: 'get',
-  SET: 'set',
-  APPLY: 'apply',
-  DELETE_PROPERTY: 'deleteProperty'
-});
-
-var ProxyCommandFields = Object.freeze({
-  get: Symbol('proxy.commands::get'),
-  set: Symbol('proxy.commands::set'),
-  apply: Symbol('proxy.commands::apply'),
-  deleteProperty: Symbol('proxy.commands::deleteProperty')
-});
-
-var ProxyCommandsClass = function () {
-  function ProxyCommandsClass() {
-    _classCallCheck(this, ProxyCommandsClass);
-
-    this.names = ProxyCommandNames;
-    this.fields = ProxyCommandFields;
-    this.createGETDescriptor = Object(__WEBPACK_IMPORTED_MODULE_0__Descriptor__["d" /* descriptorGeneratorFactory */])(ProxyCommandNames.GET, ProxyCommandFields.get);
-    this.createSETDescriptor = Object(__WEBPACK_IMPORTED_MODULE_0__Descriptor__["d" /* descriptorGeneratorFactory */])(ProxyCommandNames.SET, ProxyCommandFields.set);
-    this.createAPPLYDescriptor = Object(__WEBPACK_IMPORTED_MODULE_0__Descriptor__["d" /* descriptorGeneratorFactory */])(ProxyCommandNames.APPLY, ProxyCommandFields.apply);
-
-    Object.freeze(this);
-  }
-
-  _createClass(ProxyCommandsClass, [{
-    key: 'list',
-    get: function get() {
-      return [ProxyCommandNames.GET, ProxyCommandNames.SET, ProxyCommandNames.APPLY, ProxyCommandNames.DELETE_PROPERTY];
-    }
-  }, {
-    key: 'required',
-    get: function get() {
-      return [ProxyCommandNames.GET, ProxyCommandNames.SET, ProxyCommandNames.APPLY];
-    }
-  }]);
-
-  return ProxyCommandsClass;
-}();
-
-var ProxyCommands = new ProxyCommandsClass();
-
-var createDescriptors = function createDescriptors(handlers) {
-  var target = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-  var isTemporary = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : undefined;
-  var resourceType = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
-  var cacheable = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : true;
-  var virtual = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : false;
-
-  var args = [isTemporary, resourceType, cacheable, virtual];
-  ProxyCommands.list.forEach(function (name) {
-    var handler = handlers[name];
-    var field = ProxyCommandFields[name];
-
-    if (handler instanceof Function) {
-      var descriptor = __WEBPACK_IMPORTED_MODULE_0__Descriptor__["b" /* createDescriptor */].apply(undefined, [name, handler, field].concat(args));
-      descriptor = Object.freeze(descriptor);
-
-      if (target instanceof Array) {
-        target.push(descriptor);
-      } else if (target) {
-        target[field] = descriptor;
-      }
-    }
-  });
-
-  return target;
-};
-
-/* harmony default export */ __webpack_exports__["b"] = (ProxyCommands);
-
-/***/ }),
-/* 17 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__TARGET_INTERNALS__ = __webpack_require__(1);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__TARGET_DATA__ = __webpack_require__(2);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__isResource__ = __webpack_require__(0);
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
-
-
-
-
-
-var getResourceType = function getResourceType(object) {
-  if (_typeof(object[__WEBPACK_IMPORTED_MODULE_0__TARGET_INTERNALS__["a" /* default */]]) === 'object') {
-    return object[__WEBPACK_IMPORTED_MODULE_0__TARGET_INTERNALS__["a" /* default */]].type;
-  } else if (Object(__WEBPACK_IMPORTED_MODULE_2__isResource__["a" /* default */])(object)) {
-    return object[__WEBPACK_IMPORTED_MODULE_1__TARGET_DATA__["a" /* default */]].type;
-  }
-
-  return null;
-};
-
-/* harmony default export */ __webpack_exports__["a"] = (getResourceType);
-
-/***/ }),
-/* 18 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-/* harmony default export */ __webpack_exports__["a"] = (function (type, args, targetId) {
-  var result = {
-    type: type,
-    args: args,
-    cmd: args[0], // cmd,
-    value: args[1], // value,
-    target: targetId
-  };
-
-  return result;
-});
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(44)(module)))
 
 /***/ }),
 /* 19 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__TARGET_DATA__ = __webpack_require__(2);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__getRawResource__ = __webpack_require__(8);
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
+/**
+ * Interface for all resource types, these will be treated as resources automatically
+ * @interface
+ */
+var IConvertible = function IConvertible() {
+  _classCallCheck(this, IConvertible);
+};
 
-
-/* harmony default export */ __webpack_exports__["a"] = (function (object) {
-  var data = Object(__WEBPACK_IMPORTED_MODULE_1__getRawResource__["a" /* default */])(object);
-  return data ? data[__WEBPACK_IMPORTED_MODULE_0__TARGET_DATA__["a" /* default */]] : null;
-});
+/* harmony default export */ __webpack_exports__["a"] = (IConvertible);
 
 /***/ }),
 /* 20 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__TARGET_INTERNALS__ = __webpack_require__(1);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__IConvertible__ = __webpack_require__(19);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__isResource__ = __webpack_require__(0);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__request_target_toJSON__ = __webpack_require__(11);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__resource_ResourcePool__ = __webpack_require__(7);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__resource_Resource__ = __webpack_require__(12);
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+
+
+
+
+
+
+
+/* harmony default export */ __webpack_exports__["a"] = (function (object, pool) {
+  pool = pool || __WEBPACK_IMPORTED_MODULE_4__resource_ResourcePool__["d" /* defaultResourcePool */];
+
+  if (object instanceof __WEBPACK_IMPORTED_MODULE_5__resource_Resource__["b" /* default */]) {
+    return object.toJSON();
+  } else if (_typeof(object[__WEBPACK_IMPORTED_MODULE_0__TARGET_INTERNALS__["a" /* default */]]) === 'object') {
+    return Object(__WEBPACK_IMPORTED_MODULE_3__request_target_toJSON__["a" /* default */])(object);
+  } else if (object instanceof __WEBPACK_IMPORTED_MODULE_1__IConvertible__["a" /* default */] || typeof object === 'function') {
+    return pool.set(object).toJSON();
+  } else if (Object(__WEBPACK_IMPORTED_MODULE_2__isResource__["a" /* default */])(object)) {
+    return object;
+  }
+
+  return null;
+});
+
+/***/ }),
+/* 21 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/**
+ * All arguments are required
+ * @param command Command name, Descriptor's name
+ * @param propertyName Property name, this is the name of the handler called against target object
+ * @param args Arguments passed to handler
+ * @param target JSON object representing resource or target, its raw value
+ * @returns {{command: *, args: *, target: *}}
+ */
+/* harmony default export */ __webpack_exports__["a"] = (function (propertyName, command, args, target) {
+  return {
+    propertyName: propertyName,
+    command: command,
+    args: args,
+    target: target
+  };
+});
+
+/***/ }),
+/* 22 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -1445,7 +1479,7 @@ var RequestCommands = function RequestCommands() {
 /* harmony default export */ __webpack_exports__["c"] = (new RequestCommands());
 
 /***/ }),
-/* 21 */
+/* 23 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -1465,13 +1499,13 @@ var RequestCommands = function RequestCommands() {
 }));
 
 /***/ }),
-/* 22 */
+/* 24 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return NO_INIT; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "b", function() { return createRequestFactory; });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Decorator__ = __webpack_require__(39);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Decorator__ = __webpack_require__(40);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__Target__ = __webpack_require__(6);
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
@@ -1507,9 +1541,8 @@ var Factory = function () {
   _createClass(Factory, [{
     key: 'create',
     value: function create(promise) {
-      var name = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
-      var pack = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
-      var cacheable = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
+      var pack = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+      var cacheable = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
 
       var request = Object(__WEBPACK_IMPORTED_MODULE_1__Target__["a" /* createRequestTarget */])(promise, this.handlers);
       if (this.handlers.available) {
@@ -1517,15 +1550,15 @@ var Factory = function () {
       }
 
       if (this.cache && cacheable) {
-        this.cache.set(name, pack, request);
+        this.cache.set(pack, request);
       }
 
       return request;
     }
   }, {
     key: 'getCached',
-    value: function getCached(name, pack) {
-      return this.cache && this.cache.get(name, pack);
+    value: function getCached(pack) {
+      return this.cache && this.cache.get(pack);
     }
   }]);
 
@@ -1539,20 +1572,21 @@ var createRequestFactory = function createRequestFactory(handlers, cacheImpl) {
 /* harmony default export */ __webpack_exports__["c"] = (Factory);
 
 /***/ }),
-/* 23 */
+/* 25 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* unused harmony export ConverterEvents */
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return createResourceConverter; });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_event_dispatcher__ = __webpack_require__(10);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_event_dispatcher__ = __webpack_require__(18);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_event_dispatcher___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_event_dispatcher__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__utils_getResourcePoolId__ = __webpack_require__(14);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__utils_getResourceId__ = __webpack_require__(15);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__utils_isResource__ = __webpack_require__(0);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__utils_isResourceConvertible__ = __webpack_require__(24);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__utils_getRawResource__ = __webpack_require__(8);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__request_target_isPending__ = __webpack_require__(42);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__utils_hasOwnProperty__ = __webpack_require__(5);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__utils_getResourcePoolId__ = __webpack_require__(14);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__utils_getResourceId__ = __webpack_require__(15);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__utils_isResource__ = __webpack_require__(0);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__utils_isResourceConvertible__ = __webpack_require__(26);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__utils_getRawResource__ = __webpack_require__(20);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_7__request_target_isPending__ = __webpack_require__(46);
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -1562,6 +1596,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
 
 
 
@@ -1619,8 +1654,8 @@ var Converter = function (_EventDispatcher) {
     value: function resourceToObject(data) {
       var result = void 0;
 
-      if (Object(__WEBPACK_IMPORTED_MODULE_4__utils_isResourceConvertible__["a" /* default */])(data)) {
-        result = Object(__WEBPACK_IMPORTED_MODULE_5__utils_getRawResource__["a" /* default */])(data, this.pool);
+      if (Object(__WEBPACK_IMPORTED_MODULE_5__utils_isResourceConvertible__["a" /* default */])(data)) {
+        result = Object(__WEBPACK_IMPORTED_MODULE_6__utils_getRawResource__["a" /* default */])(data, this.pool);
       } else if (typeof data.toJSON === 'function') {
         result = data.toJSON();
       } else {
@@ -1649,12 +1684,12 @@ var Converter = function (_EventDispatcher) {
     value: function objectToResource(data) {
       var result = data;
 
-      if (Object(__WEBPACK_IMPORTED_MODULE_3__utils_isResource__["a" /* default */])(data)) {
-        var poolId = Object(__WEBPACK_IMPORTED_MODULE_1__utils_getResourcePoolId__["a" /* default */])(data);
+      if (Object(__WEBPACK_IMPORTED_MODULE_4__utils_isResource__["a" /* default */])(data)) {
+        var poolId = Object(__WEBPACK_IMPORTED_MODULE_2__utils_getResourcePoolId__["a" /* default */])(data);
 
         if (this.registry.isRegistered(poolId)) {
           // target object is stored in current pool
-          var target = this.registry.get(poolId).get(Object(__WEBPACK_IMPORTED_MODULE_2__utils_getResourceId__["a" /* default */])(data));
+          var target = this.registry.get(poolId).get(Object(__WEBPACK_IMPORTED_MODULE_3__utils_getResourceId__["a" /* default */])(data));
 
           if (target) {
             result = target.value;
@@ -1707,7 +1742,7 @@ var Converter = function (_EventDispatcher) {
       var _this3 = this;
 
       return Object.getOwnPropertyNames(data).reduce(function (result, name) {
-        if (Object.prototype.hasOwnProperty.call(data, name)) {
+        if (Object(__WEBPACK_IMPORTED_MODULE_1__utils_hasOwnProperty__["a" /* default */])(data, name)) {
           result[name] = linkConvertHandler.call(_this3, data[name]);
         }
 
@@ -1728,7 +1763,7 @@ var Converter = function (_EventDispatcher) {
       var result = data;
 
       if (data !== undefined && data !== null) {
-        if (Object(__WEBPACK_IMPORTED_MODULE_4__utils_isResourceConvertible__["a" /* default */])(data)) {
+        if (Object(__WEBPACK_IMPORTED_MODULE_5__utils_isResourceConvertible__["a" /* default */])(data)) {
           // if data is Target, Resource, IConvertible, Function or RAW resource data
           result = this.resourceToObject(data);
         } else if (data instanceof Array) {
@@ -1755,7 +1790,7 @@ var Converter = function (_EventDispatcher) {
       var result = data;
 
       if (data !== undefined && data !== null) {
-        if (Object(__WEBPACK_IMPORTED_MODULE_3__utils_isResource__["a" /* default */])(data)) {
+        if (Object(__WEBPACK_IMPORTED_MODULE_4__utils_isResource__["a" /* default */])(data)) {
           // if data is RAW resource data
           result = this.objectToResource(data);
         } else if (data instanceof Array) {
@@ -1774,6 +1809,7 @@ var Converter = function (_EventDispatcher) {
      * @param {*} data
      * @returns {Array}
      */
+    // FIXME for now data is always array
 
   }, {
     key: 'lookupForPending',
@@ -1781,14 +1817,14 @@ var Converter = function (_EventDispatcher) {
       var result = [];
 
       var add = function add(value) {
-        if (Object(__WEBPACK_IMPORTED_MODULE_6__request_target_isPending__["a" /* default */])(value)) {
+        if (Object(__WEBPACK_IMPORTED_MODULE_7__request_target_isPending__["a" /* default */])(value)) {
           result.push(value);
         }
         return value;
       };
 
       if ((typeof data === 'undefined' ? 'undefined' : _typeof(data)) === 'object' && data !== null) {
-        if (Object(__WEBPACK_IMPORTED_MODULE_6__request_target_isPending__["a" /* default */])(data)) {
+        if (Object(__WEBPACK_IMPORTED_MODULE_7__request_target_isPending__["a" /* default */])(data)) {
           result.push(data);
         } else if (data instanceof Array) {
           this.lookupArray(data, add);
@@ -1820,29 +1856,32 @@ var createResourceConverter = function createResourceConverter(factory, registry
 /* harmony default export */ __webpack_exports__["b"] = (Converter);
 
 /***/ }),
-/* 24 */
+/* 26 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__isResource__ = __webpack_require__(0);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__IConvertible__ = __webpack_require__(9);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__IConvertible__ = __webpack_require__(19);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__request_Target__ = __webpack_require__(6);
+
 
 
 
 /* harmony default export */ __webpack_exports__["a"] = (function (data) {
-  return Object(__WEBPACK_IMPORTED_MODULE_0__isResource__["a" /* default */])(data) || typeof data === 'function' || data instanceof __WEBPACK_IMPORTED_MODULE_1__IConvertible__["a" /* default */];
+  return Object(__WEBPACK_IMPORTED_MODULE_0__isResource__["a" /* default */])(data) || data instanceof __WEBPACK_IMPORTED_MODULE_2__request_Target__["b" /* default */] || typeof data === 'function' || data instanceof __WEBPACK_IMPORTED_MODULE_1__IConvertible__["a" /* default */];
 });
 
 /***/ }),
-/* 25 */
+/* 27 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* unused harmony export PoolRegistryEvents */
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return createPoolRegistry; });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_event_dispatcher__ = __webpack_require__(10);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_event_dispatcher__ = __webpack_require__(18);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_event_dispatcher___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_event_dispatcher__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__ResourcePool__ = __webpack_require__(5);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__utils_hasOwnProperty__ = __webpack_require__(5);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__ResourcePool__ = __webpack_require__(7);
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -1850,6 +1889,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
 
 
 
@@ -1883,7 +1923,7 @@ var PoolRegistry = function (_EventDispatcher) {
     _this[POOLS_FIELD] = {};
 
     // every registry should keep default pool, so you can have access from anywhere
-    _this.register(__WEBPACK_IMPORTED_MODULE_1__ResourcePool__["d" /* defaultResourcePool */]);
+    _this.register(__WEBPACK_IMPORTED_MODULE_2__ResourcePool__["d" /* defaultResourcePool */]);
     return _this;
   }
 
@@ -1896,7 +1936,7 @@ var PoolRegistry = function (_EventDispatcher) {
      * @returns {DataAccessInterface.ResourcePool} New ResourcePool instance
      */
     value: function createPool() {
-      var pool = Object(__WEBPACK_IMPORTED_MODULE_1__ResourcePool__["b" /* createResourcePool */])();
+      var pool = Object(__WEBPACK_IMPORTED_MODULE_2__ResourcePool__["b" /* createResourcePool */])();
       if (this.hasEventListener(PoolRegistryEvents.RESOURCE_POOL_CREATED)) {
         this.dispatchEvent(PoolRegistryEvents.RESOURCE_POOL_CREATED, pool);
       }
@@ -1912,9 +1952,9 @@ var PoolRegistry = function (_EventDispatcher) {
   }, {
     key: 'register',
     value: function register(pool) {
-      if (Object.prototype.hasOwnProperty.call(this[POOLS_FIELD], pool.id)) return;
+      if (Object(__WEBPACK_IMPORTED_MODULE_1__utils_hasOwnProperty__["a" /* default */])(this[POOLS_FIELD], pool.id)) return;
       this[POOLS_FIELD][pool.id] = pool;
-      pool.addEventListener(__WEBPACK_IMPORTED_MODULE_1__ResourcePool__["a" /* ResourcePoolEvents */].POOL_DESTROYED, this.handlePoolDestroyed);
+      pool.addEventListener(__WEBPACK_IMPORTED_MODULE_2__ResourcePool__["a" /* ResourcePoolEvents */].POOL_DESTROYED, this.handlePoolDestroyed);
       if (this.hasEventListener(PoolRegistryEvents.RESOURCE_POOL_REGISTERED)) {
         this.dispatchEvent(PoolRegistryEvents.RESOURCE_POOL_REGISTERED, pool);
       }
@@ -1941,7 +1981,7 @@ var PoolRegistry = function (_EventDispatcher) {
   }, {
     key: 'isRegistered',
     value: function isRegistered(pool) {
-      return Object.prototype.hasOwnProperty.call(this[POOLS_FIELD], pool instanceof __WEBPACK_IMPORTED_MODULE_1__ResourcePool__["c" /* default */] ? pool.id : String(pool));
+      return Object(__WEBPACK_IMPORTED_MODULE_1__utils_hasOwnProperty__["a" /* default */])(this[POOLS_FIELD], pool instanceof __WEBPACK_IMPORTED_MODULE_2__ResourcePool__["c" /* default */] ? pool.id : String(pool));
     }
 
     /**
@@ -1954,9 +1994,9 @@ var PoolRegistry = function (_EventDispatcher) {
     key: 'remove',
     value: function remove(pool) {
       var result = false;
-      pool = pool instanceof __WEBPACK_IMPORTED_MODULE_1__ResourcePool__["c" /* default */] ? pool : this.get(pool);
+      pool = pool instanceof __WEBPACK_IMPORTED_MODULE_2__ResourcePool__["c" /* default */] ? pool : this.get(pool);
       if (pool) {
-        pool.removeEventListener(__WEBPACK_IMPORTED_MODULE_1__ResourcePool__["a" /* ResourcePoolEvents */].POOL_DESTROYED, this.handlePoolDestroyed);
+        pool.removeEventListener(__WEBPACK_IMPORTED_MODULE_2__ResourcePool__["a" /* ResourcePoolEvents */].POOL_DESTROYED, this.handlePoolDestroyed);
         result = delete this[POOLS_FIELD][pool.id];
       }
       if (this.hasEventListener(PoolRegistryEvents.RESOURCE_POOL_REMOVED)) {
@@ -1979,25 +2019,25 @@ var createPoolRegistry = function createPoolRegistry() {
 /* harmony default export */ __webpack_exports__["b"] = (PoolRegistry);
 
 /***/ }),
-/* 26 */
+/* 28 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__DataAccessInterface__ = __webpack_require__(27);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__utils_Deferred__ = __webpack_require__(13);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__DataAccessInterface__ = __webpack_require__(29);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__utils_Deferred__ = __webpack_require__(10);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__command_Descriptor__ = __webpack_require__(4);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__command_Reserved__ = __webpack_require__(21);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__command_internal_RequestCommands__ = __webpack_require__(20);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__command_Reserved__ = __webpack_require__(23);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__command_internal_RequestCommands__ = __webpack_require__(22);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__command_internal_ProxyCommands__ = __webpack_require__(16);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__request_Target__ = __webpack_require__(6);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_7__resource_ResourcePool__ = __webpack_require__(5);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_8__resource_PoolRegistry__ = __webpack_require__(25);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_9__resource_Converter__ = __webpack_require__(23);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_10__utils_IConvertible__ = __webpack_require__(9);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_11__utils_isResourceConvertible__ = __webpack_require__(24);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_12__utils_getRawResource__ = __webpack_require__(8);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_13__utils_getResourceData__ = __webpack_require__(19);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_7__resource_ResourcePool__ = __webpack_require__(7);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_8__resource_PoolRegistry__ = __webpack_require__(27);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_9__resource_Converter__ = __webpack_require__(25);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_10__utils_IConvertible__ = __webpack_require__(19);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_11__utils_isResourceConvertible__ = __webpack_require__(26);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_12__utils_getRawResource__ = __webpack_require__(20);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_13__utils_getResourceData__ = __webpack_require__(48);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_14__utils_getResourceId__ = __webpack_require__(15);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_15__utils_getResourcePoolId__ = __webpack_require__(14);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_16__utils_getResourceType__ = __webpack_require__(17);
@@ -2046,22 +2086,22 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
 
 /***/ }),
-/* 27 */
+/* 29 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return create; });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__utils_areProxiesAvailable__ = __webpack_require__(28);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__utils_areProxiesAvailable__ = __webpack_require__(30);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__utils_isResource__ = __webpack_require__(0);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__utils_getResourcePoolId__ = __webpack_require__(14);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__utils_getResourceId__ = __webpack_require__(15);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__utils_createForeignResource__ = __webpack_require__(35);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__request_Handlers__ = __webpack_require__(36);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__request_ProxyFactory__ = __webpack_require__(38);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_7__request_Factory__ = __webpack_require__(22);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_8__resource_ResourcePool__ = __webpack_require__(5);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_9__resource_Converter__ = __webpack_require__(23);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_10__resource_PoolRegistry__ = __webpack_require__(25);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__utils_createForeignResource__ = __webpack_require__(36);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__request_Handlers__ = __webpack_require__(37);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__request_ProxyFactory__ = __webpack_require__(39);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_7__request_Factory__ = __webpack_require__(24);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_8__resource_ResourcePool__ = __webpack_require__(7);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_9__resource_Converter__ = __webpack_require__(25);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_10__resource_PoolRegistry__ = __webpack_require__(27);
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -2150,6 +2190,13 @@ var DataAccessInterface = function () {
       this.pool.addEventListener(__WEBPACK_IMPORTED_MODULE_8__resource_ResourcePool__["a" /* ResourcePoolEvents */].POOL_DESTROYED, poolDestroyedHandler);
     }
   }, {
+    key: 'send',
+    value: function send(command, args) {
+      var target = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
+
+      return;
+    }
+  }, {
     key: 'parse',
     value: function parse(data) {
       return this.resourceConverter.parse(data);
@@ -2198,7 +2245,7 @@ var create = function create(handlers) {
 /* harmony default export */ __webpack_exports__["b"] = (DataAccessInterface);
 
 /***/ }),
-/* 28 */
+/* 30 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -2207,58 +2254,18 @@ var create = function create(handlers) {
 });
 
 /***/ }),
-/* 29 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__getInternals__ = __webpack_require__(3);
-/**
- * Created by Oleg Galaburda on 16.11.17.
- */
-
-
-
-/* harmony default export */ __webpack_exports__["a"] = (function (target) {
-  return Object(__WEBPACK_IMPORTED_MODULE_0__getInternals__["a" /* default */])(target).toJSON();
-});
-
-/***/ }),
-/* 30 */
-/***/ (function(module, exports) {
-
-module.exports = function(module) {
-	if(!module.webpackPolyfill) {
-		module.deprecate = function() {};
-		module.paths = [];
-		// module.parent = undefined by default
-		if(!module.children) module.children = [];
-		Object.defineProperty(module, "loaded", {
-			enumerable: true,
-			get: function() {
-				return module.l;
-			}
-		});
-		Object.defineProperty(module, "id", {
-			enumerable: true,
-			get: function() {
-				return module.i;
-			}
-		});
-		module.webpackPolyfill = 1;
-	}
-	return module;
-};
-
-
-/***/ }),
 /* 31 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__utils_Deferred__ = __webpack_require__(13);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__utils_TargetStatus__ = __webpack_require__(7);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__Queue__ = __webpack_require__(32);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__Children__ = __webpack_require__(33);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__utils_reject__ = __webpack_require__(8);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__utils_TargetStatus__ = __webpack_require__(9);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__utils_TARGET_DATA__ = __webpack_require__(2);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__utils_createRequestPackage__ = __webpack_require__(21);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__command_internal_RequestCommands__ = __webpack_require__(22);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__SubTargets__ = __webpack_require__(32);
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -2266,6 +2273,159 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+
+
+
+
+
+
+
+var Internals = function (_SubTargets) {
+  _inherits(Internals, _SubTargets);
+
+  function Internals(target, promise, handlers) {
+    _classCallCheck(this, Internals);
+
+    var _this = _possibleConstructorReturn(this, (Internals.__proto__ || Object.getPrototypeOf(Internals)).call(this));
+
+    _this.handlePromiseResolve = function (value) {
+      var result = { target: _this.target, value: value };
+      _this.data = value;
+      _this.status = __WEBPACK_IMPORTED_MODULE_1__utils_TargetStatus__["a" /* default */].RESOLVED;
+      if (_this.isResource()) {
+        /*
+         INFO Sending "this" as result of resolve() handler, causes infinite
+         loop of this.then(), so I've used wrapper object
+        */
+        result.value = _this.target;
+      }
+
+      _this.parentResolved();
+
+      // FIXME isTemporary() was not called yet, as solution can move destruction out
+      if (_this.temporary) {
+        _this.destroy();
+      }
+
+      return result;
+    };
+
+    _this.handlePromiseReject = function (value) {
+      _this.status = __WEBPACK_IMPORTED_MODULE_1__utils_TargetStatus__["a" /* default */].REJECTED;
+      _this.parentRejected('Target of the call was rejected and call cannot be sent.');
+      return Promise.reject(value);
+    };
+
+    _this.handlers = handlers;
+    _this.target = target;
+    // INFO this should be not initialized i.e. keep it undefined, this will be checked later
+    _this.data = undefined;
+    _this.temporary = undefined;
+    _this.hadChildPromises = false;
+    _this.status = __WEBPACK_IMPORTED_MODULE_1__utils_TargetStatus__["a" /* default */].PENDING;
+    _this.promise = promise.then(_this.handlePromiseResolve).catch(_this.handlePromiseReject);
+    _this.setParent(_this);
+    return _this;
+  }
+
+  _createClass(Internals, [{
+    key: 'isResource',
+    value: function isResource() {
+      if (_typeof(this.data) === 'object' && this.data[__WEBPACK_IMPORTED_MODULE_2__utils_TARGET_DATA__["a" /* default */]]) {
+        var data = this.data[__WEBPACK_IMPORTED_MODULE_2__utils_TARGET_DATA__["a" /* default */]];
+        return Boolean(data.$poolId && data.$id);
+      }
+
+      return false;
+    }
+  }, {
+    key: 'isActive',
+    value: function isActive() {
+      return this.status === __WEBPACK_IMPORTED_MODULE_1__utils_TargetStatus__["a" /* default */].PENDING || this.status === __WEBPACK_IMPORTED_MODULE_1__utils_TargetStatus__["a" /* default */].RESOLVED;
+    }
+  }, {
+    key: 'canBeDestroyed',
+    value: function canBeDestroyed() {
+      return this.status === __WEBPACK_IMPORTED_MODULE_1__utils_TargetStatus__["a" /* default */].RESOLVED || this.status === __WEBPACK_IMPORTED_MODULE_1__utils_TargetStatus__["a" /* default */].REJECTED;
+    }
+  }, {
+    key: 'destroy',
+    value: function destroy() {
+      var promise = null;
+      if (this.canBeDestroyed()) {
+        // INFO I should not clear children list, since they are pending and requests already sent.
+        if (this.status === __WEBPACK_IMPORTED_MODULE_1__utils_TargetStatus__["a" /* default */].RESOLVED) {
+          promise = this.send(__WEBPACK_IMPORTED_MODULE_4__command_internal_RequestCommands__["a" /* RequestCommandFields */].DESTROY, Object(__WEBPACK_IMPORTED_MODULE_3__utils_createRequestPackage__["a" /* default */])(__WEBPACK_IMPORTED_MODULE_4__command_internal_RequestCommands__["b" /* RequestCommandNames */].DESTROY, [], this.toJSON()));
+        } else {
+          promise = Promise.resolve();
+        }
+        this.status = __WEBPACK_IMPORTED_MODULE_1__utils_TargetStatus__["a" /* default */].DESTROYED;
+      } else {
+        promise = Object(__WEBPACK_IMPORTED_MODULE_0__utils_reject__["a" /* default */])('Invalid or already destroyed target.');
+      }
+
+      return promise;
+    }
+  }, {
+    key: 'then',
+    value: function then(handleResolve, handleReject) {
+      var child = this.promise.then(handleResolve, handleReject);
+      this.hadChildPromises = true;
+      return child;
+    }
+  }, {
+    key: 'catch',
+    value: function _catch(handleReject) {
+      var child = this.promise.catch(handleReject);
+      this.hadChildPromises = true;
+      return child;
+    }
+  }, {
+    key: 'toJSON',
+    value: function toJSON() {
+      return this.data;
+    }
+  }, {
+    key: 'poolId',
+    get: function get() {
+      return this.isResource() ? this.data[__WEBPACK_IMPORTED_MODULE_2__utils_TARGET_DATA__["a" /* default */]].$poolId : null;
+    }
+  }, {
+    key: 'type',
+    get: function get() {
+      return this.isResource() ? this.data[__WEBPACK_IMPORTED_MODULE_2__utils_TARGET_DATA__["a" /* default */]].$type : null;
+    }
+  }, {
+    key: 'id',
+    get: function get() {
+      return this.isResource() ? this.data[__WEBPACK_IMPORTED_MODULE_2__utils_TARGET_DATA__["a" /* default */]].$id : null;
+    }
+  }]);
+
+  return Internals;
+}(__WEBPACK_IMPORTED_MODULE_5__SubTargets__["a" /* default */]);
+
+/* harmony default export */ __webpack_exports__["a"] = (Internals);
+
+/***/ }),
+/* 32 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__utils_reject__ = __webpack_require__(8);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__utils_Deferred__ = __webpack_require__(10);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__utils_TargetStatus__ = __webpack_require__(9);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__Queue__ = __webpack_require__(33);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__Children__ = __webpack_require__(34);
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
 
 
 
@@ -2283,10 +2443,12 @@ var SubTargets = function (_Children) {
 
     var _this = _possibleConstructorReturn(this, (SubTargets.__proto__ || Object.getPrototypeOf(SubTargets)).call(this, children));
 
-    _this.handleSubRequest = function (name, pack, deferred, child) {
-      var handlers = _this.parent.handlers;
+    _this.handleSubRequest = function (pack, child) {
+      var _this$parent = _this.parent,
+          handlers = _this$parent.handlers,
+          target = _this$parent.target;
 
-      return handlers.handle(_this.parent, name, pack, deferred, child);
+      return handlers.handle(target, pack, child);
     };
 
     _this.queue = null;
@@ -2303,7 +2465,7 @@ var SubTargets = function (_Children) {
     key: 'parentResolved',
     value: function parentResolved() {
       if (this.hasQueue()) {
-        this.queue.send(this.parent.id, this.handleSubRequest);
+        this.queue.send(this.parent, this.handleSubRequest);
         this.queue = null;
       }
     }
@@ -2322,18 +2484,18 @@ var SubTargets = function (_Children) {
     }
   }, {
     key: 'send',
-    value: function send(name, pack) {
-      var deferred = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
-      var child = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
+    value: function send(pack) {
+      var child = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+      var propertyName = pack.propertyName;
       var handlers = this.parent.handlers;
 
       var promise = void 0;
 
-      if (!handlers.hasCommand(name)) {
-        return Promise.reject(new Error('Request handler for "' + name + '" is not registered.'));
+      if (!handlers.hasCommand(propertyName)) {
+        return Object(__WEBPACK_IMPORTED_MODULE_0__utils_reject__["a" /* default */])('Request handler for "' + propertyName + '" is not registered.');
       }
 
-      promise = this.handleSend(name, pack, deferred || Object(__WEBPACK_IMPORTED_MODULE_0__utils_Deferred__["a" /* createDeferred */])(), child);
+      promise = this.handleSend(pack, child);
 
       if (child) {
         promise = this.register(child);
@@ -2343,47 +2505,51 @@ var SubTargets = function (_Children) {
     }
   }, {
     key: 'handleSend',
-    value: function handleSend(name, pack, deferred) {
-      var child = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
+    value: function handleSend(pack) {
+      var child = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
       var status = this.parent.status;
 
 
       switch (status) {
-        case __WEBPACK_IMPORTED_MODULE_1__utils_TargetStatus__["a" /* default */].PENDING:
+        case __WEBPACK_IMPORTED_MODULE_2__utils_TargetStatus__["a" /* default */].PENDING:
           if (!this.queue) {
-            this.queue = Object(__WEBPACK_IMPORTED_MODULE_2__Queue__["a" /* createQueue */])();
+            this.queue = Object(__WEBPACK_IMPORTED_MODULE_3__Queue__["a" /* createQueue */])();
           }
 
-          return this.queue.add(name, pack, deferred, child);
-        case __WEBPACK_IMPORTED_MODULE_1__utils_TargetStatus__["a" /* default */].REJECTED:
-          return Promise.reject(new Error('Target object was rejected and cannot be used for calls.'));
-        case __WEBPACK_IMPORTED_MODULE_1__utils_TargetStatus__["a" /* default */].DESTROYED:
-          return Promise.reject(new Error('Target object was destroyed and cannot be used for calls.'));
-        case __WEBPACK_IMPORTED_MODULE_1__utils_TargetStatus__["a" /* default */].RESOLVED:
-          this.handleSubRequest(name, pack, deferred, child);
-          return deferred.promise;
+          return this.queue.add(pack, child);
+        case __WEBPACK_IMPORTED_MODULE_2__utils_TargetStatus__["a" /* default */].REJECTED:
+          return Object(__WEBPACK_IMPORTED_MODULE_0__utils_reject__["a" /* default */])('Target object was rejected and cannot be used for calls.');
+        case __WEBPACK_IMPORTED_MODULE_2__utils_TargetStatus__["a" /* default */].DESTROYED:
+          return Object(__WEBPACK_IMPORTED_MODULE_0__utils_reject__["a" /* default */])('Target object was destroyed and cannot be used for calls.');
+        case __WEBPACK_IMPORTED_MODULE_2__utils_TargetStatus__["a" /* default */].RESOLVED:
+          return this.handleSubRequest(pack, child);
         default:
-          return Promise.reject(new Error('Target object is in unknown status "' + status + '".'));
+          return Object(__WEBPACK_IMPORTED_MODULE_0__utils_reject__["a" /* default */])('Target object is in unknown status "' + status + '".');
       }
     }
   }]);
 
   return SubTargets;
-}(__WEBPACK_IMPORTED_MODULE_3__Children__["a" /* default */]);
+}(__WEBPACK_IMPORTED_MODULE_4__Children__["a" /* default */]);
 
 /* harmony default export */ __webpack_exports__["a"] = (SubTargets);
 
 /***/ }),
-/* 32 */
+/* 33 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return createQueue; });
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__utils_Deferred__ = __webpack_require__(10);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__toJSON__ = __webpack_require__(11);
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+
+
 
 var Queue = function () {
   function Queue() {
@@ -2396,9 +2562,9 @@ var Queue = function () {
 
   _createClass(Queue, [{
     key: 'add',
-    value: function add(name, pack, deferred, child) {
+    value: function add(pack, child) {
+      var deferred = Object(__WEBPACK_IMPORTED_MODULE_0__utils_Deferred__["a" /* createDeferred */])();
       this.list.push({
-        name: name,
         pack: pack,
         deferred: deferred,
         child: child
@@ -2416,21 +2582,23 @@ var Queue = function () {
     value: function getCommands() {
       // return this.list.map(([name, pack]) => pack.type);
       return this.list.map(function (_ref) {
-        var name = _ref.name;
-        return name;
+        var propertyName = _ref.pack.propertyName;
+        return propertyName;
       });
     }
   }, {
     key: 'send',
-    value: function send(id, callback) {
+    value: function send(target, callback) {
+      // target reset is needed because, when request was made, target probably was in
+      // pending mode and may be didn't have proper data
+      var targetJSON = Object(__WEBPACK_IMPORTED_MODULE_1__toJSON__["a" /* default */])(target);
       this.list.forEach(function (_ref2) {
-        var name = _ref2.name,
-            pack = _ref2.pack,
+        var pack = _ref2.pack,
             deferred = _ref2.deferred,
             child = _ref2.child;
 
-        pack.target = id;
-        callback(name, pack, deferred, child);
+        pack.target = targetJSON;
+        deferred.resolve(callback(pack, child));
       });
       this.list = [];
     }
@@ -2462,11 +2630,11 @@ var createQueue = function createQueue() {
 /* unused harmony default export */ var _unused_webpack_default_export = (Queue);
 
 /***/ }),
-/* 33 */
+/* 34 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__getRawPromise__ = __webpack_require__(34);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__getRawPromise__ = __webpack_require__(35);
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
@@ -2531,34 +2699,29 @@ var Children = function () {
 /* harmony default export */ __webpack_exports__["a"] = (Children);
 
 /***/ }),
-/* 34 */
+/* 35 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__getInternals__ = __webpack_require__(3);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__PROMISE_FIELD__ = __webpack_require__(44);
 /**
  * Created by Oleg Galaburda on 16.11.17.
  */
 
 
 
-
 /* harmony default export */ __webpack_exports__["a"] = (function (target) {
   var internals = Object(__WEBPACK_IMPORTED_MODULE_0__getInternals__["a" /* default */])(target);
-  if (internals && internals.promise) {
-    return internals.promise;
-  }
-  return target[__WEBPACK_IMPORTED_MODULE_1__PROMISE_FIELD__["a" /* default */]] || null;
+  return internals ? internals.promise : undefined;
 });
 
 /***/ }),
-/* 35 */
+/* 36 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__TARGET_DATA__ = __webpack_require__(2);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__getId__ = __webpack_require__(11);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__getId__ = __webpack_require__(13);
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
 
@@ -2569,16 +2732,16 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
   var resource = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
   resource[__WEBPACK_IMPORTED_MODULE_0__TARGET_DATA__["a" /* default */]] = {
-    id: 'foreign-id-' + Object(__WEBPACK_IMPORTED_MODULE_1__getId__["a" /* default */])(),
-    type: type || (typeof resource === 'undefined' ? 'undefined' : _typeof(resource)),
-    poolId: 'foreign-poolId-' + Object(__WEBPACK_IMPORTED_MODULE_1__getId__["a" /* default */])()
+    $id: 'foreign-id-' + Object(__WEBPACK_IMPORTED_MODULE_1__getId__["a" /* default */])(),
+    $type: type || (typeof resource === 'undefined' ? 'undefined' : _typeof(resource)),
+    $poolId: 'foreign-poolId-' + Object(__WEBPACK_IMPORTED_MODULE_1__getId__["a" /* default */])()
   };
 
   return resource;
 });
 
 /***/ }),
-/* 36 */
+/* 37 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -2587,8 +2750,9 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return createHandlers; });
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__command_Descriptor__ = __webpack_require__(4);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__command_internal_ProxyCommands__ = __webpack_require__(16);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__utils_filterRequestHandlers__ = __webpack_require__(37);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__utils_getResourceType__ = __webpack_require__(17);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__utils_hasOwnProperty__ = __webpack_require__(5);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__utils_filterRequestHandlers__ = __webpack_require__(38);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__utils_getResourceType__ = __webpack_require__(17);
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
@@ -2596,6 +2760,7 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
 
 
 
@@ -2655,9 +2820,9 @@ var Handlers = function () {
       this.setCommandsByType(DEFAULT_KEY, handlers);
 
       Object.keys(handlers).forEach(function (name) {
-        var type = handlers[name];
-        if (type && (type.constructor === Object || type instanceof Array)) {
-          _this.setCommandsByType(name, type);
+        var handler = handlers[name];
+        if (handler && (handler.constructor === Object || handler instanceof Array)) {
+          _this.setCommandsByType(name, handler);
         }
       });
 
@@ -2670,14 +2835,19 @@ var Handlers = function () {
     value: function setCommandsByType(type, handlers) {
       var descrs = {};
       var props = [];
-      Object(__WEBPACK_IMPORTED_MODULE_2__utils_filterRequestHandlers__["a" /* default */])(handlers, descrs, props);
+      Object(__WEBPACK_IMPORTED_MODULE_3__utils_filterRequestHandlers__["a" /* default */])(handlers, descrs, props);
       this.descriptors[type] = descrs;
       this.properties[type] = props;
     }
+
+    // FIXME Not quite obvious that it checks against property name, not command name
+
   }, {
     key: 'hasCommand',
-    value: function hasCommand(name, type) {
-      return this.descriptors[type] && Object.prototype.hasOwnProperty.call(this.descriptors[type], name) || this.descriptors[DEFAULT_KEY] && Object.prototype.hasOwnProperty.call(this.descriptors[DEFAULT_KEY], name);
+    value: function hasCommand(propertyName) {
+      var type = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : DEFAULT_KEY;
+
+      return type && this.descriptors[type] && Object(__WEBPACK_IMPORTED_MODULE_2__utils_hasOwnProperty__["a" /* default */])(this.descriptors[type], propertyName) || this.descriptors[DEFAULT_KEY] && Object(__WEBPACK_IMPORTED_MODULE_2__utils_hasOwnProperty__["a" /* default */])(this.descriptors[DEFAULT_KEY], propertyName);
     }
   }, {
     key: 'getPropertyCommands',
@@ -2693,13 +2863,15 @@ var Handlers = function () {
       var type = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
 
       return this.getPropertyCommands(type).map(function (descriptor) {
-        return descriptor.name;
+        return descriptor.propertyName;
       });
     }
   }, {
     key: 'getCommands',
-    value: function getCommands(type) {
-      if (this.descriptors[type]) {
+    value: function getCommands() {
+      var type = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : DEFAULT_KEY;
+
+      if (type && this.descriptors[type]) {
         return Object.assign({}, this.descriptors[DEFAULT_KEY], this.descriptors[type]);
       }
 
@@ -2707,38 +2879,44 @@ var Handlers = function () {
     }
   }, {
     key: 'getCommand',
-    value: function getCommand(name, type) {
-      var descriptor = this.descriptors[type] && this.descriptors[type][name] || this.descriptors[DEFAULT_KEY] && this.descriptors[DEFAULT_KEY][name];
+    value: function getCommand(propertyName) {
+      var type = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : DEFAULT_KEY;
+
+      var descriptor = this.descriptors[type] && this.descriptors[type][propertyName] || this.descriptors[DEFAULT_KEY] && this.descriptors[DEFAULT_KEY][propertyName];
 
       return descriptor || null;
     }
   }, {
-    key: 'handle',
-    value: function handle(parentRequest, name, pack, deferred, resultRequest) {
+    key: 'call',
+    value: function call(parentRequest, pack, resultRequest) {
       var _this2 = this;
 
-      var list = this.converter ? this.converter.lookupForPending(pack.value) : null;
+      // FIXME should it also check for resultRequest to not appear in the list?
+      var list = this.converter ? this.converter.lookupForPending(pack.args) : null;
+
       if (list && list.length) {
         // FIXME Need to test on all platforms: might not work because may need list of
         // Promise objects, not Targets
-        Promise.all(list).then(function () {
-          _this2.handleImmediately(parentRequest, name, pack, deferred, resultRequest);
+        return Promise.all(list).then(function () {
+          return _this2.callImmediately(parentRequest, pack, resultRequest);
         });
-      } else {
-        this.handleImmediately(parentRequest, name, pack, deferred, resultRequest);
       }
+
+      return this.callImmediately(parentRequest, pack, resultRequest);
     }
   }, {
-    key: 'handleImmediately',
-    value: function handleImmediately(parentRequest, name, pack, deferred, resultRequest) {
-      var descriptor = this.getCommand(name, Object(__WEBPACK_IMPORTED_MODULE_3__utils_getResourceType__["a" /* default */])(parentRequest));
+    key: 'callImmediately',
+    value: function callImmediately(parentRequest, pack, resultRequest) {
+      var propertyName = pack.propertyName;
+
+      var descriptor = this.getCommand(propertyName, Object(__WEBPACK_IMPORTED_MODULE_4__utils_getResourceType__["a" /* default */])(parentRequest));
       if (descriptor instanceof __WEBPACK_IMPORTED_MODULE_0__command_Descriptor__["c" /* default */]) {
-        // INFO result should be applied to deferred.resolve() or deferred.reject()
-        // FIXME change pack to {command, args} object
-        descriptor.handler(parentRequest, pack, deferred, resultRequest);
-      } else {
-        throw new Error('Command descriptor for "' + name + '" was not found.');
+        return new Promise(function (resolve) {
+          resolve(descriptor.handler(parentRequest, pack, resultRequest));
+        });
       }
+
+      return reject('Command descriptor for "' + name + '" was not found.');
     }
   }, {
     key: 'available',
@@ -2766,13 +2944,15 @@ var createHandlers = function createHandlers(proxyEnabled) {
 /* unused harmony default export */ var _unused_webpack_default_export = (Handlers);
 
 /***/ }),
-/* 37 */
+/* 38 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__command_Descriptor__ = __webpack_require__(4);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__command_Reserved__ = __webpack_require__(21);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__hasOwnProperty__ = __webpack_require__(5);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__command_Descriptor__ = __webpack_require__(4);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__command_Reserved__ = __webpack_require__(23);
 function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
 
 
 
@@ -2785,15 +2965,16 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
  * @private
  */
 var applyDescriptor = function applyDescriptor(descriptor, descriptors, properties) {
-  var name = descriptor.name;
+  var propertyName = descriptor.propertyName;
 
-  if (name in __WEBPACK_IMPORTED_MODULE_1__command_Reserved__["a" /* default */].names) {
-    throw new Error('Name "' + name + '" is reserved and cannot be used in descriptor.');
+  if (propertyName in __WEBPACK_IMPORTED_MODULE_2__command_Reserved__["a" /* default */].names) {
+    throw new Error('Name "' + propertyName + '" is reserved and cannot be used in descriptor.');
   }
-  if (Object.prototype.hasOwnProperty.call(descriptors, name) && descriptors[name] instanceof __WEBPACK_IMPORTED_MODULE_0__command_Descriptor__["c" /* default */]) {
-    throw new Error('Field names should be unique, "' + String(name) + '" field has duplicates.');
+  if (Object(__WEBPACK_IMPORTED_MODULE_0__hasOwnProperty__["a" /* default */])(descriptors, propertyName) && descriptors[propertyName] instanceof __WEBPACK_IMPORTED_MODULE_1__command_Descriptor__["c" /* default */]) {
+    throw new Error('Field names should be unique, "' + String(propertyName) + '" field has duplicates.');
   }
-  descriptors[name] = descriptor;
+  descriptors[propertyName] = descriptor;
+  // FIXME Check if new implementation uses virtual commands properly
   if (!descriptor.virtual) {
     properties.push(descriptor);
   }
@@ -2806,7 +2987,7 @@ var applyDescriptor = function applyDescriptor(descriptor, descriptors, properti
  */
 var filterArray = function filterArray(handlers, descriptors, properties) {
   handlers.forEach(function (value) {
-    if (value instanceof __WEBPACK_IMPORTED_MODULE_0__command_Descriptor__["c" /* default */]) {
+    if (value instanceof __WEBPACK_IMPORTED_MODULE_1__command_Descriptor__["c" /* default */]) {
       applyDescriptor(value, descriptors, properties);
     }
   });
@@ -2820,12 +3001,13 @@ var filterArray = function filterArray(handlers, descriptors, properties) {
  */
 var filterHash = function filterHash(handlers, descriptors, properties) {
   if (!handlers) return;
-  [].concat(_toConsumableArray(Object.getOwnPropertyNames(handlers)), _toConsumableArray(Object.getOwnPropertySymbols(handlers))).forEach(function (name) {
-    var value = handlers[name];
+  [].concat(_toConsumableArray(Object.getOwnPropertyNames(handlers)), _toConsumableArray(Object.getOwnPropertySymbols(handlers))).forEach(function (propertyName) {
+    var value = handlers[propertyName];
+    // FIXME unnecessary typeof(value is defined), could be replaced with instanceof
     if (typeof value === 'function') {
-      value = Object(__WEBPACK_IMPORTED_MODULE_0__command_Descriptor__["b" /* createDescriptor */])(name, value);
+      value = Object(__WEBPACK_IMPORTED_MODULE_1__command_Descriptor__["b" /* createDescriptor */])(propertyName, value);
     }
-    if (value instanceof __WEBPACK_IMPORTED_MODULE_0__command_Descriptor__["c" /* default */]) {
+    if (value instanceof __WEBPACK_IMPORTED_MODULE_1__command_Descriptor__["c" /* default */]) {
       applyDescriptor(value, descriptors, properties);
     }
   });
@@ -2846,15 +3028,16 @@ var filterHash = function filterHash(handlers, descriptors, properties) {
 });
 
 /***/ }),
-/* 38 */
+/* 39 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* unused harmony export createProxyHandlers */
 /* unused harmony export applyProxyWithDefaultHandlers */
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return createProxyFactory; });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Factory__ = __webpack_require__(22);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__command_internal_ProxyCommands__ = __webpack_require__(16);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Factory__ = __webpack_require__(24);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__utils_hasOwnProperty__ = __webpack_require__(5);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__command_internal_ProxyCommands__ = __webpack_require__(16);
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
@@ -2866,6 +3049,7 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
 
 
 
@@ -2899,12 +3083,12 @@ var proxyGet = function proxyGet(wrapper, name) {
     return target[name];
   }
   // INFO Proxy should be already applied, so no need in additional wrapping
-  return target[__WEBPACK_IMPORTED_MODULE_1__command_internal_ProxyCommands__["a" /* ProxyCommandFields */].get](name);
+  return target[__WEBPACK_IMPORTED_MODULE_2__command_internal_ProxyCommands__["a" /* ProxyCommandFields */].get](name);
 };
 
 // INFO Proxy should be already applied, so no need in additional wrapping
 var proxyApply = function proxyApply(wrapper, thisValue, args) {
-  return wrapper.target[__WEBPACK_IMPORTED_MODULE_1__command_internal_ProxyCommands__["a" /* ProxyCommandFields */].apply](null, args);
+  return wrapper.target[__WEBPACK_IMPORTED_MODULE_2__command_internal_ProxyCommands__["a" /* ProxyCommandFields */].apply](null, args);
 };
 
 var proxySet = function proxySet(wrapper, name, value) {
@@ -2916,8 +3100,8 @@ var proxySet = function proxySet(wrapper, name, value) {
     return value;
   }
 
-  if (__WEBPACK_IMPORTED_MODULE_1__command_internal_ProxyCommands__["a" /* ProxyCommandFields */].set in target) {
-    target[__WEBPACK_IMPORTED_MODULE_1__command_internal_ProxyCommands__["a" /* ProxyCommandFields */].set](name, value);
+  if (__WEBPACK_IMPORTED_MODULE_2__command_internal_ProxyCommands__["a" /* ProxyCommandFields */].set in target) {
+    target[__WEBPACK_IMPORTED_MODULE_2__command_internal_ProxyCommands__["a" /* ProxyCommandFields */].set](name, value);
     return true;
   }
 
@@ -2925,14 +3109,14 @@ var proxySet = function proxySet(wrapper, name, value) {
 };
 
 var proxyHas = function proxyHas(wrapper, name) {
-  return Object.prototype.hasOwnProperty.call(wrapper.target, name);
+  return Object(__WEBPACK_IMPORTED_MODULE_1__utils_hasOwnProperty__["a" /* default */])(wrapper.target, name);
 };
 
 var proxyDeleteProperty = function proxyDeleteProperty(wrapper, name) {
   var target = wrapper.target;
 
-  if (__WEBPACK_IMPORTED_MODULE_1__command_internal_ProxyCommands__["a" /* ProxyCommandFields */].deleteProperty in target) {
-    target[__WEBPACK_IMPORTED_MODULE_1__command_internal_ProxyCommands__["a" /* ProxyCommandFields */].deleteProperty](name);
+  if (__WEBPACK_IMPORTED_MODULE_2__command_internal_ProxyCommands__["a" /* ProxyCommandFields */].deleteProperty in target) {
+    target[__WEBPACK_IMPORTED_MODULE_2__command_internal_ProxyCommands__["a" /* ProxyCommandFields */].deleteProperty](name);
     return true;
   }
 
@@ -2952,10 +3136,14 @@ var proxyEnumerate = function proxyEnumerate(wrapper) {
 };
 
 var proxyGetOwnPropertyDescriptor = function proxyGetOwnPropertyDescriptor(wrapper, name) {
-  if (Object.prototype.hasOwnProperty.call(EXCLUSIONS, name)) {
+  if (Object(__WEBPACK_IMPORTED_MODULE_1__utils_hasOwnProperty__["a" /* default */])(EXCLUSIONS, name)) {
     return Object.getOwnPropertyDescriptor(wrapper, name);
   }
   return Object.getOwnPropertyDescriptor(wrapper.target, name);
+};
+
+var proxyGetPrototypeOf = function proxyGetPrototypeOf(wrapper) {
+  return Object.getPrototypeOf(wrapper.target);
 };
 
 /**
@@ -2972,7 +3160,8 @@ var createProxyHandlers = function createProxyHandlers() {
     deleteProperty: proxyDeleteProperty,
     ownKeys: proxyOwnKeys,
     enumerate: proxyEnumerate,
-    getOwnPropertyDescriptor: proxyGetOwnPropertyDescriptor
+    getOwnPropertyDescriptor: proxyGetOwnPropertyDescriptor,
+    getPrototypeOf: proxyGetPrototypeOf
   }, handlers);
 };
 
@@ -2995,7 +3184,11 @@ var ProxyFactory = function (_Factory) {
   _createClass(ProxyFactory, [{
     key: 'create',
     value: function create(promise) {
-      var instance = this.factory.create(promise);
+      var name = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+      var pack = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
+      var cacheable = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
+
+      var instance = this.factory.create(promise, name, pack, cacheable);
 
       if (this.handlers.available) {
         return wrapWithProxy(instance, PROXY_HANDLERS);
@@ -3007,17 +3200,6 @@ var ProxyFactory = function (_Factory) {
     key: 'getCached',
     value: function getCached(name, pack) {
       return this.factory.getCached(name, pack);
-    }
-  }, {
-    key: 'createCached',
-    value: function createCached(promise, name, pack) {
-      var instance = this.factory.createCached(promise, name, pack);
-
-      if (this.handlers.available) {
-        return wrapWithProxy(instance, PROXY_HANDLERS);
-      }
-
-      return instance;
     }
   }]);
 
@@ -3035,12 +3217,12 @@ var createProxyFactory = function createProxyFactory(handlers, cacheImpl) {
 /* unused harmony default export */ var _unused_webpack_default_export = (ProxyFactory);
 
 /***/ }),
-/* 39 */
+/* 40 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return createDecorator; });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__command_CallbackFactory__ = __webpack_require__(40);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__command_CallbackFactory__ = __webpack_require__(41);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__utils_getResourceType__ = __webpack_require__(17);
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
@@ -3068,7 +3250,7 @@ var Decorator = function () {
 
       var descriptors = this.handlers.getPropertyCommands(Object(__WEBPACK_IMPORTED_MODULE_1__utils_getResourceType__["a" /* default */])(request));
       return descriptors.forEach(function (descriptor) {
-        request[descriptor.name] = _this.members.get(descriptor);
+        request[descriptor.propertyName] = _this.members.get(descriptor);
       });
     }
   }, {
@@ -3090,57 +3272,24 @@ var createDecorator = function createDecorator(factory, handlers) {
 /* unused harmony default export */ var _unused_webpack_default_export = (Decorator);
 
 /***/ }),
-/* 40 */
+/* 41 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__request_target_getInternals__ = __webpack_require__(3);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__utils_Deferred__ = __webpack_require__(13);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__utils_createRequestPackage__ = __webpack_require__(18);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__request_target_setTemporary__ = __webpack_require__(41);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Flow__ = __webpack_require__(42);
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 
 
-
-
-
-var createHandlerFor = function createHandlerFor(factoryWrapper, propertyName, commandType, isTemporary, cacheable) {
-  var factory = factoryWrapper.factory,
-      checkState = factoryWrapper.checkState,
-      getChildRequest = factoryWrapper.getChildRequest;
-
-
-  function commandHandler(command, value) {
-    var target = Object(__WEBPACK_IMPORTED_MODULE_0__request_target_getInternals__["a" /* default */])(this);
-    var result = void 0;
-    var promise = void 0;
-    if (target) {
-      for (var _len = arguments.length, args = Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
-        args[_key - 2] = arguments[_key];
-      }
-
-      var pack = Object(__WEBPACK_IMPORTED_MODULE_2__utils_createRequestPackage__["a" /* default */])(commandType, [command, value].concat(args), target.id);
-      // FIXME Explicitly pass scope
-      var request = getChildRequest(propertyName, pack, cacheable);
-      result = request.child;
-      if (request.deferred) {
-        promise = target.send(propertyName, pack, request.deferred, result);
-        if (promise) {
-          // FIXME isTemporary must be called before `result` was resolved
-          // FIXME remove default `isTemporary`, if not defined just skip
-          checkState(promise, isTemporary, this, result, pack);
-        } else {
-          result = null;
-          promise = Promise.reject(new Error('Initial request failed and didn\'t result in promise.'));
-        }
-      }
-    } else {
-      promise = Promise.reject(new Error('Target object is not a resource, so cannot be used for calls.'));
+var createHandlerFor = function createHandlerFor(flow, propertyName, command, isTemporaryFn, cacheable) {
+  function commandHandler() {
+    for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+      args[_key] = arguments[_key];
     }
-    return result || factory.create(promise);
+
+    return flow.apply(this, propertyName, command, args, isTemporaryFn, cacheable);
   }
 
   return commandHandler;
@@ -3148,37 +3297,12 @@ var createHandlerFor = function createHandlerFor(factoryWrapper, propertyName, c
 
 var CallbackFactory = function () {
   function CallbackFactory() {
-    var _this = this;
-
     var factory = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
 
     _classCallCheck(this, CallbackFactory);
 
     this.members = new Map();
-    this.factory = null;
-
-    this.getChildRequest = function (propertyName, pack, cacheable) {
-      var child = void 0;
-      var deferred = void 0;
-
-      if (cacheable) {
-        child = _this.factory.getCached(propertyName, pack);
-      }
-
-      if (!child) {
-        deferred = Object(__WEBPACK_IMPORTED_MODULE_1__utils_Deferred__["a" /* createDeferred */])();
-        child = _this.factory.create(deferred.promise, propertyName, pack, cacheable);
-      }
-
-      return { child: child, deferred: deferred };
-    };
-
-    this.checkState = function (promise, isTemporaryFn, parentRequest, childRequest, pack) {
-      promise.then(function (data) {
-        var isTemporary = Boolean(isTemporaryFn(parentRequest, childRequest, pack, data));
-        Object(__WEBPACK_IMPORTED_MODULE_3__request_target_setTemporary__["a" /* default */])(childRequest, isTemporary);
-      });
-    };
+    this.flow = null;
 
     this.setFactory(factory);
   }
@@ -3193,21 +3317,29 @@ var CallbackFactory = function () {
   _createClass(CallbackFactory, [{
     key: 'get',
     value: function get(descriptor) {
-      var propertyName = descriptor.name;
+      var propertyName = descriptor.propertyName;
+
       if (!this.members.has(propertyName)) {
-        this.members.set(propertyName, this.create(descriptor.name, descriptor.type, descriptor.isTemporary, descriptor.cacheable));
+        this.members.set(propertyName, this.create(propertyName, descriptor.command, descriptor.isTemporary, descriptor.cacheable));
       }
+
       return this.members.get(propertyName);
     }
   }, {
     key: 'create',
-    value: function create(propertyName, commandType, isTemporary, cacheable) {
-      return createHandlerFor(this, propertyName, commandType, isTemporary, cacheable);
+    value: function create(propertyName, command, isTemporaryFn) {
+      var cacheable = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
+
+      return createHandlerFor(this.flow, propertyName, command, isTemporaryFn, cacheable);
     }
   }, {
     key: 'setFactory',
     value: function setFactory(factory) {
-      this.factory = factory;
+      this.flow = null;
+
+      if (factory) {
+        this.flow = new __WEBPACK_IMPORTED_MODULE_0__Flow__["a" /* default */](factory);
+      }
     }
   }]);
 
@@ -3217,7 +3349,95 @@ var CallbackFactory = function () {
 /* harmony default export */ __webpack_exports__["a"] = (CallbackFactory);
 
 /***/ }),
-/* 41 */
+/* 42 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__request_target_getInternals__ = __webpack_require__(3);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__request_target_toJSON__ = __webpack_require__(11);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__utils_reject__ = __webpack_require__(8);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__utils_createRequestPackage__ = __webpack_require__(21);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__request_target_setTemporary__ = __webpack_require__(43);
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+
+
+
+
+
+
+var Flow = function () {
+  function Flow(factory) {
+    _classCallCheck(this, Flow);
+
+    this.factory = factory;
+  }
+
+  _createClass(Flow, [{
+    key: 'apply',
+    value: function apply(target, propertyName, command, args, isTemporaryFn) {
+      var cacheable = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : false;
+
+      var internals = Object(__WEBPACK_IMPORTED_MODULE_0__request_target_getInternals__["a" /* default */])(target);
+
+      // call target must be a request target
+      if (internals) {
+        var pack = Object(__WEBPACK_IMPORTED_MODULE_3__utils_createRequestPackage__["a" /* default */])(propertyName, command, args, Object(__WEBPACK_IMPORTED_MODULE_1__request_target_toJSON__["a" /* default */])(target));
+
+        if (cacheable) {
+          var child = this.factory.getCached(pack);
+
+          if (child) {
+            return child;
+          }
+        }
+
+        return this.makeChildReqest(target, pack, isTemporaryFn, cacheable);
+      }
+
+      return this.rejectCall();
+    }
+  }, {
+    key: 'rejectCall',
+    value: function rejectCall() {
+      return this.factory.create(Object(__WEBPACK_IMPORTED_MODULE_2__utils_reject__["a" /* default */])('Target object is not an instance of Target, so cannot be used for calls.'));
+    }
+  }, {
+    key: 'makeChildReqest',
+    value: function makeChildReqest(target, propertyName, pack, isTemporaryFn) {
+      var cacheable = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : false;
+
+      // this wil be populated on internals.send() call and passed into target's
+      // promise when it will be executed on next tick, so there are no need in deferred anymore
+      var promise = void 0;
+      var internals = Object(__WEBPACK_IMPORTED_MODULE_0__request_target_getInternals__["a" /* default */])(target);
+      var child = this.factory.create(Promise.resolve().then(function () {
+        return promise;
+      }), propertyName, pack, cacheable);
+
+      promise = internals.send(propertyName, pack, child);
+      this.checkState(promise, isTemporaryFn, target, child, pack);
+      return child;
+    }
+  }, {
+    key: 'checkState',
+    value: function checkState(promise, isTemporaryFn, parentRequest, childRequest, pack) {
+      return promise.then(function (data) {
+        var isTemporary = Boolean(isTemporaryFn(parentRequest, childRequest, pack, data));
+        Object(__WEBPACK_IMPORTED_MODULE_4__request_target_setTemporary__["a" /* default */])(childRequest, isTemporary);
+      });
+    }
+  }]);
+
+  return Flow;
+}();
+
+/* harmony default export */ __webpack_exports__["a"] = (Flow);
+
+/***/ }),
+/* 43 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -3233,12 +3453,52 @@ var CallbackFactory = function () {
 });
 
 /***/ }),
-/* 42 */
+/* 44 */
+/***/ (function(module, exports) {
+
+module.exports = function(module) {
+	if(!module.webpackPolyfill) {
+		module.deprecate = function() {};
+		module.paths = [];
+		// module.parent = undefined by default
+		if(!module.children) module.children = [];
+		Object.defineProperty(module, "loaded", {
+			enumerable: true,
+			get: function() {
+				return module.l;
+			}
+		});
+		Object.defineProperty(module, "id", {
+			enumerable: true,
+			get: function() {
+				return module.i;
+			}
+		});
+		module.webpackPolyfill = 1;
+	}
+	return module;
+};
+
+
+/***/ }),
+/* 45 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__getStatus__ = __webpack_require__(43);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__utils_TargetStatus__ = __webpack_require__(7);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__utils_TARGET_INTERNALS__ = __webpack_require__(1);
+
+
+/* harmony default export */ __webpack_exports__["a"] = (function (target) {
+  return Boolean(target && target[__WEBPACK_IMPORTED_MODULE_0__utils_TARGET_INTERNALS__["a" /* default */]]);
+});
+
+/***/ }),
+/* 46 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__getStatus__ = __webpack_require__(47);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__utils_TargetStatus__ = __webpack_require__(9);
 /**
  * Created by Oleg Galaburda on 16.11.17.
  */
@@ -3247,11 +3507,12 @@ var CallbackFactory = function () {
 
 
 /* harmony default export */ __webpack_exports__["a"] = (function (value) {
-  return Object(__WEBPACK_IMPORTED_MODULE_0__getStatus__["a" /* default */])(value) === __WEBPACK_IMPORTED_MODULE_1__utils_TargetStatus__["a" /* default */].PENDING;
+  var status = Object(__WEBPACK_IMPORTED_MODULE_0__getStatus__["a" /* default */])(value);
+  return status ? status === __WEBPACK_IMPORTED_MODULE_1__utils_TargetStatus__["a" /* default */].PENDING : undefined;
 });
 
 /***/ }),
-/* 43 */
+/* 47 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -3263,172 +3524,24 @@ var CallbackFactory = function () {
 
 
 /* harmony default export */ __webpack_exports__["a"] = (function (target) {
-  return Object(__WEBPACK_IMPORTED_MODULE_0__getInternals__["a" /* default */])(target).status;
+  var internals = Object(__WEBPACK_IMPORTED_MODULE_0__getInternals__["a" /* default */])(target);
+  return internals ? internals.status : undefined;
 });
 
 /***/ }),
-/* 44 */
+/* 48 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/**
- * Created by Oleg Galaburda on 16.11.17.
- */
-
-/* harmony default export */ __webpack_exports__["a"] = (Symbol('request.target::promise'));
-
-/***/ }),
-/* 45 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__utils_TargetStatus__ = __webpack_require__(7);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__utils_TARGET_DATA__ = __webpack_require__(2);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__utils_createRequestPackage__ = __webpack_require__(18);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__utils_isResource__ = __webpack_require__(0);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__utils_getResourceData__ = __webpack_require__(19);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__command_internal_RequestCommands__ = __webpack_require__(20);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__SubTargets__ = __webpack_require__(31);
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__TARGET_DATA__ = __webpack_require__(2);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__getRawResource__ = __webpack_require__(20);
 
 
 
-
-
-
-
-
-
-var Internals = function (_SubTargets) {
-  _inherits(Internals, _SubTargets);
-
-  function Internals(target, promise, handlers) {
-    _classCallCheck(this, Internals);
-
-    var _this = _possibleConstructorReturn(this, (Internals.__proto__ || Object.getPrototypeOf(Internals)).call(this));
-
-    _this.handlePromiseResolve = function (value) {
-      var result = { target: _this.target, value: value };
-      _this.status = __WEBPACK_IMPORTED_MODULE_0__utils_TargetStatus__["a" /* default */].RESOLVED;
-      if (Object(__WEBPACK_IMPORTED_MODULE_3__utils_isResource__["a" /* default */])(value)) {
-        _this.link = Object(__WEBPACK_IMPORTED_MODULE_4__utils_getResourceData__["a" /* default */])(value);
-        /*
-         INFO Sending "this" as result of resolve() handler, causes infinite
-         loop of this.then(), so I've used wrapper object
-        */
-        // FIXME Propagate proxified target, not original object, so it will be possible to use it as before
-        // best way of doing this is probably replacing "target" in ProxyFactory
-        // FIXME request target must be anything, not only resource, could be any value
-        // we should be able to make request against any type of value that was returned by server successfully
-        result.value = _this.target;
-      }
-
-      _this.parentResolved();
-
-      if (_this.temporary) {
-        _this.destroy();
-      }
-
-      return result;
-    };
-
-    _this.handlePromiseReject = function (value) {
-      _this.status = __WEBPACK_IMPORTED_MODULE_0__utils_TargetStatus__["a" /* default */].REJECTED;
-      _this.parentRejected('Target of the call was rejected and call cannot be sent.');
-      return Promise.reject(value);
-    };
-
-    _this.handlers = handlers;
-    _this.target = target;
-    _this.link = {};
-    // INFO this should be not initialized i.e. keep it undefined, this will be checked later
-    _this.temporary = undefined;
-    _this.hadChildPromises = false;
-    _this.status = __WEBPACK_IMPORTED_MODULE_0__utils_TargetStatus__["a" /* default */].PENDING;
-    _this.promise = promise.then(_this.handlePromiseResolve).catch(_this.handlePromiseReject);
-    _this.setParent(_this);
-    return _this;
-  }
-
-  _createClass(Internals, [{
-    key: 'isActive',
-    value: function isActive() {
-      return this.status === __WEBPACK_IMPORTED_MODULE_0__utils_TargetStatus__["a" /* default */].PENDING || this.status === __WEBPACK_IMPORTED_MODULE_0__utils_TargetStatus__["a" /* default */].RESOLVED;
-    }
-  }, {
-    key: 'canBeDestroyed',
-    value: function canBeDestroyed() {
-      return this.status === __WEBPACK_IMPORTED_MODULE_0__utils_TargetStatus__["a" /* default */].RESOLVED || this.status === __WEBPACK_IMPORTED_MODULE_0__utils_TargetStatus__["a" /* default */].REJECTED;
-    }
-  }, {
-    key: 'destroy',
-    value: function destroy() {
-      var promise = null;
-      if (this.canBeDestroyed()) {
-        // INFO I should not clear children list, since they are pending and requests already sent.
-        if (this.status === __WEBPACK_IMPORTED_MODULE_0__utils_TargetStatus__["a" /* default */].RESOLVED) {
-          promise = this.send(__WEBPACK_IMPORTED_MODULE_5__command_internal_RequestCommands__["a" /* RequestCommandFields */].DESTROY, Object(__WEBPACK_IMPORTED_MODULE_2__utils_createRequestPackage__["a" /* default */])(__WEBPACK_IMPORTED_MODULE_5__command_internal_RequestCommands__["b" /* RequestCommandNames */].DESTROY, [null, null], this.id));
-        } else {
-          promise = Promise.resolve();
-        }
-        this.status = __WEBPACK_IMPORTED_MODULE_0__utils_TargetStatus__["a" /* default */].DESTROYED;
-      } else {
-        promise = Promise.reject(new Error('Invalid or already destroyed target.'));
-      }
-      return promise;
-    }
-  }, {
-    key: 'then',
-    value: function then(handleResolve, handleReject) {
-      var child = this.promise.then(handleResolve, handleReject);
-      this.hadChildPromises = true;
-      return child;
-    }
-  }, {
-    key: 'catch',
-    value: function _catch(handleReject) {
-      var child = this.promise.catch(handleReject);
-      this.hadChildPromises = true;
-      return child;
-    }
-  }, {
-    key: 'toJSON',
-    value: function toJSON() {
-      return _defineProperty({}, __WEBPACK_IMPORTED_MODULE_1__utils_TARGET_DATA__["a" /* default */], {
-        id: this.link.id,
-        type: this.link.type,
-        poolId: this.link.poolId
-      });
-    }
-  }, {
-    key: 'poolId',
-    get: function get() {
-      return this.link.poolId || null;
-    }
-  }, {
-    key: 'type',
-    get: function get() {
-      return this.link.type || null;
-    }
-  }, {
-    key: 'id',
-    get: function get() {
-      return this.link.id || null;
-    }
-  }]);
-
-  return Internals;
-}(__WEBPACK_IMPORTED_MODULE_6__SubTargets__["a" /* default */]);
-
-/* harmony default export */ __webpack_exports__["a"] = (Internals);
+/* harmony default export */ __webpack_exports__["a"] = (function (object) {
+  var data = Object(__WEBPACK_IMPORTED_MODULE_1__getRawResource__["a" /* default */])(object);
+  return data ? data[__WEBPACK_IMPORTED_MODULE_0__TARGET_DATA__["a" /* default */]] : null;
+});
 
 /***/ })
 /******/ ]);
