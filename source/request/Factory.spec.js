@@ -4,6 +4,7 @@ const requestFactoryInjector = require('inject-loader!./Factory');
 
 describe('RequestFactory', () => {
   let sandbox;
+  let Factory;
   let resource;
   let factory;
   let decorator;
@@ -37,6 +38,7 @@ describe('RequestFactory', () => {
       './Target': requestTargetModule,
       './Decorator': requestTargetDecoratorModule,
     });
+    Factory = module.default;
   });
 
   afterEach(() => {
@@ -45,7 +47,7 @@ describe('RequestFactory', () => {
 
   describe('When noInit passed', () => {
     beforeEach(() => {
-      factory = new module.default(module.NO_INIT);
+      factory = new Factory(module.NO_INIT);
     });
 
     it('should not create decorator', () => {
@@ -105,7 +107,7 @@ describe('RequestFactory', () => {
     });
 
     it('getCached() should return null', () => {
-      expect(factory.getCached('property', {})).to.be.null;
+      expect(factory.getCached({})).to.be.null;
     });
   });
 
@@ -118,8 +120,9 @@ describe('RequestFactory', () => {
     beforeEach(() => {
       cachedResource = {};
       pack = {
-        command: 'type',
-        args: ['command', 'vaalue'],
+        propertyName: 'property',
+        command: 'command',
+        args: ['value'],
         target: __createRequestData(),
       };
       cache = {
@@ -131,12 +134,12 @@ describe('RequestFactory', () => {
 
     describe('getCached()', () => {
       beforeEach(() => {
-        result = factory.getCached('property', pack);
+        result = factory.getCached(pack);
       });
 
       it('should request cached instance', () => {
         expect(cache.get).to.be.calledOnce;
-        expect(cache.get).to.be.calledWith('property', pack);
+        expect(cache.get).to.be.calledWith(pack);
       });
 
       it('should return cached instance', () => {
@@ -146,7 +149,7 @@ describe('RequestFactory', () => {
 
     describe('create() with cacheable', () => {
       beforeEach(() => {
-        result = factory.create(Promise.reject(), 'property', pack, true);
+        result = factory.create(Promise.reject(), pack, true);
       });
 
       it('should create new resource', () => {
@@ -155,7 +158,7 @@ describe('RequestFactory', () => {
 
       it('should cache created resource', () => {
         expect(cache.set).to.be.calledOnce;
-        expect(cache.set).to.be.calledWith('property', pack, resource);
+        expect(cache.set).to.be.calledWith(pack, resource);
       });
 
       it('should return cached instance', () => {
@@ -163,5 +166,4 @@ describe('RequestFactory', () => {
       });
     });
   });
-
 });

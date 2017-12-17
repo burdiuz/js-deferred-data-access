@@ -2,7 +2,7 @@
  * Created by Oleg Galaburda on 29.03.16.
  */
 
-import { ProxyCommandFields } from '../command/internal/ProxyCommands';
+import { ProxyPropertyNames } from '../command/proxy/ProxyCommands';
 import { __createRequestData } from '../../tests/stubs';
 // import Factory, { createRequestFactory } from './RequestFactory';
 // import ProxyFactory, { createProxyFactory } from './ProxyFactory';
@@ -32,10 +32,10 @@ describe('ProxyFactory', () => {
     resource = new FakeTarget();
     resource.then = sandbox.spy();
     resource.catch = sandbox.spy();
-    resource[ProxyCommandFields.get] = sandbox.spy();
-    resource[ProxyCommandFields.set] = sandbox.spy();
-    resource[ProxyCommandFields.apply] = sandbox.spy();
-    resource[ProxyCommandFields.deleteProperty] = sandbox.spy();
+    resource[ProxyPropertyNames.get] = sandbox.spy();
+    resource[ProxyPropertyNames.set] = sandbox.spy();
+    resource[ProxyPropertyNames.apply] = sandbox.spy();
+    resource[ProxyPropertyNames.deleteProperty] = sandbox.spy();
     baseFactory = {
       getCached: sandbox.spy(() => resource),
       create: sandbox.spy(() => resource),
@@ -195,8 +195,8 @@ describe('ProxyFactory', () => {
       });
 
       it('should call proxy handler', () => {
-        expect(resource[ProxyCommandFields.get]).to.be.calledOnce;
-        expect(resource[ProxyCommandFields.get]).to.be.calledWith('property');
+        expect(resource[ProxyPropertyNames.get]).to.be.calledOnce;
+        expect(resource[ProxyPropertyNames.get]).to.be.calledWith('property');
       });
 
       describe('When Symbol used', () => {
@@ -205,12 +205,12 @@ describe('ProxyFactory', () => {
 
         beforeEach(() => {
           name = Symbol('some property');
-          resource[ProxyCommandFields.get].reset();
+          resource[ProxyPropertyNames.get].reset();
           value = result[name];
         });
 
         it('should not call proxy handler', () => {
-          expect(resource[ProxyCommandFields.get]).to.not.be.called;
+          expect(resource[ProxyPropertyNames.get]).to.not.be.called;
         });
 
         it('should apply value directly', () => {
@@ -222,12 +222,12 @@ describe('ProxyFactory', () => {
         let value;
 
         beforeEach(() => {
-          resource[ProxyCommandFields.get].reset();
+          resource[ProxyPropertyNames.get].reset();
           value = result.then;
         });
 
         it('should not call proxy handler', () => {
-          expect(resource[ProxyCommandFields.get]).to.not.be.called;
+          expect(resource[ProxyPropertyNames.get]).to.not.be.called;
         });
 
         it('should apply value directly', () => {
@@ -242,8 +242,8 @@ describe('ProxyFactory', () => {
       });
 
       it('should call proxy handler', () => {
-        expect(resource[ProxyCommandFields.set]).to.be.calledOnce;
-        expect(resource[ProxyCommandFields.set]).to.be.calledWith('property', 'value');
+        expect(resource[ProxyPropertyNames.set]).to.be.calledOnce;
+        expect(resource[ProxyPropertyNames.set]).to.be.calledWith('property', 'value');
       });
 
       describe('When Symbol used', () => {
@@ -251,12 +251,12 @@ describe('ProxyFactory', () => {
 
         beforeEach(() => {
           name = Symbol('some property');
-          resource[ProxyCommandFields.set].reset();
+          resource[ProxyPropertyNames.set].reset();
           result[name] = 'VALUE';
         });
 
         it('should not call proxy handler', () => {
-          expect(resource[ProxyCommandFields.set]).to.not.be.called;
+          expect(resource[ProxyPropertyNames.set]).to.not.be.called;
         });
 
         it('should apply value directly', () => {
@@ -266,12 +266,12 @@ describe('ProxyFactory', () => {
 
       describe('When existent property used', () => {
         beforeEach(() => {
-          resource[ProxyCommandFields.set].reset();
+          resource[ProxyPropertyNames.set].reset();
           result.then = 'VALUE';
         });
 
         it('should not call proxy handler', () => {
-          expect(resource[ProxyCommandFields.set]).to.not.be.called;
+          expect(resource[ProxyPropertyNames.set]).to.not.be.called;
         });
 
         it('should apply value directly', () => {
@@ -281,7 +281,7 @@ describe('ProxyFactory', () => {
 
       describe('When no handler registered', () => {
         beforeEach(() => {
-          delete resource[ProxyCommandFields.set];
+          delete resource[ProxyPropertyNames.set];
         });
 
         it('should throw an error', () => {
@@ -300,8 +300,8 @@ describe('ProxyFactory', () => {
       });
 
       it('should call proxy handler', () => {
-        expect(resource[ProxyCommandFields.apply]).to.be.calledOnce;
-        expect(resource[ProxyCommandFields.apply]).to.be.calledWith(null, ['command', 'value']);
+        expect(resource[ProxyPropertyNames.apply]).to.be.calledOnce;
+        expect(resource[ProxyPropertyNames.apply]).to.be.calledWith(null, ['command', 'value']);
       });
     });
 
@@ -320,8 +320,8 @@ describe('ProxyFactory', () => {
       });
 
       it('should call proxy handler', () => {
-        expect(resource[ProxyCommandFields.deleteProperty]).to.be.calledOnce;
-        expect(resource[ProxyCommandFields.deleteProperty]).to.be.calledWith('property');
+        expect(resource[ProxyPropertyNames.deleteProperty]).to.be.calledOnce;
+        expect(resource[ProxyPropertyNames.deleteProperty]).to.be.calledWith('property');
       });
 
       it('should result with true', () => {
@@ -332,7 +332,7 @@ describe('ProxyFactory', () => {
         let value;
 
         beforeEach(() => {
-          delete resource[ProxyCommandFields.deleteProperty];
+          delete resource[ProxyPropertyNames.deleteProperty];
         });
 
         it('should result with false', () => {

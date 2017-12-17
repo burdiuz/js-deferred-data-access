@@ -36,19 +36,18 @@ class Flow {
     ));
   }
 
-  makeChildReqest(target, propertyName, pack, isTemporaryFn, cacheable = false) {
-    // this wil be populated on internals.send() call and passed into target's
-    // promise when it will be executed on next tick, so there are no need in deferred anymore
+  makeChildReqest(target, pack, isTemporaryFn, cacheable = false) {
     let promise;
     const internals = getInternals(target);
     const child = this.factory.create(
+      // this wil be populated on internals.send() call and passed into target's
+      // promise when it will be executed on next tick, so there are no need in deferred anymore
       Promise.resolve().then(() => promise),
-      propertyName,
       pack,
       cacheable,
     );
 
-    promise = internals.send(propertyName, pack, child);
+    promise = internals.send(pack, child);
     this.checkState(promise, isTemporaryFn, target, child, pack);
     return child;
   }

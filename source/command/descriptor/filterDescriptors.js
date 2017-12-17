@@ -1,6 +1,6 @@
-import hasOwnProperty from './hasOwnProperty';
-import Descriptor, { createDescriptor } from '../command/Descriptor';
-import Reserved from '../command/Reserved';
+import hasOwnProperty from '../../utils/hasOwnProperty';
+import Descriptor, { createDescriptor } from '../Descriptor';
+import Reserved from '../Reserved';
 
 
 /**

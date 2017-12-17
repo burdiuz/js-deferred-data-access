@@ -1,12 +1,7 @@
-import Descriptor, { addDescriptorTo } from '../Descriptor';
-
-export const RequestCommandNames = Object.freeze({
-  DESTROY: '::destroy.resource',
-});
-
-export const RequestCommandFields = Object.freeze({
-  DESTROY: Symbol('::destroy.resource'),
-});
+import Descriptor from '../Descriptor';
+import addDescriptorTo from '../descriptor/addDescriptorTo';
+import RequestCommandNames from './RequestCommandNames';
+import RequestPropertyNames from './RequestPropertyNames';
 
 /**
  * Destroy is unique type that exists for every Target
@@ -19,16 +14,15 @@ class RequestCommands {
     Object.freeze(this);
   }
 
-  names = RequestCommandNames;
-  fields = RequestCommandFields;
-
   createDESTROYDescriptor = (handler, target) => {
     const descriptor = new Descriptor(
       RequestCommandNames.DESTROY,
       handler,
-      RequestCommandFields.DESTROY,
+      // FIXME "destroy" command could be virtual
+      RequestPropertyNames.DESTROY,
     );
     descriptor.cacheable = false;
+    // FIXME ^^^ look above
     descriptor.virtual = true;
     addDescriptorTo(descriptor, target);
     return Object.freeze(descriptor);

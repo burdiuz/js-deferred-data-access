@@ -9,7 +9,7 @@ import TARGET_DATA from '../../utils/TARGET_DATA';
 import RequestCommands, {
   RequestCommandNames,
   RequestCommandFields,
-} from '../../command/internal/RequestCommands';
+} from '../../command/request/RequestCommands';
 import {
   __createRequest,
   __createRequestData,

@@ -45,8 +45,10 @@ class Queue {
     this.list = [];
   }
 
-  reject(message) {
-    const error = new Error(message || 'This request was rejected before sending.');
+  reject(error) {
+    if (!error) {
+      error = new Error('This request was rejected before sending.');
+    }
     this.list.forEach(({ deferred }) => deferred.reject(error));
     this.list = [];
   }

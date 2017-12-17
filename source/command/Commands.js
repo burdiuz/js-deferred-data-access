@@ -1,7 +1,8 @@
-import Descriptor from '../command/Descriptor';
-import ProxyCommands, { ProxyCommandFields } from '../command/internal/ProxyCommands';
+import Descriptor from './Descriptor';
+import reject from '../utils/reject';
+import areProxyHandlersAvailable from './proxy/areProxyHandlersAvailable';
 import hasOwnProperty from '../utils/hasOwnProperty';
-import filterHandlers from '../utils/filterRequestHandlers';
+import filterDescriptors from './descriptor/filterDescriptors';
 import getResourceType from '../utils/getResourceType';
 
 /**
@@ -11,29 +12,40 @@ import getResourceType from '../utils/getResourceType';
  */
 const DEFAULT_KEY = '';
 
-export const areProxyHandlersAvailable = (handlers, throwError = false) => {
-  let result = true;
-  ProxyCommands.required.forEach((name) => {
-    if (!(ProxyCommandFields[name] in handlers)) {
-      result = false;
-      if (throwError) {
-        throw new Error(`For Proxy interface, handler "${name}" should be set.`);
-      }
-    }
-  });
-
-  return result;
-};
 
 export const HandlersEvents = Object.freeze({
   HANDLERS_UPDATED: 'handlersUpdated',
 });
 
-class Handlers {
+const executeCommand = (parentRequest, pack, resultRequest) => {
+  // FIXME is it necessary to check here for instanceof?
+  if (descriptor instanceof Descriptor) {
+    return new Promise((resolve) => {
+      resolve(descriptor.handler(parentRequest, pack, resultRequest));
+    });
+  }
+
+  return reject(`Command descriptor for "${propertyName}" was not found.`);
+}
+
+/* FIXME reorganize handlers to have access to handlers by command not property name.
+   virtual command must be the one with propertyName = null.
+   command could be sent by command type or property name, no need in both.
+   command and propertyName must be unique, both.
+   CommandFactory generates handlers that end command by propertyName.
+   request/target/send() sends commands by Command type
+   rename request/Handlers to command/Commands, rename call() to execute()
+   rename command/CallbackFactory to request/MemberFactory, Flow move too
+ */
+class Commands {
   constructor(proxyEnabled = false) {
     // named collection of Descriptor lists that may be applied
     this.properties = { [DEFAULT_KEY]: [] };
-    this.descriptors = { [DEFAULT_KEY]: [] };
+    this.descriptors = { [DEFAULT_KEY]: {} };
+    // FIXME this.by*** should replace this.descriptors to store descriptors by command
+    // and by property name for easier access
+    this.byCommand = { [DEFAULT_KEY]: {} };
+    this.byPropertyName = { [DEFAULT_KEY]: {} };
     this.proxyEnabled = Boolean(proxyEnabled);
     this.converter = null;
   }
@@ -68,7 +80,7 @@ class Handlers {
   setCommandsByType(type, handlers) {
     const descrs = {};
     const props = [];
-    filterHandlers(handlers, descrs, props);
+    filterDescriptors(handlers, descrs, props);
     this.descriptors[type] = descrs;
     this.properties[type] = props;
   }
@@ -120,35 +132,20 @@ class Handlers {
     return descriptor || null;
   }
 
-  call(parentRequest, pack, resultRequest) {
-    // FIXME should it also check for resultRequest to not appear in the list?
-    const list = this.converter ? this.converter.lookupForPending(pack.args) : null;
-
-    if (list && list.length) {
-      // FIXME Need to test on all platforms: might not work because may need list of
-      // Promise objects, not Targets
-      return Promise.all(list)
-        .then(() => this.callImmediately(parentRequest, pack, resultRequest));
-    }
-
-    return this.callImmediately(parentRequest, pack, resultRequest);
-  }
-
-  callImmediately(parentRequest, pack, resultRequest) {
+  execute(parentRequest, pack, resultRequest) {
     const { propertyName } = pack;
+    // FIXME should it also check for resultRequest to not appear in the list?
+    const list = this.converter ? this.converter.lookupForPending(pack.args) : [];
     const descriptor = this.getCommand(propertyName, getResourceType(parentRequest));
-    if (descriptor instanceof Descriptor) {
-      return new Promise((resolve) => {
-        resolve(descriptor.handler(parentRequest, pack, resultRequest));
-      });
-    }
 
-    return reject(`Command descriptor for "${name}" was not found.`);
+    return Promise.all(list)
+      .then(() => executeCommand(descriptor, parentRequest, pack, resultRequest));
   }
+
 
   static events = HandlersEvents;
 }
 
-export const createHandlers = (proxyEnabled) => new Handlers(proxyEnabled);
+export const createCommands = (proxyEnabled) => new Commands(proxyEnabled);
 
-export default Handlers;
+export default Commands;

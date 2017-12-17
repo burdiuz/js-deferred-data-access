@@ -10,7 +10,8 @@ export default (
   args = [],
   propertyName = null,
 ) => getInternals(target)
-  .send(propertyName, {
+  .send({
+    propertyName,
     command,
     args
   });

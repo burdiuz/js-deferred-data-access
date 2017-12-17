@@ -2,7 +2,7 @@ import TARGET_DATA from '../source/utils/TARGET_DATA';
 import { createRequestTarget } from '../source/request/Target';
 import { applyProxyWithDefaultHandlers } from '../source/request/ProxyFactory';
 import { createResource } from '../source/resource/Resource';
-import { ProxyCommandFields } from "../source/command/internal/ProxyCommands";
+import { ProxyCommandFields } from "../source/command/proxy/ProxyCommands";
 
 export const __createRequestData = (data = {}) => ({
   [TARGET_DATA]: {

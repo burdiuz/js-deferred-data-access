@@ -1,6 +1,6 @@
 import Factory, { NO_INIT, createRequestFactory } from './Factory';
 import hasOwnProperty from '../utils/hasOwnProperty';
-import { ProxyCommandFields } from '../command/internal/ProxyCommands';
+import { ProxyPropertyNames } from '../command/proxy/ProxyCommands';
 
 const EXCLUSIONS = {
   /*
@@ -29,12 +29,12 @@ const proxyGet = (wrapper, name) => {
     return target[name];
   }
   // INFO Proxy should be already applied, so no need in additional wrapping
-  return target[ProxyCommandFields.get](name);
+  return target[ProxyPropertyNames.get](name);
 };
 
 // INFO Proxy should be already applied, so no need in additional wrapping
 const proxyApply = (wrapper, thisValue, args) => (
-  wrapper.target[ProxyCommandFields.apply](null, args)
+  wrapper.target[ProxyPropertyNames.apply](null, args)
 );
 
 const proxySet = (wrapper, name, value) => {
@@ -45,8 +45,8 @@ const proxySet = (wrapper, name, value) => {
     return value;
   }
 
-  if (ProxyCommandFields.set in target) {
-    target[ProxyCommandFields.set](name, value);
+  if (ProxyPropertyNames.set in target) {
+    target[ProxyPropertyNames.set](name, value);
     return true;
   }
 
@@ -57,8 +57,8 @@ const proxyHas = (wrapper, name) => hasOwnProperty(wrapper.target, name);
 
 const proxyDeleteProperty = (wrapper, name) => {
   const { target } = wrapper;
-  if (ProxyCommandFields.deleteProperty in target) {
-    target[ProxyCommandFields.deleteProperty](name);
+  if (ProxyPropertyNames.deleteProperty in target) {
+    target[ProxyPropertyNames.deleteProperty](name);
     return true;
   }
 

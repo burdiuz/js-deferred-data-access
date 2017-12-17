@@ -1,6 +1,10 @@
 import CallbackFactory from '../command/CallbackFactory';
 import getResourceType from '../utils/getResourceType';
 
+/* FIXME how factory/decorator know resource type before its resolved? Need to be
+   sure, that type-specific handlers are bound to resource only after its resolved.
+   Is it good idea to bind default handlers on creation?
+ */
 class Decorator {
   constructor(factory, handlers) {
     this.handlers = handlers;

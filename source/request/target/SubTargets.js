@@ -1,8 +1,7 @@
 import reject from '../../utils/reject';
-import { createDeferred } from '../../utils/Deferred';
 import TargetStatus from '../../utils/TargetStatus';
-import { createQueue } from './Queue';
 import Children from './Children';
+import getRawPromise from './getRawPromise';
 
 class SubTargets extends Children {
   constructor(parent = null, children = []) {
@@ -17,18 +16,23 @@ class SubTargets extends Children {
 
   parentResolved() {
     if (this.hasQueue()) {
+      /*
+        FIXME Queue not needed, we can just listen to promise resolve/reject and store data in a
+        closure to pass again into send() when parent resolved.
+       */
+      /*
+        FIXME Add intellectual destroy on temporary resource, after its resolved set
+        destroying on next tick, when it comes, check for children requests, if they do
+        exist, use Promise.all() on them to wait till they resolve, after that, check
+        again if resource is temporary and do same again. So children may be needed after
+        all(do not remove them).
+       */
       this.queue.send(this.parent, this.handleSubRequest);
       this.queue = null;
     }
   }
 
   parentRejected(message = null) {
-    this.queue.reject(new Error(message || 'This request was rejected before sending.'));
-    this.queue = null;
-  }
-
-  hasQueue() {
-    return Boolean(this.queue && this.queue.length);
   }
 
   send(pack, child = null) {
@@ -36,6 +40,7 @@ class SubTargets extends Children {
     const { handlers } = this.parent;
     let promise;
 
+    // FIXME should it be hasProperty? and hasCommand to check by command name?
     if (!handlers.hasCommand(propertyName)) {
       return reject(`Request handler for "${propertyName}" is not registered.`);
     }
@@ -54,11 +59,10 @@ class SubTargets extends Children {
 
     switch (status) {
       case TargetStatus.PENDING:
-        if (!this.queue) {
-          this.queue = createQueue();
-        }
-
-        return this.queue.add(pack, child);
+        // this should completely remove need in pre-resolve waiting queue
+        return getRawPromise(this.parent)
+          .catch(() => reject('This request was rejected before sending.'))
+          .then(() => this.send(pack, child));
       case TargetStatus.REJECTED:
         return reject('Target object was rejected and cannot be used for calls.');
       case TargetStatus.DESTROYED:
@@ -71,8 +75,8 @@ class SubTargets extends Children {
   }
 
   handleSubRequest = (pack, child) => {
-    const { handlers, target } = this.parent;
-    return handlers.handle(target, pack, child);
+    const { commands, target } = this.parent;
+    return commands.execute(target, pack, child);
   };
 }
 

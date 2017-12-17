@@ -1,6 +1,5 @@
-import Descriptor, { createDescriptor } from '../command/Descriptor';
-import { createDescriptors, ProxyCommandFields } from '../command/internal/ProxyCommands';
-import { createDeferred } from '../utils/Deferred';
+import Descriptor, { createDescriptor } from './Descriptor';
+import { createDescriptors, ProxyPropertyNames } from './proxy/ProxyCommands';
 import Handlers, * as utils from './Handlers';
 
 // const requestHandlersInjector = require('inject-loader!./Handlers');
@@ -234,36 +233,30 @@ describe('Handlers', () => {
     });
   });
 
-  describe('handle()', () => {
+  describe('call()', () => {
     let commandHandler;
     let resource;
     let pack;
-    let deferred;
 
     beforeEach(() => {
-      commandHandler = sandbox.spy(() => {
-        deferred.resolve('something!');
-      });
+      commandHandler = sandbox.spy(() => Promise.resolve('something!'));
       resource = {};
       pack = {
-        type: 'type',
+        propertyName: 'myCommand',
+        command: 'myCommand',
       };
-      deferred = createDeferred();
       handlers.setCommands({
-        type: commandHandler,
+        myCommand: commandHandler,
       });
     });
 
-    it('should throw Error non-existent handler', () => {
-      expect(() => {
-        handlers.handle(resource, 'no-type', pack, deferred);
-      }).to.throw(Error);
-    });
+    it('should throw Error non-existent handler', () => handlers
+      .call(resource, pack)
+      .then(() => assert(false, 'promise should not resolve'))
+      .catch(() => null));
 
     describe('When called', () => {
-      beforeEach(() => {
-        handlers.handle(resource, 'type', pack, deferred, null);
-      });
+      beforeEach(() => handlers.call(resource, pack, null));
 
       it('should call type handler', () => {
         expect(commandHandler).to.be.calledOnce;
@@ -271,7 +264,7 @@ describe('Handlers', () => {
 
       it('should pass type parameters into handler', () => {
         const { args } = commandHandler.getCall(0);
-        expect(args).to.be.eql([resource, pack, deferred, null]);
+        expect(args).to.be.eql([resource, pack, null]);
       });
     });
 
@@ -284,10 +277,12 @@ describe('Handlers', () => {
 
       describe('When has pending promises', () => {
         let pending;
+        let result;
+
         beforeEach(() => {
-          pending = createDeferred();
+          pending = Promise.resolve('pending resolved');
           converter.lookupForPending = sandbox.spy(() => [pending.promise]);
-          handlers.handle(resource, 'type', pack, deferred);
+          result = handlers.call(resource, pack);
         });
 
         it('should not call handler immediately', () => {
@@ -298,19 +293,17 @@ describe('Handlers', () => {
           expect(converter.lookupForPending).to.be.calledOnce;
         });
 
-        it('should wait for pending promise', () => {
-          pending.resolve('pending resolved');
-          return deferred.promise.then(() => {
+        it('should wait for pending promise', () => result
+          .then(() => {
             expect(commandHandler).to.be.calledOnce;
-          });
-        });
+          }));
       });
 
       describe('When no pending promises found', () => {
         beforeEach(() => {
           converter.lookupForPending = sandbox.spy(() => []);
 
-          handlers.handle(resource, 'type', pack, deferred);
+          handlers.call(resource, pack);
         });
 
         it('should check for pending', () => {
@@ -339,9 +332,9 @@ describe('areProxyHandlersAvailable()', () => {
 
     beforeEach(() => {
       target = {
-        [ProxyCommandFields.get]: () => null,
-        [ProxyCommandFields.set]: () => null,
-        [ProxyCommandFields.apply]: () => null,
+        [ProxyPropertyNames.get]: () => null,
+        [ProxyPropertyNames.set]: () => null,
+        [ProxyPropertyNames.apply]: () => null,
       };
     });
 
@@ -355,8 +348,8 @@ describe('areProxyHandlersAvailable()', () => {
 
     beforeEach(() => {
       target = {
-        [ProxyCommandFields.get]: () => null,
-        [ProxyCommandFields.set]: () => null,
+        [ProxyPropertyNames.get]: () => null,
+        [ProxyPropertyNames.set]: () => null,
       };
     });
 

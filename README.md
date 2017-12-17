@@ -19,7 +19,7 @@ DataAccessInterface.create({
 4. when applying handlers first should be applied default and then type-specific, default might be overwritten in case of name collision
 5. default handlers applied on RequestType creation and type-specific when its resolved.
 6. introduce Descriptor.resourceType for supposed resource type. Can be string or function that results in a string.
-7. Add WeakMap ResourcePool
+7. Add WeakMap ResourcePool -- not iterable, not going to work
 
 [![Coverage Status](https://coveralls.io/repos/github/burdiuz/js-deferred-data-access/badge.svg?branch=master)](https://coveralls.io/github/burdiuz/js-deferred-data-access?branch=master)
 [![Build Status](https://travis-ci.org/burdiuz/js-deferred-data-access.svg?branch=master)](https://travis-ci.org/burdiuz/js-deferred-data-access)

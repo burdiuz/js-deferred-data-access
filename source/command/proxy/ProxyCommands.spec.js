@@ -1,6 +1,6 @@
 import Descriptor from '../Descriptor';
 import ProxyCommands, {
-  ProxyCommandFields,
+  ProxyPropertyNames,
   ProxyCommandNames,
   createDescriptors,
 } from './ProxyCommands';
@@ -36,7 +36,7 @@ describe('ProxyCommands', () => {
     });
 
     it('should contain Proxy GET property name', () => {
-      expect(descriptor.propertyName).to.be.equal(ProxyCommandFields.get);
+      expect(descriptor.propertyName).to.be.equal(ProxyPropertyNames.get);
     });
 
     it('should contain Proxy GET commant type', () => {
@@ -82,7 +82,7 @@ describe('ProxyCommands', () => {
       });
 
       it('should add descriptor to Array', () => {
-        expect(target[ProxyCommandFields.get]).to.be.an.instanceof(Descriptor);
+        expect(target[ProxyPropertyNames.get]).to.be.an.instanceof(Descriptor);
       });
     });
   });
@@ -99,7 +99,7 @@ describe('ProxyCommands', () => {
     });
 
     it('should contain Proxy SET property name', () => {
-      expect(descriptor.propertyName).to.be.equal(ProxyCommandFields.set);
+      expect(descriptor.propertyName).to.be.equal(ProxyPropertyNames.set);
     });
 
     it('should contain Proxy SET command type', () => {
@@ -130,7 +130,7 @@ describe('ProxyCommands', () => {
       descriptor = ProxyCommands.createAPPLYDescriptor(handler, null, isTemporary);
     });
     it('should contain Proxy APPLY property name', () => {
-      expect(descriptor.propertyName).to.be.equal(ProxyCommandFields.apply);
+      expect(descriptor.propertyName).to.be.equal(ProxyPropertyNames.apply);
     });
     it('should contain Proxy APPLY command type', () => {
       expect(descriptor.command).to.be.equal(ProxyCommandNames.APPLY);
@@ -178,27 +178,27 @@ describe('createDescriptors()', () => {
     });
 
     it('should create properties for descriptors', () => {
-      expect(target[ProxyCommandFields.get]).to.be.an.instanceof(Descriptor);
-      expect(target[ProxyCommandFields.set]).to.be.an.instanceof(Descriptor);
-      expect(target[ProxyCommandFields.apply]).to.be.an.instanceof(Descriptor);
+      expect(target[ProxyPropertyNames.get]).to.be.an.instanceof(Descriptor);
+      expect(target[ProxyPropertyNames.set]).to.be.an.instanceof(Descriptor);
+      expect(target[ProxyPropertyNames.apply]).to.be.an.instanceof(Descriptor);
     });
 
     it('should assign handlers', () => {
-      expect(target[ProxyCommandFields.get].handler).to.be.equal(getHandler);
-      expect(target[ProxyCommandFields.set].handler).to.be.equal(setHandler);
-      expect(target[ProxyCommandFields.apply].handler).to.be.equal(applyHandler);
+      expect(target[ProxyPropertyNames.get].handler).to.be.equal(getHandler);
+      expect(target[ProxyPropertyNames.set].handler).to.be.equal(setHandler);
+      expect(target[ProxyPropertyNames.apply].handler).to.be.equal(applyHandler);
     });
 
     it('should assign isTemporary to all descriptors', () => {
-      expect(target[ProxyCommandFields.get].isTemporary).to.be.equal(isTemporary);
-      expect(target[ProxyCommandFields.set].isTemporary).to.be.equal(isTemporary);
-      expect(target[ProxyCommandFields.apply].isTemporary).to.be.equal(isTemporary);
+      expect(target[ProxyPropertyNames.get].isTemporary).to.be.equal(isTemporary);
+      expect(target[ProxyPropertyNames.set].isTemporary).to.be.equal(isTemporary);
+      expect(target[ProxyPropertyNames.apply].isTemporary).to.be.equal(isTemporary);
     });
 
     it('should pass cacheable argument', () => {
-      expect(target[ProxyCommandFields.get].cacheable).to.be.equal(cacheable);
-      expect(target[ProxyCommandFields.set].cacheable).to.be.equal(cacheable);
-      expect(target[ProxyCommandFields.apply].cacheable).to.be.equal(cacheable);
+      expect(target[ProxyPropertyNames.get].cacheable).to.be.equal(cacheable);
+      expect(target[ProxyPropertyNames.set].cacheable).to.be.equal(cacheable);
+      expect(target[ProxyPropertyNames.apply].cacheable).to.be.equal(cacheable);
     });
   });
 
@@ -228,9 +228,9 @@ describe('createDescriptors()', () => {
       }, target, isTemporary);
     });
     it('should have all descriptors added to target', () => {
-      expect(target[ProxyCommandFields.get]).to.be.an.instanceof(Descriptor);
-      expect(target[ProxyCommandFields.set]).to.be.an.instanceof(Descriptor);
-      expect(target[ProxyCommandFields.apply]).to.be.an.instanceof(Descriptor);
+      expect(target[ProxyPropertyNames.get]).to.be.an.instanceof(Descriptor);
+      expect(target[ProxyPropertyNames.set]).to.be.an.instanceof(Descriptor);
+      expect(target[ProxyPropertyNames.apply]).to.be.an.instanceof(Descriptor);
     });
   });
 
