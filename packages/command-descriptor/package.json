@@ -1,22 +1,22 @@
 {
-  "name": "@actualwave/remote-resource-pool",
+  "name": "@actualwave/command-descriptor",
   "description": "",
   "version": "0.0.1",
-  "main": "dist/remote-resource-pool.js",
+  "main": "dist/command-descriptor.js",
   "keywords": [
     "js",
     "javascript"
   ],
-  "homepage": "https://github.com/burdiuz/js-remote-resource-pool",
+  "homepage": "https://github.com/burdiuz/js-command-descriptor",
   "bugs": {
-    "url": "https://github.com/burdiuz/js-remote-resource-pool/issues",
+    "url": "https://github.com/burdiuz/js-command-descriptor/issues",
     "email": "burdiuz@gmail.com"
   },
   "license": "MIT",
   "author": "Oleg Galaburda <burdiuz@gmail.com> (http://actualwave.com/)",
   "repository": {
     "type": "git",
-    "url": "https://github.com/burdiuz/js-remote-resource-pool.git"
+    "url": "https://github.com/burdiuz/js-command-descriptor.git"
   },
   "dependencies": {},
   "devDependencies": {},
