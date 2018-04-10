@@ -1,13 +1,11 @@
 {
-  "name": "deferred-data-access",
+  "name": "@actualwave/deferred-data-access",
   "description": "",
-  "version": "1.0.8",
-  "main": "dist/deferred-data-access.min.js",
+  "version": "0.0.1",
+  "main": "dist/deferred-data-access.js",
   "keywords": [
-    "data",
-    "access",
-    "deferred",
-    "promise"
+    "js",
+    "javascript"
   ],
   "homepage": "https://github.com/burdiuz/js-deferred-data-access",
   "bugs": {
@@ -20,51 +18,46 @@
     "type": "git",
     "url": "https://github.com/burdiuz/js-deferred-data-access.git"
   },
-  "dependencies": {
-    "event-dispatcher": "github:burdiuz/js-event-dispatcher#1.1.12",
-    "karma-chrome-launcher": "^2.2.0"
+  "dependencies": {},
+  "devDependencies": {},
+  "lint-staged": {
+    "source/**/!(__tests__/).js": "eslint --fix",
+    "{source/**/__tests__/*.js,source/**/__mocks__/*.js}": "eslint -c eslintrc.spec.json --fix",
+    "source/**/*.js": [
+      "prettier --write",
+      "git add"
+    ]
   },
-  "devDependencies": {
-    "babel-core": "^6.26.0",
-    "babel-eslint": "^8.0.1",
-    "babel-loader": "^7.1.2",
-    "babel-plugin-istanbul": "^4.1.5",
-    "babel-plugin-transform-class-properties": "^6.24.1",
-    "babel-plugin-transform-es2015-modules-commonjs": "^6.26.0",
-    "babel-plugin-transform-flow-strip-types": "^6.22.0",
-    "babel-plugin-transform-object-rest-spread": "^6.26.0",
-    "babel-preset-env": "^1.6.1",
-    "chai": "^4.1.2",
-    "eslint": "^4.9.0",
-    "eslint-config-airbnb": "^16.1.0",
-    "eslint-plugin-import": "^2.8.0",
-    "eslint-plugin-jsx-a11y": "^6.0.2",
-    "eslint-plugin-react": "^7.4.0",
-    "flow-bin": "^0.57.3",
-    "inject-loader": "^3.0.1",
-    "karma": "^1.7.1",
-    "karma-coverage": "^1.1.1",
-    "karma-coveralls": "^1.1.2",
-    "karma-firefox-launcher": "^1.0.1",
-    "karma-mocha": "^1.3.0",
-    "karma-sinon-chai": "^1.3.2",
-    "karma-sourcemap-loader": "^0.3.7",
-    "karma-webpack": "^2.0.5",
-    "mocha": "^4.0.1",
-    "sinon": "^4.0.1",
-    "sinon-chai": "^2.14.0",
-    "webpack": "^3.8.1",
-    "webpack-dev-server": "^2.9.3",
-    "websocket-server": "git://github.com/burdiuz/js-websocket-server.git"
+  "prettier": {
+    "singleQuote": true,
+    "trailing-comma": "es5",
+    "arrowParens": "always",
+    "parser": "flow"
+  },
+  "jest": {
+    "collectCoverage": true,
+    "coverageReporters": [
+      "json",
+      "lcov"
+    ],
+    "coverageDirectory": "coverage",
+    "collectCoverageFrom": [
+      "source/**/*.js",
+      "!**/node_modules/**",
+      "!**/vendor/**"
+    ]
   },
   "scripts": {
-    "start": "webpack --progress --colors",
-    "build:watch": "webpack --progress --colors --watch",
-    "lint": "./node_modules/.bin/eslint \"source/**/!(*.spec).js\"",
-    "lint:spec": "./node_modules/.bin/eslint -c eslintrc.spec.json \"source/**/*.spec.js\" \"tests/**/*.js\"",
+    "start": "build",
+    "build": "rollup --config",
+    "build:watch": "rollup --config --watch \"./source\"",
+    "lint": "./node_modules/.bin/eslint \"source/**/!(__tests__/)*.js\"",
+    "lint:spec": "./node_modules/.bin/eslint -c eslintrc.spec.json \"source/**/__tests__/*.js\"",
     "flow": "./node_modules/.bin/flow",
-    "server": "./node_modules/.bin/webpack-dev-server --port 8081 --config webpack.config.main.js --open",
-    "test": "./node_modules/.bin/karma start --single-run --browsers Firefox karma.conf.js",
-    "test:watch": "./node_modules/.bin/karma start --auto-watch --no-single-run --browsers Firefox karma.conf.js"
+    "server": "rollup --config rollup.serve.js",
+    "test": "jest --colors",
+    "test:watch": "jest --colors --watch",
+    "lint-staged": "lint-staged",
+    "precommit": "npm run lint-staged && npm run build && npm run test"
   }
 }

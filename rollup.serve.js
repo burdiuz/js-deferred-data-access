@@ -8,7 +8,10 @@ export default {
     serve({
       open: true,
       port: 8081,
-      contentBase: ['dist', 'example'],
+      contentBase: [
+        'packages/deferred-data-access/dist',
+        'example',
+      ],
     }),
   ],
 };

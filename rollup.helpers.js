@@ -6,9 +6,6 @@ import json from 'rollup-plugin-json';
 import uglify from 'rollup-plugin-uglify';
 import { minify } from 'uglify-es';
 
-export const LIBRARY_FILE_NAME = 'remote-resource-pool'; // dummy, replace with project name
-export const LIBRARY_VAR_NAME = 'RemoteResourcePool'; // dummy, replace with project name
-
 export const plugins = [
   resolve(),
   // flow(),
@@ -27,28 +24,28 @@ export const plugins = [
   json(),
 ];
 
-export const baseConfig = {
+export const baseConfig = (libraryFileName, libraryVarName) => ({
   input: 'source/index.js',
   output: [
     {
-      file: `dist/${LIBRARY_FILE_NAME}.js`,
+      file: `dist/${libraryFileName}.js`,
       sourcemap: true,
       exports: 'named',
-      name: LIBRARY_VAR_NAME,
+      name: libraryVarName,
       format: 'cjs',
     },
   ],
   plugins,
-};
+});
 
-export const minConfig = {
+export const minConfig = (libraryFileName, libraryVarName) => ({
   input: 'source/index.js',
   output: [
     {
-      file: `dist/${LIBRARY_FILE_NAME}.min.js`,
+      file: `dist/${libraryFileName}.min.js`,
       sourcemap: true,
       exports: 'named',
-      name: LIBRARY_VAR_NAME,
+      name: libraryVarName,
       format: 'umd',
     },
   ],
@@ -56,4 +53,9 @@ export const minConfig = {
     ...plugins,
     uglify({}, minify),
   ],
-};
+});
+
+export default (libraryFileName, libraryVarName) => ([
+  baseConfig(libraryFileName, libraryVarName),
+  minConfig(libraryFileName, libraryVarName),
+]);

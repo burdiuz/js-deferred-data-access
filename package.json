@@ -1,4 +1,24 @@
 {
+  "babel": {
+    "env": {
+      "test": {
+        "plugins": [
+          "babel-plugin-transform-es2015-modules-commonjs",
+          "babel-plugin-transform-flow-strip-types",
+          "babel-plugin-transform-class-properties",
+          [
+            "babel-plugin-transform-object-rest-spread",
+            {
+              "useBuiltIns": true
+            }
+          ]
+        ],
+        "presets": [
+          "jest"
+        ]
+      }
+    }
+  },
   "dependencies": {
     "@actualwave/event-dispatcher": "^1.1.13"
   },
@@ -32,5 +52,8 @@
     "rollup-plugin-serve": "^0.4.2",
     "rollup-plugin-uglify": "^2.0.1",
     "uglify-es": "^3.3.10"
+  },
+  "scripts": {
+    "server": "rollup --config rollup.serve.js"
   }
 }
