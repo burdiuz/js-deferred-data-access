@@ -1,4 +1,4 @@
-import areProxiesAvailable from './areProxiesAvailable';
+import areProxiesAvailable from '../areProxiesAvailable';
 
 describe('areProxiesAvailable()', () => {
   if (typeof Proxy === 'function') {

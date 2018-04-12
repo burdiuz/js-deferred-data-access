@@ -1,5 +1,6 @@
+import getId from 'shared-utils/getId';
+
 import TARGET_DATA from './TARGET_DATA';
-import getId from './getId';
 
 export default (type = '', resource = {}) => {
   resource[TARGET_DATA] = {

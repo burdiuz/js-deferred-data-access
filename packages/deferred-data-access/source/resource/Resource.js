@@ -1,7 +1,7 @@
 import TARGET_DATA from '../utils/TARGET_DATA';
 import TARGET_INTERNALS from '../utils/TARGET_INTERNALS';
 import getInternals from '../request/target/getInternals';
-import getId from '../utils/getId';
+import getId from '../../../shared-utils/getId';
 
 const getPoolId = (pool) => (pool ? pool.id : null);
 

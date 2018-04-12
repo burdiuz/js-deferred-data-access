@@ -1,21 +1,21 @@
-import PoolRegistry from './PoolRegistry';
-import ResourcePool, { getDefaultValidTargets, setValidTargets } from './ResourcePool';
-import Resource from './Resource';
-import createResource from './createResource';
-import createResourcePool from './createResourcePool';
-import createPoolRegistry from './createPoolRegistry';
-import defaultResourcePool from './defaultResourcePool';
-
-setValidTargets(getDefaultValidTargets());
+import CallbackFactory from './CallbackFactory';
+import Commands from './Commands';
+import Descriptor from './Descriptor';
+import Flow from './Flow';
+import Reserved from './Reserved';
+import addDescriptorTo from './descriptor/addDescriptorTo';
+import descriptorGeneratorFactory from './descriptor/descriptorGeneratorFactory';
+import getPropertyName from './descriptor/getPropertyName';
+import isVirtual from './descriptor/isVirtual';
 
 export {
-  Resource,
-  PoolRegistry,
-  ResourcePool,
-  createResource,
-  createResourcePool,
-  createPoolRegistry,
-  getDefaultValidTargets,
-  setValidTargets,
-  defaultResourcePool,
+  CallbackFactory,
+  Commands,
+  Descriptor,
+  Flow,
+  Reserved,
+  addDescriptorTo,
+  descriptorGeneratorFactory,
+  getPropertyName,
+  isVirtual,
 };

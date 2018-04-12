@@ -1,4 +1,4 @@
-import { createDeferred } from '../../utils/Deferred';
+import { createDeferred } from '../../../../shared-utils/Deferred';
 import toJSON from './toJSON';
 
 class Queue {

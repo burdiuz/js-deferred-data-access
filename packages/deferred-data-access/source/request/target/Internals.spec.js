@@ -2,7 +2,7 @@
  * Created by Oleg Galaburda on 21.03.16.
  */
 
-import Deferred, { createDeferred } from '../../utils/Deferred';
+import Deferred, { createDeferred } from '../../../../shared-utils/Deferred';
 import TargetStatus from '../../utils/TargetStatus';
 import TARGET_DATA from '../../utils/TARGET_DATA';
 

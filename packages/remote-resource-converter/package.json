@@ -18,7 +18,11 @@
     "type": "git",
     "url": "https://github.com/burdiuz/js-remote-resource-converter.git"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@actualwave/event-dispatcher": "^1.1.13",
+    "@actualwave/remote-resource-pool": "^0.0.1",
+    "shared-utils": "^0.0.1"
+  },
   "devDependencies": {},
   "lint-staged": {
     "source/**/!(__tests__/).js": "eslint --fix",

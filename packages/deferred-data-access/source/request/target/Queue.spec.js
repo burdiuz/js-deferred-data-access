@@ -1,7 +1,7 @@
 /**
  * Created by Oleg Galaburda on 25.11.17.
  */
-import Deferred, { createDeferred } from '../../utils/Deferred';
+import Deferred, { createDeferred } from '../../../../shared-utils/Deferred';
 import Queue from './Queue';
 
 describe('Queue', () => {

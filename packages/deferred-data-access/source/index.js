@@ -1,5 +1,5 @@
 import DataAccessInterface, { create, dummy } from './DataAccessInterface';
-import Deferred, { createDeferred } from './utils/Deferred';
+import Deferred, { createDeferred } from '../../shared-utils/Deferred';
 import Descriptor from './command/Descriptor';
 import Reserved from './command/Reserved';
 import RequestCommands from './command/request/RequestCommands';

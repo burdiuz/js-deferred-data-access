@@ -1,4 +1,4 @@
-import Flow from './Flow';
+import Flow from '../Flow';
 import TARGET_INTERNALS from '../utils/TARGET_INTERNALS';
 import { __createRequestData } from '../../tests/stubs';
 

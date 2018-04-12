@@ -1,5 +1,5 @@
 import EventDispatcher from '@actualwave/event-dispatcher';
-import generateId from './utils/generateId';
+import generateId from 'shared-utils/generateId';
 import isResource from './resource/isResource';
 import createResource from './createResource';
 

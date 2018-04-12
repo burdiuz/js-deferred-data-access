@@ -1,7 +1,7 @@
 /**
  * Created by Oleg Galaburda on 29.03.16.
  */
-const callbackFactoryInjector = require('inject-loader!./CallbackFactory');
+const callbackFactoryInjector = require('inject-loader!../CallbackFactory');
 
 describe('CallbackFactory', () => {
   let module;

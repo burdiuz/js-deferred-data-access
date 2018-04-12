@@ -18,7 +18,9 @@
     "type": "git",
     "url": "https://github.com/burdiuz/js-command-descriptor.git"
   },
-  "dependencies": {},
+  "dependencies": {
+    "shared-utils": "^0.0.1"
+  },
   "devDependencies": {},
   "lint-staged": {
     "source/**/!(__tests__/).js": "eslint --fix",

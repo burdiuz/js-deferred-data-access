@@ -1,5 +1,5 @@
 import EventDispatcher from '@actualwave/event-dispatcher';
-import hasOwnProperty from './utils/hasOwnProperty';
+import hasOwnProperty from 'shared-utils/hasOwnProperty';
 import createResourcePool from './createResourcePool';
 import defaultResourcePool from './defaultResourcePool';
 import ResourcePool from './ResourcePool';

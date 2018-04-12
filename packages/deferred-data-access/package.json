@@ -18,7 +18,14 @@
     "type": "git",
     "url": "https://github.com/burdiuz/js-deferred-data-access.git"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@actualwave/event-dispatcher": "^1.1.13",
+    "@actualwave/remote-resource-pool": "^0.0.1",
+    "@actualwave/remote-resource-converter": "^0.0.1",
+    "@actualwave/remote-request-target": "^0.0.1",
+    "@actualwave/command-descriptor": "^0.0.1",
+    "shared-utils": "^0.0.1"
+  },
   "devDependencies": {},
   "lint-staged": {
     "source/**/!(__tests__/).js": "eslint --fix",

@@ -1,4 +1,4 @@
-import getId from './getId';
+import getId from '../getId';
 
 describe('getId()', () => {
   it('Should return string', () => {

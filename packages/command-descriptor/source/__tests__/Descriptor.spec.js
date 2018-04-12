@@ -2,7 +2,7 @@ import Descriptor, {
   createDescriptor,
   DEFAULT_IS_TEMPORARY,
   descriptorGeneratorFactory,
-} from './Descriptor';
+} from '../Descriptor';
 import { __createRequestData } from '../../tests/stubs';
 
 describe('Descriptor', () => {

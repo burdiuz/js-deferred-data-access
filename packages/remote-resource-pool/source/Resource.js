@@ -1,7 +1,7 @@
 import RAW_RESOURCE_DATA_KEY from './utils/RAW_RESOURCE_DATA_KEY';
 import RESOURCE_INTERNALS_KEY from './utils/RESOURCE_INTERNALS_KEY';
 import getInternals from './utils/getInternals';
-import generateId from './utils/generateId';
+import generateId from 'shared-utils/generateId';
 
 const getPoolId = (pool) => (pool ? pool.id : null);
 

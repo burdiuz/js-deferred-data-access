@@ -1,4 +1,4 @@
-import Descriptor, { createDescriptor } from './Descriptor';
+import Descriptor, { createDescriptor } from '../Descriptor';
 import { createDescriptors, ProxyPropertyNames } from './proxy/ProxyCommands';
 import Handlers, * as utils from './Handlers';
 

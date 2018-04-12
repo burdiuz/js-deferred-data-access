@@ -1,5 +1,5 @@
 import {} from '../../../tests/stubs';
-import Descriptor, { createDescriptor } from '../Descriptor';
+import Descriptor, { createDescriptor } from '../../Descriptor';
 import filterRequestHandlers from './filterRequestHandlers';
 
 describe('filterRequestHandlers()', () => {

@@ -1,4 +1,4 @@
-import Deferred from '../utils/Deferred';
+import Deferred from '../../../shared-utils/Deferred';
 import TARGET_INTERNALS from '../utils/TARGET_INTERNALS';
 import {
   __createRequestData,

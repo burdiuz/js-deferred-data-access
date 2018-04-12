@@ -2,7 +2,7 @@
  * Created by Oleg Galaburda on 25.11.17.
  */
 
-import { createDeferred } from '../../utils/Deferred';
+import { createDeferred } from '../../../../shared-utils/Deferred';
 import Children from './Children';
 import { __createRequest } from '../../../tests/stubs';
 

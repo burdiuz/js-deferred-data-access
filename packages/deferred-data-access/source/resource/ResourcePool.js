@@ -1,5 +1,5 @@
 import EventDispatcher from 'event-dispatcher';
-import getId from '../utils/getId';
+import getId from '../../../shared-utils/getId';
 import isResource from '../utils/isResource';
 import { createResource } from './Resource';
 import isRequest from '../request/target/isRequest';

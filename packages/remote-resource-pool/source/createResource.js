@@ -1,4 +1,4 @@
-import generateId from './utils/generateId';
+import generateId from 'shared-utils/generateId';
 import Resource from './Resource';
 
 export default (pool, value, resourceType, id = null) => (

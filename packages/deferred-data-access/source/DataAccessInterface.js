@@ -2,7 +2,7 @@
  * @exports DataAccessInterface
  */
 
-import areProxiesAvailable from './utils/areProxiesAvailable';
+import areProxiesAvailable from '../../shared-utils/areProxiesAvailable';
 import isResource from './utils/isResource';
 import getResourcePoolId from './utils/getResourcePoolId';
 import getResourceId from './utils/getResourceId';

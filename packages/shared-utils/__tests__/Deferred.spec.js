@@ -1,4 +1,4 @@
-import { createDeferred } from './Deferred';
+import { createDeferred } from '../Deferred';
 
 describe('createDeferred()', () => {
   describe('When called', () => { // since its factory method
