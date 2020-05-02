@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head >
+    <meta charset="UTF-8" >
+    <meta name="viewport" content="width=device-width, initial-scale=1" >
+    <title >Deferred Data Access Example</title >
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"
+          integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous" >
+    <link rel="stylesheet" href="calc.css" >
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.2/jquery.min.js" ></script >
+    <script src="calc.js" ></script >
+</head >
+<body >
+<div class="container" >
+    <div class="row" >
+        <div class="col-lg-5 col-md-10 col-sm-10 col-xs-10" >
+            <div class="display form-control" >
+            </div >
+        </div >
+    </div >
+
+    <div class="row" >
+        <div class="col-lg-1 col-md-2 col-sm-2 col-xs-2" >
+            <button class="btn btn-lg btn-primary operation" data-value="MC" >MC</button >
+        </div >
+        <div class="col-lg-1 col-md-2 col-sm-2 col-xs-2" >
+            <button class="btn btn-lg btn-primary operation" data-value="MR" >MR</button >
+        </div >
+        <div class="col-lg-1 col-md-2 col-sm-2 col-xs-2" >
+            <button class="btn btn-lg btn-primary operation" data-value="MS" >MS</button >
+        </div >
+        <div class="col-lg-1 col-md-2 col-sm-2 col-xs-2" >
+            <button class="btn btn-lg btn-primary operation" data-value="Mp" >M+</button >
+        </div >
+        <div class="col-lg-1 col-md-2 col-sm-2 col-xs-2" >
+            <button class="btn btn-lg btn-primary operation" data-value="Mm" >M-</button >
+        </div >
+    </div >
+    <div class="row" >
+        <div class="col-lg-1 col-md-2 col-sm-2 col-xs-2" >
+            <button class="btn btn-lg btn-primary operation" data-value="Rm" >←</button >
+        </div >
+        <div class="col-lg-1 col-md-2 col-sm-2 col-xs-2" >
+            <button class="btn btn-lg btn-primary operation" data-value="CE" >CE</button >
+        </div >
+        <div class="col-lg-1 col-md-2 col-sm-2 col-xs-2" >
+            <button class="btn btn-lg btn-primary operation" data-value="C" >C</button >
+        </div >
+        <div class="col-lg-1 col-md-2 col-sm-2 col-xs-2" >
+            <button class="btn btn-lg btn-primary operation" data-value="Si" >±</button >
+        </div >
+        <div class="col-lg-1 col-md-2 col-sm-2 col-xs-2" >
+            <button class="btn btn-lg btn-primary operation" data-value="Sq" >√</button >
+        </div >
+    </div >
+
+
+    <div class="row" >
+        <div class="col-lg-1 col-md-2 col-sm-2 col-xs-2" >
+            <button class="btn btn-lg number" >7</button >
+        </div >
+        <div class="col-lg-1 col-md-2 col-sm-2 col-xs-2" >
+            <button class="btn btn-lg number" >8</button >
+        </div >
+        <div class="col-lg-1 col-md-2 col-sm-2 col-xs-2" >
+            <button class="btn btn-lg number" >9</button >
+        </div >
+        <div class="col-lg-1 col-md-2 col-sm-2 col-xs-2" >
+            <button class="btn btn-lg btn-primary operation" data-value="Pr" >%</button >
+        </div >
+        <div class="col-lg-1 col-md-2 col-sm-2 col-xs-2" >
+            <button class="btn btn-lg btn-primary operation" data-value="Rp" >1/x</button >
+        </div >
+    </div >
+    <div class="row" >
+        <div class="col-lg-1 col-md-2 col-sm-2 col-xs-2" >
+            <button class="btn btn-lg number" >4</button >
+        </div >
+        <div class="col-lg-1 col-md-2 col-sm-2 col-xs-2" >
+            <button class="btn btn-lg number" >5</button >
+        </div >
+        <div class="col-lg-1 col-md-2 col-sm-2 col-xs-2" >
+            <button class="btn btn-lg number" >6</button >
+        </div >
+        <div class="col-lg-1 col-md-2 col-sm-2 col-xs-2" >
+            <button class="btn btn-lg btn-primary operation" data-value="Ml" >*</button >
+        </div >
+        <div class="col-lg-1 col-md-2 col-sm-2 col-xs-2" >
+            <button class="btn btn-lg btn-primary operation" data-value="Dv" >/</button >
+        </div >
+    </div >
+    <div class="row" >
+        <div class="col-lg-1 col-md-2 col-sm-2 col-xs-2" >
+            <button class="btn btn-lg number" >1</button >
+        </div >
+        <div class="col-lg-1 col-md-2 col-sm-2 col-xs-2" >
+            <button class="btn btn-lg number" >2</button >
+        </div >
+        <div class="col-lg-1 col-md-2 col-sm-2 col-xs-2" >
+            <button class="btn btn-lg number" >3</button >
+        </div >
+        <div class="col-lg-1 col-md-2 col-sm-2 col-xs-2" >
+            <button class="btn btn-lg btn-primary operation" data-value="Ad" >+</button >
+        </div >
+        <div class="col-lg-1 col-md-2 col-sm-2 col-xs-2" >
+            <button class="btn btn-lg btn-primary operation" data-value="Su" >-</button >
+        </div >
+    </div >
+    <div class="row" >
+        <div class="col-lg-2 col-md-4 col-sm-4 col-xs-4" >
+            <button class="btn btn-lg number" >0</button >
+        </div >
+        <div class="col-lg-1 col-md-2 col-sm-2 col-xs-2" >
+            <button class="btn btn-lg number" >.</button >
+        </div >
+        <div class="col-lg-2 col-md-4 col-sm-4 col-xs-4" >
+            <button class="btn btn-lg btn-primary operation" data-value="Eq" >=</button >
+        </div >
+    </div >
+    <div class="history" ></div >
+</div >
+</div>
+</body >
+</html >

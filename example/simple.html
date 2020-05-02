@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Deferred Data Access Example</title>
+    <script type="text/javascript" src="../dist/deferred-data-access.direct.js"></script>
+    <script type="text/javascript">
+      const { create, ProxyCommands } = DataAccessInterface;
+      const handlers = {};
+      ProxyCommands.createGETDescriptor((parent, { cmd }, deferred) => {
+        return parent.then(({ value }) => {
+          console.log(typeof value === 'string' ? `${value}/${cmd}` : cmd);
+          return typeof value === 'string' ? `${value}/${cmd}` : cmd;
+        });
+      }, handlers);
+      ProxyCommands.createSETDescriptor(() => (target, pack, deferred) => deferred.resolve(), handlers);
+      ProxyCommands.createAPPLYDescriptor(() => (target, pack, deferred) => deferred.resolve(), handlers);
+      const api = create(handlers, true);
+      api.dummy().server.data.request.me.then((...args) => console.log('response:', ...args));
+    </script>
+</head>
+<body>
+</body>
+</html>

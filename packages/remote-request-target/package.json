@@ -1,0 +1,67 @@
+{
+  "name": "@actualwave/remote-request-target",
+  "description": "",
+  "version": "0.0.1",
+  "main": "dist/remote-request-target.js",
+  "keywords": [
+    "js",
+    "javascript"
+  ],
+  "homepage": "https://github.com/burdiuz/js-remote-request-target",
+  "bugs": {
+    "url": "https://github.com/burdiuz/js-remote-request-target/issues",
+    "email": "burdiuz@gmail.com"
+  },
+  "license": "MIT",
+  "author": "Oleg Galaburda <burdiuz@gmail.com> (http://actualwave.com/)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/burdiuz/js-remote-request-target.git"
+  },
+  "dependencies": {
+    "@actualwave/event-dispatcher": "^1.1.13",
+    "@actualwave/remote-resource-pool": "^0.0.1",
+    "shared-utils": "^0.0.1"
+  },
+  "devDependencies": {},
+  "lint-staged": {
+    "source/**/!(__tests__/).js": "eslint --fix",
+    "{source/**/__tests__/*.js,source/**/__mocks__/*.js}": "eslint -c eslintrc.spec.json --fix",
+    "source/**/*.js": [
+      "prettier --write",
+      "git add"
+    ]
+  },
+  "prettier": {
+    "singleQuote": true,
+    "trailing-comma": "es5",
+    "arrowParens": "always",
+    "parser": "flow"
+  },
+  "jest": {
+    "collectCoverage": true,
+    "coverageReporters": [
+      "json",
+      "lcov"
+    ],
+    "coverageDirectory": "coverage",
+    "collectCoverageFrom": [
+      "source/**/*.js",
+      "!**/node_modules/**",
+      "!**/vendor/**"
+    ]
+  },
+  "scripts": {
+    "start": "build",
+    "build": "rollup --config",
+    "build:watch": "rollup --config --watch \"./source\"",
+    "lint": "./node_modules/.bin/eslint \"source/**/!(__tests__/)*.js\"",
+    "lint:spec": "./node_modules/.bin/eslint -c eslintrc.spec.json \"source/**/__tests__/*.js\"",
+    "flow": "./node_modules/.bin/flow",
+    "server": "rollup --config rollup.serve.js",
+    "test": "jest --colors",
+    "test:watch": "jest --colors --watch",
+    "lint-staged": "lint-staged",
+    "precommit": "npm run lint-staged && npm run build && npm run test"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "shared-utils",
+  "description": "",
+  "version": "0.0.1",
+  "main": "index.js",
+  "keywords": [
+    "js",
+    "javascript"
+  ],
+  "homepage": "https://github.com/burdiuz/js-remote-resource-pool",
+  "bugs": {
+    "url": "https://github.com/burdiuz/js-remote-resource-pool/issues",
+    "email": "burdiuz@gmail.com"
+  },
+  "license": "MIT",
+  "author": "Oleg Galaburda <burdiuz@gmail.com> (http://actualwave.com/)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/burdiuz/js-remote-resource-pool.git"
+  }
+}
