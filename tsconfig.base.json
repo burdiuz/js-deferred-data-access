@@ -1,0 +1,31 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "rootDir": ".",
+    "sourceMap": true,
+    "declaration": false,
+    "moduleResolution": "node",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "target": "es2015",
+    "module": "commonjs",
+    "module.bak": "esnext",
+    "lib": ["es2017", "dom"],
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@actualwave/deferred-data-access": ["packages/core/index.ts"],
+      "@actualwave/deferred-data-access/command": [
+        "packages/command/index.ts"
+      ],
+      "@actualwave/deferred-data-access/proxy": ["packages/proxy/index.ts"],
+      "@actualwave/deferred-data-access/resource": [
+        "packages/resource/index.ts"
+      ],
+      "@actualwave/deferred-data-access/utils": ["packages/utils/index.ts"]
+    }
+  },
+  "exclude": ["node_modules", "tmp"]
+}

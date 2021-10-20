@@ -1,50 +1,28 @@
 {
-  "name": "deferred-data-access",
-  "description": "",
-  "version": "0.0.5",
-  "main": "dist/deferred-data-access.min.js",
-  "keywords": [
-    "data",
-    "access",
-    "deferred",
-    "promise"
-  ],
-  "homepage": "https://github.com/burdiuz/js-deferred-data-access",
-  "bugs": {
-    "url": "https://github.com/burdiuz/js-deferred-data-access/issues",
-    "email": "burdiuz@gmail.com"
-  },
+  "name": "@actualwave/deferred-data-access",
+  "version": "0.0.0",
   "license": "MIT",
-  "author": "Oleg Galaburda <burdiuz@gmail.com> (http://actualwave.com/)",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/burdiuz/js-deferred-data-access.git"
-  },
+  "scripts": {},
+  "private": true,
   "dependencies": {
-    "event-dispatcher": "git://github.com/burdiuz/js-event-dispatcher.git"
+    "tslib": "^2.0.0"
   },
   "devDependencies": {
-    "chai": "^3.5.0",
-    "express": "^4.13.3",
-    "gulp": "^3.9.0",
-    "gulp-include": "^2.1.0",
-    "gulp-jsdoc-to-markdown": "^1.2.1",
-    "gulp-jsdoc3": "^0.2.1",
-    "gulp-rename": "^1.2.2",
-    "gulp-strip-comments": "^2.2.1",
-    "gulp-uglify": "^1.5.1",
-    "karma": "^0.13.16",
-    "karma-coverage": "^0.5.3",
-    "karma-coveralls": "^1.1.2",
-    "karma-firefox-launcher": "^0.1.7",
-    "karma-mocha": "^0.2.1",
-    "karma-sinon-chai": "^1.1.0",
-    "lolex": "^1.4.0",
-    "mocha": "^2.4.5",
-    "sinon": "^1.17.3",
-    "sinon-chai": "^2.8.0"
-  },
-  "scripts": {
-    "test": "./node_modules/.bin/karma start --single-run --browsers Firefox karma.conf.js"
+    "@nrwl/cli": "12.10.0",
+    "@nrwl/eslint-plugin-nx": "12.10.0",
+    "@nrwl/jest": "12.10.0",
+    "@nrwl/linter": "12.10.0",
+    "@nrwl/tao": "12.10.0",
+    "@nrwl/workspace": "12.10.0",
+    "@types/jest": "27.0.2",
+    "@types/node": "14.14.33",
+    "@typescript-eslint/eslint-plugin": "~4.31.1",
+    "@typescript-eslint/parser": "~4.31.1",
+    "eslint": "7.22.0",
+    "eslint-config-prettier": "8.1.0",
+    "jest": "27.2.3",
+    "prettier": "^2.3.1",
+    "ts-jest": "27.0.5",
+    "typescript": "~4.3.5"
   }
 }

@@ -1,0 +1,168 @@
+{
+  "version": 2,
+  "projects": {
+    "core": {
+      "root": "packages/core",
+      "sourceRoot": "packages/core",
+      "projectType": "library",
+      "targets": {
+        "build": {
+          "executor": "@nrwl/workspace:tsc",
+          "outputs": ["{options.outputPath}"],
+          "options": {
+            "outputPath": "dist/@actualwave/deferred-data-access",
+            "main": "packages/core/index.ts",
+            "tsConfig": "packages/core/tsconfig.lib.json",
+            "assets": ["packages/core/*.md"]
+          }
+        },
+        "lint": {
+          "executor": "@nrwl/linter:eslint",
+          "outputs": ["{options.outputFile}"],
+          "options": {
+            "lintFilePatterns": ["packages/core/**/*.ts"]
+          }
+        },
+        "test": {
+          "executor": "@nrwl/jest:jest",
+          "outputs": ["coverage/packages/core"],
+          "options": {
+            "jestConfig": "packages/core/jest.config.js",
+            "passWithNoTests": true
+          }
+        }
+      }
+    },
+    "command": {
+      "root": "packages/command",
+      "sourceRoot": "packages/command",
+      "projectType": "library",
+      "targets": {
+        "build": {
+          "executor": "@nrwl/workspace:tsc",
+          "outputs": ["{options.outputPath}"],
+          "options": {
+            "outputPath": "dist/@actualwave/command",
+            "main": "packages/command/index.ts",
+            "tsConfig": "packages/command/tsconfig.lib.json",
+            "assets": ["packages/command/*.md"]
+          }
+        },
+        "lint": {
+          "executor": "@nrwl/linter:eslint",
+          "outputs": ["{options.outputFile}"],
+          "options": {
+            "lintFilePatterns": ["packages/command/**/*.ts"]
+          }
+        },
+        "test": {
+          "executor": "@nrwl/jest:jest",
+          "outputs": ["coverage/packages/command"],
+          "options": {
+            "jestConfig": "packages/command/jest.config.js",
+            "passWithNoTests": true
+          }
+        }
+      }
+    },
+    "proxy": {
+      "root": "packages/proxy",
+      "sourceRoot": "packages/proxy",
+      "projectType": "library",
+      "targets": {
+        "build": {
+          "executor": "@nrwl/workspace:tsc",
+          "outputs": ["{options.outputPath}"],
+          "options": {
+            "outputPath": "dist/@actualwave/proxy",
+            "main": "packages/proxy/index.ts",
+            "tsConfig": "packages/proxy/tsconfig.lib.json",
+            "assets": ["packages/proxy/*.md"]
+          }
+        },
+        "lint": {
+          "executor": "@nrwl/linter:eslint",
+          "outputs": ["{options.outputFile}"],
+          "options": {
+            "lintFilePatterns": ["packages/proxy/**/*.ts"]
+          }
+        },
+        "test": {
+          "executor": "@nrwl/jest:jest",
+          "outputs": ["coverage/packages/proxy"],
+          "options": {
+            "jestConfig": "packages/proxy/jest.config.js",
+            "passWithNoTests": true
+          }
+        }
+      }
+    },
+    "resource": {
+      "root": "packages/resource",
+      "sourceRoot": "packages/resource",
+      "projectType": "library",
+      "targets": {
+        "build": {
+          "executor": "@nrwl/workspace:tsc",
+          "outputs": ["{options.outputPath}"],
+          "options": {
+            "outputPath": "dist/@actualwave/resource",
+            "main": "packages/resource/index.ts",
+            "tsConfig": "packages/resource/tsconfig.lib.json",
+            "assets": ["packages/resource/*.md"]
+          }
+        },
+        "lint": {
+          "executor": "@nrwl/linter:eslint",
+          "outputs": ["{options.outputFile}"],
+          "options": {
+            "lintFilePatterns": ["packages/resource/**/*.ts"]
+          }
+        },
+        "test": {
+          "executor": "@nrwl/jest:jest",
+          "outputs": ["coverage/packages/resource"],
+          "options": {
+            "jestConfig": "packages/resource/jest.config.js",
+            "passWithNoTests": true
+          }
+        }
+      }
+    },
+    "utils": {
+      "root": "packages/utils",
+      "sourceRoot": "packages/utils",
+      "projectType": "library",
+      "targets": {
+        "build": {
+          "executor": "@nrwl/workspace:tsc",
+          "outputs": ["{options.outputPath}"],
+          "options": {
+            "outputPath": "dist/@actualwave/utils",
+            "main": "packages/utils/index.ts",
+            "tsConfig": "packages/utils/tsconfig.lib.json",
+            "assets": ["packages/utils/*.md"]
+          }
+        },
+        "lint": {
+          "executor": "@nrwl/linter:eslint",
+          "outputs": ["{options.outputFile}"],
+          "options": {
+            "lintFilePatterns": ["packages/utils/**/*.ts"]
+          }
+        },
+        "test": {
+          "executor": "@nrwl/jest:jest",
+          "outputs": ["coverage/packages/utils"],
+          "options": {
+            "jestConfig": "packages/utils/jest.config.js",
+            "passWithNoTests": true
+          }
+        }
+      }
+    }
+  },
+  "cli": {
+    "defaultCollection": "@nrwl/workspace"
+  }
+}
