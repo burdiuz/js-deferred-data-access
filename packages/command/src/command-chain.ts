@@ -37,7 +37,7 @@ export class CommandChain extends Command implements ICommandList {
 
     do {
       callback(node);
-      node = this.prev;
+      node = node.prev;
     } while (node);
   }
 
@@ -47,22 +47,22 @@ export class CommandChain extends Command implements ICommandList {
 
     do {
       list.push(callback(node));
-      node = this.prev;
+      node = node.prev;
     } while (node);
 
     return list;
   }
 
   reduce<T = unknown>(
-    callback: (result: T | undefined, item: ICommandChain) => T,
-    base?: T
+    callback: (result: T, item: ICommandChain) => T,
+    base: T
   ): T {
     let node: ICommandChain | undefined = this;
     let result = base;
 
     do {
       result = callback(result, node);
-      node = this.prev;
+      node = node.prev;
     } while (node);
 
     return result;

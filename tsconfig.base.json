@@ -25,7 +25,8 @@
         "packages/resource/index.ts"
       ],
       "@actualwave/deferred-data-access/utils": ["packages/utils/index.ts"]
-    }
+    },
+    "typeRoots": ["node_modules/@types", "typings"]
   },
   "exclude": ["node_modules", "tmp"]
 }

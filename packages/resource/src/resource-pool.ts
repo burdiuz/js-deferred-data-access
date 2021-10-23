@@ -1,5 +1,7 @@
+/* eslint-disable @typescript-eslint/ban-types */
 import { IdOwner } from '@actualwave/deferred-data-access/utils';
 import { WeakStorage } from '@actualwave/weak-storage';
+import { createResource, Resource } from './resource';
 import { isValidTarget } from './utils';
 
 export class ResourcePool extends IdOwner {
@@ -13,7 +15,7 @@ export class ResourcePool extends IdOwner {
     return !!this.resources;
   }
 
-  set(target: any, type: string = '') {
+  set(target: object, type?: string): Resource | null {
     let resource = null;
 
     if (!isValidTarget(target)) {
@@ -22,8 +24,8 @@ export class ResourcePool extends IdOwner {
 
     resource = this.resources.get(target);
 
-    if(!resource) {
-      resource = createResource(this, target, type || typeof target);
+    if (!resource) {
+      resource = createResource(this, type);
       this.refs.set(resource.id, target);
       this.resources.set(target, resource);
     }
@@ -31,39 +33,31 @@ export class ResourcePool extends IdOwner {
     return resource;
   }
 
-  has(target:any) {
+  has(target: object) {
     return this.resources.has(target);
   }
-  
-  get(target:any) {
+
+  get(target: object) {
     return this.resources.get(target);
   }
-  
-  remove(target:any) {
-    var resource = this.resources.get(target);
-  
+
+  remove(target: object): boolean {
+    const resource = this.resources.get(target);
+
     if (resource) {
       this.refs.delete(resource.id);
-      this.resources.delete(resource.resource);
-      resource.destroy();
+      return this.resources.delete(target);
     }
-  }
-  
-  clear() {
-    let key;
-    var keys = this.map.keys();
-    //FIXME update to for...of loop when it comes to browsers
-    while (!(key = keys.next()).done) {
-      if (typeof key.value === 'string') {
-        var resource = this.map.get(key.value);
-        resource.destroy();
-      }
-    }
-    this.map.clear();
+
+    return false;
   }
 
-  destroy() {
-    this.clear();
-    delete this.refs;
-    delete this.resources;
+  clear() {
+    for (const key of this.refs.keys()) {
+      const target = this.refs.get(key);
+      this.resources.delete(target);
+    }
+
+    this.refs.clear();
   }
+}

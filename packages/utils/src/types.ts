@@ -28,8 +28,8 @@ export interface ICommandList extends ICommandChain {
   forEach(callback: (item: ICommandChain) => void): void;
   map<T = unknown>(callback: (item: ICommandChain) => T): Array<T>;
   reduce<T = unknown>(
-    callback: (result: T | undefined, item: ICommandChain) => T,
-    base?: T
+    callback: (result: T, item: ICommandChain) => T,
+    base: T
   ): T;
 }
 

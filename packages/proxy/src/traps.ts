@@ -48,6 +48,7 @@ const createDeletePropertyTrap =
   };
 
 const proxyHasTrap = (wrapper: ProxyWrapper, name: PropertyName): boolean => {
+  // target is promise now, can't verify now
   // return wrapper.target.hasOwnProperty(name);
   return true;
 }

@@ -1,9 +1,11 @@
+///<reference path="../../../typings/@actualwave/has-own/index.d.ts" />
+import { hasOwn } from '@actualwave/has-own';
 import { PropertyName } from '@actualwave/deferred-data-access/utils';
 import { CommandChain } from '@actualwave/deferred-data-access/command';
 import { ProxyCommand, getMethodCallContext } from './command';
 import { EXCLUSIONS } from './types';
 
-export const isNameExcluded = (name: PropertyName) => name in EXCLUSIONS;
+export const isNameExcluded = (name: PropertyName) => hasOwn(EXCLUSIONS, name);
 
 export const isNameSymbol = (name: PropertyName) => typeof name === 'symbol';
 
