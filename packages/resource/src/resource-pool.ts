@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import { IdOwner } from '@actualwave/deferred-data-access/utils';
-import { WeakStorage } from '@actualwave/weak-storage';
+import { WeakValueMap } from '@actualwave/weak-storage';
 import { createResource, Resource } from './resource';
 import { isValidTarget } from './utils';
 
 export class ResourcePool extends IdOwner {
   // { [string]: weakref }
-  private refs = new WeakStorage();
+  private refs = new WeakValueMap();
 
   // { [weakref]: Resource }
   private resources = new WeakMap();
@@ -25,7 +25,7 @@ export class ResourcePool extends IdOwner {
     resource = this.resources.get(target);
 
     if (!resource) {
-      resource = createResource(this, type);
+      resource = createResource(this, target, type);
       this.refs.set(resource.id, target);
       this.resources.set(target, resource);
     }
@@ -37,7 +37,15 @@ export class ResourcePool extends IdOwner {
     return this.resources.has(target);
   }
 
-  get(target: object) {
+  get({ id }: { id: string }): unknown {
+    return this.getById(id);
+  }
+
+  getById(id: string): unknown {
+    return this.refs.get(id);
+  }
+
+  getResource(target: object): Resource {
     return this.resources.get(target);
   }
 

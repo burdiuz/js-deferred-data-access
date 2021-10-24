@@ -1,11 +1,11 @@
 import { Worker } from 'worker_threads';
 import { handle } from '@actualwave/deferred-data-access';
-import {
-  createUIDGenerator,
-  isResource,
-} from '@actualwave/deferred-data-access/utils/index.js';
+import { createUIDGenerator } from '@actualwave/deferred-data-access/utils/index.js';
 import { ProxyCommand } from '@actualwave/deferred-data-access/proxy/index.js';
-import { getRegistry } from '@actualwave/deferred-data-access/resource/index.js';
+import {
+  getRegistry,
+  isResourceObject,
+} from '@actualwave/deferred-data-access/resource/index.js';
 
 const registry = getRegistry();
 const pool = registry.createPool();
@@ -43,14 +43,30 @@ Message signature
 
 const createRequestMessage =
   (source, target) =>
-  (command, context, id = generateMessageId()) => ({
-    id,
-    type: MessageType.REQUEST,
-    source,
-    target,
-    command,
-    context,
-  });
+  async (commandChain, context, id = generateMessageId()) => {
+    const command = commandChain.toObject();
+
+    // apply function to owner object
+    if (command.type === ProxyCommand.APPLY) {
+      let exeContext;
+
+      if (commandChain.prev) {
+        exeContext = await commandChain.prev.context;
+      }
+
+      // prepare arguments for Function.apply()
+      command.value = [exeContext, command.value];
+    }
+
+    return {
+      id,
+      type: MessageType.REQUEST,
+      source,
+      target,
+      command,
+      context,
+    };
+  };
 
 const createResponseMessage =
   (source) =>
@@ -99,35 +115,43 @@ const resolveOrTimeout = ({
     : promise;
 };
 
-const findEventEmitter = () => {
+const findEventEmitter = (worker) => {
+  if (worker) {
+    return worker;
+  }
+
   if (typeof self === 'object') {
     return self;
   }
 
-  return global;
+  throw new Error(
+    'EventEmitter is not defined, please provide EventEmitter interface via "worker" or "eventEmitter" property.'
+  );
 };
 
-const findMessagePort = () => {
+const findMessagePort = (worker) => {
+  if (worker) {
+    return worker;
+  }
+
   if (typeof self === 'object') {
     return self;
   }
 
-  if (typeof globalThis === 'object') {
-    return globalThis;
-  }
+  throw new Error(
+    'MessagePort is not defined, please provide MessagePort interface via "worker" or "messagePort" property.'
+  );
 };
 
-const handshakeHost = ({
-  id,
-  root,
-  isMessage,
-  subscribe,
-  unsubscribe,
-  postMessage,
-}) =>
-  new Promise((resolve) => {
-    const handshakeHandler = ({ data }) => {
-      if (!isMessage) {
+const getMessageEventData = (event) => event instanceof Event ? event.data : event;
+
+const handshakeHost =
+  ({ id, root, isMessage, subscribe, unsubscribe, postMessage }) =>
+  (resolve) => {
+    const handshakeHandler = (event) => {
+      const data = getMessageEventData(event);
+
+      if (!isMessage(data)) {
         return;
       }
 
@@ -137,20 +161,24 @@ const handshakeHost = ({
     };
 
     subscribe(handshakeHandler);
-  });
+  };
 
-const handshakeWorker = ({
-  id,
-  root,
-  isMessage,
-  subscribe,
-  unsubscribe,
-  postMessage,
-}) =>
-  new Promise((resolve) => {
+const handshakeWorker =
+  ({
+    id,
+    root,
+    isMessage,
+    subscribe,
+    unsubscribe,
+    postMessage,
+    handshakeInterval,
+  }) =>
+  (resolve) => {
     let intervalId;
 
-    const handshakeHandler = ({ data }) => {
+    const handshakeHandler = (event) => {
+      const data = getMessageEventData(event);
+
       if (!isMessage(data)) {
         return;
       }
@@ -161,8 +189,15 @@ const handshakeWorker = ({
     };
 
     subscribe(handshakeHandler);
-    intervalId = setInterval(() => postMessage({ id, root }), 100);
-  });
+
+    const intervalFn = () => postMessage({ id, root });
+
+    if (handshakeInterval) {
+      intervalId = setInterval(intervalFn, handshakeInterval);
+    } else {
+      intervalFn();
+    }
+  };
 
 const handshake = ({ type, remoteId, handshakeTimeout, ...params }) => {
   const fn = type === InterfaceType.HOST ? handshakeHost : handshakeWorker;
@@ -174,24 +209,30 @@ const handshake = ({ type, remoteId, handshakeTimeout, ...params }) => {
   });
 };
 
-const applyRemoteRequest = ({ command: { type, name, value }, context }) => {
-  let target = context;
-
-  if (isResource(context)) {
-    const { poolId, id } = context;
-
-    const pool = getRegistry().get(poolId);
-
-    if (pool) {
-      target = pool.get(id);
-
-      if (!target) {
-        throw new Error(`Resource "${id}" does not exist, pool "${poolId}".`);
-      }
-    } else {
-      throw new Error(`Resource Pool "${poolId}" does not exist.`);
-    }
+const extractResourceFrom = (value) => {
+  if (!isResourceObject(value)) {
+    return value;
   }
+
+  const { poolId, id } = value;
+
+  const pool = getRegistry().get(poolId);
+
+  if (!pool) {
+    throw new Error(`Resource Pool "${poolId}" does not exist.`);
+  }
+
+  const target = pool.getById(id);
+
+  if (!target) {
+    throw new Error(`Resource "${id}" does not exist, pool "${poolId}".`);
+  }
+
+  return target;
+};
+
+const applyRemoteRequest = ({ command: { type, name, value }, context }) => {
+  const target = extractResourceFrom(context);
 
   if (!target) {
     throw new Error(
@@ -199,18 +240,64 @@ const applyRemoteRequest = ({ command: { type, name, value }, context }) => {
     );
   }
 
+  let result;
+
   switch (type) {
     case ProxyCommand.GET:
-      return target[name];
+      result = target[name];
+      break;
     case ProxyCommand.SET:
-      return (target[name] = value);
+      return (target[name] = extractResourceFrom(value));
     case ProxyCommand.DELETE_PROPERTY:
       return delete target[name];
     case ProxyCommand.APPLY:
-      return target(...value);
+      const [exeContext, args] = value;
+      result = target.apply(
+        extractResourceFrom(exeContext),
+        args.map(extractResourceFrom)
+      );
+      break;
     case ProxyCommand.METHOD_CALL:
-      return target[name](...value);
+      result = target[name](...value.map(extractResourceFrom));
+      break;
   }
+
+  if (typeof result === 'function') {
+    return pool.set(result).toObject();
+  }
+
+  return result;
+};
+
+const createSubscriberFns = (instance) => {
+  if (instance.addEventListener) {
+    return {
+      subscribe: (listener) => instance.addEventListener(EVENT_TYPE, listener),
+      unsubscribe: (listener) =>
+        instance.removeEventListener(EVENT_TYPE, listener),
+    };
+  }
+
+  if (instance.addListener) {
+    return {
+      subscribe: (listener) => instance.addListener(EVENT_TYPE, listener),
+      unsubscribe: (listener) => instance.removeListener(EVENT_TYPE, listener),
+    };
+  }
+
+  if (instance.on) {
+    return {
+      subscribe: (listener) => instance.on(EVENT_TYPE, listener),
+      unsubscribe: (listener) => instance.off(EVENT_TYPE, listener),
+    };
+  }
+
+  throw new Error(
+    'Worker instance does not implement EventEmitter insterface, ' +
+      'it must expose "addEventListener"/"removeEventListener", ' +
+      '"addListener"/"removeListener" or ' +
+      '"on"/"off" method pair.'
+  );
 };
 
 /*
@@ -224,12 +311,13 @@ const applyRemoteRequest = ({ command: { type, name, value }, context }) => {
   postMessage,
   handshakeTimeout,
   responseTimeout,
+  handshakeInterval,
 }
   */
 
-export const initialize = async ({ id: initId, api, ...params }) => {
+export const initialize = async ({ id: initId, root: apiRoot, ...params }) => {
   const id = initId || generateId();
-  const root = pool.set(api);
+  const root = apiRoot && pool.set(apiRoot).toObject();
 
   const { subscribe, unsubscribe, postMessage } = params;
 
@@ -239,13 +327,19 @@ export const initialize = async ({ id: initId, api, ...params }) => {
     ...params,
   });
 
+  console.log('HANDSHAKE COMPLETE:', params.type);
+
   const pendingRequests = new Map(); // {[key: string]: { resolve: (value) => void, reject: (error) => void }}
 
   const isMessage = createIsMessage(id);
   const createRequest = createRequestMessage(id, remoteId);
   const createResponse = createResponseMessage(id);
 
-  const messageHandler = ({ data }) => {
+  const messageHandler = async (event) => {
+    const data = getMessageEventData(event);
+
+    console.log('MESSAGE!::', data);
+
     if (!isMessage(data)) {
       return;
     }
@@ -254,6 +348,8 @@ export const initialize = async ({ id: initId, api, ...params }) => {
       case MessageType.REQUEST:
         try {
           const value = await applyRemoteRequest(data);
+
+          console.log('RETURN RESPONSE:', value, data);
 
           postMessage(createResponse(data, value));
         } catch (error) {
@@ -291,15 +387,20 @@ export const initialize = async ({ id: initId, api, ...params }) => {
     */
 
     const id = generateMessageId();
-    const result = resolveOrTimeout({
-      handler: (resolve, reject) => {
-        createRequest(command, target, id);
+    let result = resolveOrTimeout({
+      handler: async (resolve, reject) => {
+        const request = await createRequest(command, target, id);
+        postMessage(request);
         pendingRequests.set(id, { resolve, reject });
       },
       timeout: responseTimeout,
       timeoutError: `Could not receive command ${command.type}/${command.name} response in ${responseTimeout}ms.`,
       onTimeout: () => pendingRequests.delete(id),
     });
+
+    if (isResourceObject(result)) {
+      result = wrap(result, command);
+    }
 
     return result;
   }, false);
@@ -314,32 +415,36 @@ export const initialize = async ({ id: initId, api, ...params }) => {
 };
 
 export const initializeWorker = async ({
-  eventEmitter /*: { addEventListener: unknown }*/ = findEventEmitter(),
-  messagePort /*: { postMessage: unknown }*/ = findMessagePort(),
+  worker,
+  eventEmitter /*: { addEventListener: unknown }*/ = findEventEmitter(worker),
+  messagePort /*: { postMessage: unknown }*/ = findMessagePort(worker),
   ...params
-}) =>
+} = {}) =>
   initialize({
     ...params,
     type: InterfaceType.WORKER,
-    subscribe: (listener) =>
-      eventEmitter.addEventListener(EVENT_TYPE, listener),
-    unsubscribe: (listener) =>
-      eventEmitter.removeEventListener(EVENT_TYPE, listener),
     postMessage: (message) => messagePort.postMessage(message),
+    ...createSubscriberFns(eventEmitter),
   });
 
 export const initializeHost = async ({
   worker, //: Worker | string
   ...params
 }) => {
-  const instance = typeof worker === 'string' ? new Worker(worker) : worker;
+  let instance = worker;
+
+  if (typeof worker === 'string') {
+    if (typeof Worker === 'undefined') {
+      throw new Error('Worker class is not available globally.');
+    }
+
+    instance = new Worker(worker);
+  }
 
   return initialize({
     ...params,
     type: InterfaceType.HOST,
-    subscribe: (listener) => instance.addEventListener(EVENT_TYPE, listener),
-    unsubscribe: (listener) =>
-      instance.removeEventListener(EVENT_TYPE, listener),
     postMessage: (message) => instance.postMessage(message),
+    ...createSubscriberFns(instance),
   });
 };

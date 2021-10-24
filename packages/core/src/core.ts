@@ -59,11 +59,12 @@ const applyPromiseActivity = (
   wrap: (context: CommandContext, command?: ICommandChain) => unknown
 ) => {
   switch (command.type) {
-    case ProxyCommand.GET:
+    case ProxyCommand.GET: {
+      const { name, prev } = command;
+      let { context } = command;
+
       if (lazy) {
         // then() / catch() on lazy means we should call handler and subscribe to promise
-
-        const { name, prev } = command;
 
         if (!prev) {
           throw new Error(
@@ -72,28 +73,20 @@ const applyPromiseActivity = (
         }
 
         // When lazy, context is a dummy promise, so we have to call handler with previous command and then use it as a context.
-        const context = commandHandler(
-          prev as CommandChain,
-          prev.context,
-          wrap
-        );
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return (...args: never[]) => (context as any)[name as string](...args);
+        context = commandHandler(prev as CommandChain, prev.context, wrap);
       } else {
         // then() / catch() on non-lazy means we handler already called, just subscribe to promise of it
-
-        const { context, name, value } = command;
-
         /* 
            When not lazy, this promise was already created and is a context to this action.
            Without wrapper we may get this error:
            Uncaught TypeError: Method Promise.prototype.then called on incompatible receiver undefined
         */
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return (context as any)[name as string](...(value as never[]));
+        //return (context as any)[name as string](...(value as never[]));
       }
-      break;
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return (...args: never[]) => (context as any)[name as string](...args);
+    }
     case ProxyCommand.METHOD_CALL:
       if (!command.context) {
         throw new Error(
@@ -133,8 +126,10 @@ const applyPromiseActivity = (
 export const handle =
   (commandHandler: CommandHandler, lazy = true) =>
   (context?: unknown, command?: Command): unknown => {
-
-    const wrap = (context: CommandContext, command?: ICommandChain): unknown => {
+    const wrap = (
+      context: CommandContext,
+      command?: ICommandChain
+    ): unknown => {
       const traps = createProxyTrapsObject(
         (
           type: ProxyCommand,
@@ -186,5 +181,8 @@ export const handle =
       });
     };
 
-    return wrap(Promise.resolve(context), command ? CommandChain.fromCommand(command) : undefined);
+    return wrap(
+      Promise.resolve(context),
+      command ? CommandChain.fromCommand(command) : undefined
+    );
   };
