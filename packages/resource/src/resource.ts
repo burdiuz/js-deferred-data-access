@@ -9,7 +9,7 @@ export class Resource extends IdOwner {
     super();
   }
 
-  toObject() {
+  toObject(): ResourceObject {
     return { id: this.id, poolId: this.pool.id, type: this.type };
   }
 
@@ -18,13 +18,19 @@ export class Resource extends IdOwner {
   }
 }
 
+export type ResourceObject = {
+  id: string;
+  poolId: string;
+  type: string;
+};
+
 export const createResource = (
   pool: ResourcePool,
   target: unknown,
   type?: string
 ) => new Resource(pool, type || typeof target);
 
-export const isResourceObject = (obj: { id: string; poolId: string }) =>
+export const isResourceObject = (obj: any) =>
   obj &&
   // type signature is not enough for non-ts env
   typeof obj === 'object' &&

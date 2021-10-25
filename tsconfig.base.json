@@ -17,16 +17,16 @@
     "baseUrl": ".",
     "paths": {
       "@actualwave/deferred-data-access": ["packages/core/index.ts"],
-      "@actualwave/deferred-data-access/command": [
-        "packages/command/index.ts"
-      ],
+      "@actualwave/deferred-data-access/command": ["packages/command/index.ts"],
       "@actualwave/deferred-data-access/proxy": ["packages/proxy/index.ts"],
       "@actualwave/deferred-data-access/resource": [
         "packages/resource/index.ts"
       ],
-      "@actualwave/deferred-data-access/utils": ["packages/utils/index.ts"]
+      "@actualwave/deferred-data-access/utils": ["packages/utils/index.ts"],
+      "@actualwave/rest-object": ["packages/rest-object/index.ts"],
+      "@actualwave/worker-interface": ["packages/worker-interface/index.ts"]
     },
-    "typeRoots": ["node_modules/@types", "typings"]
+    "typeRoots": ["node_modules/@types", "./typings"]
   },
   "exclude": ["node_modules", "tmp"]
 }

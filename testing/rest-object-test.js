@@ -1,4 +1,7 @@
-import { createRESTObject } from "./lib/rest-object";
+import { createRESTObject, setFetchFn } from "@actualwave/rest-object";
+import fetch from 'node-fetch';
+
+setFetchFn(fetch);
 
 const base = createRESTObject('https://gorest.co.in');
 

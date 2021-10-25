@@ -1,4 +1,3 @@
-///<reference path="../../../typings/@actualwave/has-own/index.d.ts" />
 import { hasOwn } from '@actualwave/has-own';
 import { PropertyName } from '@actualwave/deferred-data-access/utils';
 import { CommandChain } from '@actualwave/deferred-data-access/command';

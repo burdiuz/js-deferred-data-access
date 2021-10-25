@@ -1,6 +1,5 @@
-///<reference path="../../../typings/@actualwave/has-own/index.d.ts" />
-import { IdOwner } from '@actualwave/deferred-data-access/utils';
 import { hasOwn } from '@actualwave/has-own';
+import { IdOwner } from '@actualwave/deferred-data-access/utils';
 import { getDefaultResourcePool } from './default-resource-pool';
 import { ResourcePool } from './resource-pool';
 

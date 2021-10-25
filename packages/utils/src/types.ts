@@ -21,6 +21,7 @@ export interface ICommand {
 
 export interface ICommandChain extends ICommand {
   prev?: ICommandChain;
+  toObject(): ICommand;
 }
 
 export interface ICommandList extends ICommandChain {

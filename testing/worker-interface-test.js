@@ -1,5 +1,5 @@
 import { Worker } from 'worker_threads';
-import { initializeHost } from './lib/worker-interface.js';
+import { initializeHost } from '@actualwave/worker-interface';
 
 (async () => {
   const api = await initializeHost({ worker: new Worker('./worker.js') });

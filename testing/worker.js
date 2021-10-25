@@ -1,5 +1,5 @@
 import { parentPort } from 'worker_threads';
-import { initializeWorker } from './lib/worker-interface.js';
+import { initializeWorker } from '@actualwave/worker-interface';
 
 const api = initializeWorker({
   worker: parentPort,
