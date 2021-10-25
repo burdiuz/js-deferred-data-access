@@ -1,4 +1,28 @@
 {
-  "name": "@deferred-data-access/rest-object",
-  "version": "0.0.1"
+  "name": "@actualwave/rest-object",
+  "version": "1.0.0",
+  "description": "RESTObject allows remote data access via dot notation and operations with object properties instead of classic URL based actions.",
+  "keywords": [
+    "data",
+    "access",
+    "deferred",
+    "promise",
+    "rest",
+    "fetch",
+    "ajax"
+  ],
+  "homepage": "https://github.com/burdiuz/js-deferred-data-access/tree/master/packages/rest-object",
+  "bugs": {
+    "url": "https://github.com/burdiuz/js-deferred-data-access/issues",
+    "email": "burdiuz@gmail.com"
+  },
+  "license": "MIT",
+  "author": "Oleg Galaburda <burdiuz@gmail.com> (http://actualwave.com/)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/burdiuz/js-deferred-data-access.git"
+  },
+  "dependencies": {
+    "@actualwave/deferred-data-access": "^2.0.0"
+  }
 }

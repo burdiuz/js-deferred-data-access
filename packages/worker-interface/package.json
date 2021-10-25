@@ -1,4 +1,28 @@
 {
-  "name": "@deferred-data-access/worker-interface",
-  "version": "0.0.1"
+  "name": "@actualwave/worker-interface",
+  "description": "WorkerInterface is an extension to WebWorkers interface that allows requesting resources from WebWorkers directly using dot notation.",
+  "version": "1.0.0",
+  "keywords": [
+    "events",
+    "webworker",
+    "worker",
+    "fire",
+    "handle",
+    "listener",
+    "dispatcher"
+  ],
+  "homepage": "https://github.com/burdiuz/js-deferred-data-access/tree/master/packages/worker-interface",
+  "bugs": {
+    "url": "https://github.com/burdiuz/js-deferred-data-access/issues",
+    "email": "burdiuz@gmail.com"
+  },
+  "license": "MIT",
+  "author": "Oleg Galaburda <burdiuz@gmail.com> (http://actualwave.com/)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/burdiuz/js-deferred-data-access.git"
+  },
+  "dependencies": {
+    "@actualwave/deferred-data-access": "^2.0.0"
+  }
 }
