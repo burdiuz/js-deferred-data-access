@@ -31,7 +31,8 @@
             "passWithNoTests": true
           }
         }
-      }
+      },
+      "tags": []
     },
     "core": {
       "root": "packages/core",
@@ -45,7 +46,7 @@
             "outputPath": "dist/@actualwave/deferred-data-access",
             "main": "packages/core/index.ts",
             "tsConfig": "packages/core/tsconfig.lib.json",
-            "assets": ["packages/core/*.md"]
+            "assets": ["packages/core/*.md", "packages/core/LICENSE"]
           }
         },
         "lint": {
@@ -63,7 +64,8 @@
             "passWithNoTests": true
           }
         }
-      }
+      },
+      "tags": []
     },
     "proxy": {
       "root": "packages/proxy",
@@ -95,7 +97,8 @@
             "passWithNoTests": true
           }
         }
-      }
+      },
+      "tags": []
     },
     "resource": {
       "root": "packages/resource",
@@ -127,7 +130,8 @@
             "passWithNoTests": true
           }
         }
-      }
+      },
+      "tags": []
     },
     "rest-object": {
       "root": "packages/rest-object",
@@ -141,7 +145,28 @@
             "outputPath": "dist/@actualwave/rest-object",
             "main": "packages/rest-object/index.ts",
             "tsConfig": "packages/rest-object/tsconfig.lib.json",
-            "assets": ["packages/rest-object/*.md"]
+            "assets": [
+              "packages/rest-object/*.md",
+              "packages/rest-object/LICENSE"
+            ]
+          }
+        },
+        "umd": {
+          "executor": "@nrwl/web:package",
+          "outputs": ["{options.outputPath}"],
+          "options": {
+            "entryFile": "packages/rest-object/index.ts",
+            "outputPath": "dist/@actualwave/rest-object-umd",
+            "project": "packages/rest-object/package.json",
+            "tsConfig": "packages/rest-object/tsconfig.lib.json",
+            "assets": [
+              "packages/rest-object/README.md",
+              "packages/rest-object/LICENSE"
+            ],
+            "format": ["umd"],
+            "moduleId": "rest-object",
+            "global": "RESTObject",
+            "umdName": "RESTObject"
           }
         },
         "lint": {
@@ -159,7 +184,8 @@
             "passWithNoTests": true
           }
         }
-      }
+      },
+      "tags": []
     },
     "utils": {
       "root": "packages/utils",
@@ -191,7 +217,8 @@
             "passWithNoTests": true
           }
         }
-      }
+      },
+      "tags": []
     },
     "worker-interface": {
       "root": "packages/worker-interface",
@@ -205,7 +232,10 @@
             "outputPath": "dist/@actualwave/worker-interface",
             "main": "packages/worker-interface/index.ts",
             "tsConfig": "packages/worker-interface/tsconfig.lib.json",
-            "assets": ["packages/worker-interface/*.md"]
+            "assets": [
+              "packages/worker-interface/*.md",
+              "packages/worker-interface/LICENSE"
+            ]
           }
         },
         "lint": {
@@ -223,10 +253,8 @@
             "passWithNoTests": true
           }
         }
-      }
+      },
+      "tags": []
     }
-  },
-  "cli": {
-    "defaultCollection": "@nrwl/workspace"
   }
 }

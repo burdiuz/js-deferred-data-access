@@ -12,27 +12,7 @@
       }
     }
   },
-  "projects": {
-    "command": {
-      "tags": []
-    },
-    "core": {
-      "tags": []
-    },
-    "proxy": {
-      "tags": []
-    },
-    "resource": {
-      "tags": []
-    },
-    "rest-object": {
-      "tags": []
-    },
-    "utils": {
-      "tags": []
-    },
-    "worker-interface": {
-      "tags": []
-    }
+  "cli": {
+    "defaultCollection": "@nrwl/workspace"
   }
 }

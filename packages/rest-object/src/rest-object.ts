@@ -3,6 +3,7 @@ import { handle } from '@actualwave/deferred-data-access';
 import { generateRequest, Request } from './request';
 import { callFetchFn } from './fetch';
 import { ICommandList } from '@actualwave/deferred-data-access/utils';
+import { RESTObject } from './types';
 
 const getResponse = async (
   response: Response,
@@ -37,5 +38,5 @@ export const createRESTObject = (
     };
   });
 
-  return wrap(baseUrl);
+  return wrap(baseUrl) as RESTObject;
 };
