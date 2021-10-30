@@ -45,13 +45,11 @@
         const secretData = await secretApi.secretData();
       }
 
-      /* TODO make it working
       {
         const apiResource = await api.getPrivateAPI('password1');
-        const secretApi = api.wrap(apiResource);
+        const secretApi = workerApi.wrap(apiResource);
         const secretData = await secretApi.secretData();
       }
-      //*/
 
       console.log('Interface ready!', api);
       api.requestTime().then((time) => {

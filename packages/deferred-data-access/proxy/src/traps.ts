@@ -59,6 +59,8 @@ const proxyHasTrap = (wrapper: ProxyWrapper, name: PropertyName): boolean => {
     return (wrapper as any)[name];
   }
 
+  // because of this Promise does not call ProxyWrapper.then() and just returns it.
+  // if change to true, it will subscribe to ProxyWrapper.then() and wait for it to resolve
   return false;
 };
 

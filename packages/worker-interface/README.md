@@ -50,7 +50,7 @@ const privateAPI = {
   },
 };
 
-const api =  WorkerInterface.initializeWorker({
+const api = WorkerInterface.initializeWorker({
   worker: self,
   root: {
     async getPrivateAPI(secret) {
@@ -82,6 +82,22 @@ const { root: api } = workerApi;
 const secretApi = api.getPrivateAPI('password1');
 
 // Call method on Resource
+const secretData = await secretApi.secretData();
+```
+
+If somehow you retrieve a resource object unwrapped, it is possible to wrap it using `wrap()` function.
+```javascript
+const { root: api, wrap } = await WorkerInterface.initializeHost({
+  worker: './webworker.js',
+});
+
+// by await-ing for resource we forcefully unwrap it to get resource object
+const apiResource = await api.getPrivateAPI('password1');
+
+// wrap received resource 
+const secretApi = wrap(apiResource);
+
+// use wrapped resource to issue commands from its context
 const secretData = await secretApi.secretData();
 ```
 
