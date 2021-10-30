@@ -1,17 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>RESTObject Example</title>
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"
-        integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+    integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
   <style type="text/css">
     body {
       font: Helvetica;
     }
 
-    th, td {
+    th,
+    td {
       padding: 4px;
     }
 
@@ -32,67 +34,71 @@
       background-color: #AAEEFF;
     }
   </style>
-  <script type="text/javascript" src="../bower_components/jquery/dist/jquery.js"></script>
-  <script type="text/javascript" src="../dist/rest-object.standalone.js"></script>
-  <script type="text/javascript" src="example.proxy.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"
+    integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+  <script type="text/javascript" src="rest-object.umd.js"></script>
+  <script type="text/javascript" src="example.methods.js"></script>
+  <!--script type="text/javascript" src="example.proxy.js"></script-->
 </head>
+
 <body>
-<div class="container">
-  <div class="row">
-    <div class="col-xs-12">
-      <h2>RESTObject Example</h2>
+  <div class="container">
+    <div class="row">
+      <div class="col-xs-12">
+        <h2>RESTObject Example</h2>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-xs-6">
+        <h4>Customer Add/Edit form</h4>
+      </div>
+      <div class="col-xs-6">
+        <h4>Customer list</h4>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-xs-6">
+        <form class="edit">
+          <div class="form-group">
+            <label for="name">Name</label>
+            <input type="text" class="form-control" id="name">
+          </div>
+          <div class="form-group">
+            <label for="company">Company</label>
+            <input type="text" class="form-control" id="company">
+          </div>
+          <div class="form-group">
+            <label for="age">Age</label>
+            <input type="number" min="25" max="120" class="form-control" id="age">
+          </div>
+          <div class="form-group">
+            <label for="phone">Phone</label>
+            <input type="phone" class="form-control" id="phone">
+          </div>
+          <div class="form-group">
+            <label for="address">Address</label>
+            <input type="text" class="form-control" id="address">
+          </div>
+          <button class="save btn btn-lg btn-primary btn-block hidden">Save Changes</button>
+          <button class="add btn btn-lg btn-default btn-block">Add as New</button>
+        </form>
+      </div>
+      <div class="col-xs-6">
+      </div>
+      <div class="col-xs-6">
+        <table class="list" width="100%">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
-  <div class="row">
-    <div class="col-xs-6">
-      <h4>Customer Add/Edit form</h4>
-    </div>
-    <div class="col-xs-6">
-      <h4>Customer list</h4>
-    </div>
-  </div>
-  <div class="row">
-    <div class="col-xs-6">
-      <form class="edit">
-        <div class="form-group">
-          <label for="name">Name</label>
-          <input type="text" class="form-control" id="name">
-        </div>
-        <div class="form-group">
-          <label for="company">Company</label>
-          <input type="text" class="form-control" id="company">
-        </div>
-        <div class="form-group">
-          <label for="age">Age</label>
-          <input type="number" min="25" max="120" class="form-control" id="age">
-        </div>
-        <div class="form-group">
-          <label for="phone">Phone</label>
-          <input type="phone" class="form-control" id="phone">
-        </div>
-        <div class="form-group">
-          <label for="address">Address</label>
-          <input type="text" class="form-control" id="address">
-        </div>
-        <button class="save btn btn-lg btn-primary btn-block hidden">Save Changes</button>
-        <button class="add btn btn-lg btn-default btn-block">Add as New</button>
-      </form>
-    </div>
-    <div class="col-xs-6">
-    </div>
-    <div class="col-xs-6">
-      <table class="list" width="100%">
-        <thead>
-        <tr>
-          <th>Name</th>
-          <th></th>
-        </tr>
-        </thead>
-        <tbody>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
 </body>
+
 </html>

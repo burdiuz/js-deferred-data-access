@@ -1,53 +1,61 @@
-/**
- * Created by Oleg Galaburda on 27.03.16.
- */
-var api = RESTObject.create('/example/api');
-var customers = api.portal.users.customers.preventDefault();
-$(function() {
+const api = RESTObject.createRESTObject('/example/api');
+const customers = api.portal.users.customers;
+
+$(() => {
   reloadList();
-  $('button.save').on('click', function(event) {
+  $('button.save').on('click', async (event) => {
     event.preventDefault();
     var item = getFormData();
     item.id = $('form.edit').data('item').id;
-    // POST /example/api/portal/users/customers/:id -- update customer info
-    customers[item.id].update(item).then(function() {
+    // PUT /example/api/portal/users/customers/:id -- update customer info
+    try {
+      await customers[item.id].update(null, item);
       reloadList();
-    });
+    } catch (error) {
+      console.log(error);
+    }
   });
-  $('button.add').on('click', function(event) {
+
+  $('button.add').on('click', async (event) => {
     event.preventDefault();
-    // PUT /example/api/portal/users/customers -- create new customer
-    customers.create(getFormData()).then(
-      reloadList,
-      function() {
-        alert('Error happened when adding new customer.');
-      }
-    );
+    // POST /example/api/portal/users/customers -- create new customer
+    try {
+      await customers.create(null, getFormData());
+      reloadList();
+    } catch (error) {
+      console.log(error);
+      alert('Error happened when adding new customer.');
+    }
   });
 });
-function reloadList() {
+
+const reloadList = async () => {
   $('.list tbody').empty();
   // GET /example/api/portal/users/customers -- get list of customers
-  customers.read().then(
-    displayList,
-    function(xhr) {
-      alert('Error happened while loading customers list.');
-    }
-  );
-}
-function displayList(list) {
+  try {
+    const { body } = await customers.read();
+    displayList(body);
+  } catch (error) {
+    console.log(error);
+    alert('Error happened while loading customers list.');
+  }
+};
+
+const displayList = (list) => {
   var $container = $('.list tbody');
   $container.empty();
-  $.each(list, function(index, item) {
-    var $el = $('<tr>\
-                       <td>' + item.name + '</td>\
-                       <td><a href="" class="delete">Delete</a></td>\
-                     </tr>');
+  $.each(list, (index, item) => {
+    var $el = $(
+      `<tr>
+          <td>${item.name}</td>
+          <td><a href="" class="delete">Delete</a></td>
+       </tr>`
+    );
     $el.addClass('customer-' + item.id);
-    $el.on('click', 'td', function() {
+    $el.on('click', 'td', () => {
       editCustomer(item);
     });
-    $el.on('click', 'a.delete', function(event) {
+    $el.on('click', 'a.delete', (event) => {
       event.preventDefault();
       event.stopImmediatePropagation();
       deleteCustomer(item);
@@ -55,8 +63,9 @@ function displayList(list) {
     $el.data('item', item);
     $container.append($el);
   });
-}
-function displayForm(data) {
+};
+
+const displayForm = (data) => {
   $('#name').val(data.name);
   $('#company').val(data.company);
   $('#age').val(data.age);
@@ -64,30 +73,38 @@ function displayForm(data) {
   $('#address').val(data.address);
   $('form.edit').data('item', data);
   $('button.save').removeClass('hidden');
-}
-function getFormData() {
-  return {
-    name: $('#name').val(),
-    company: $('#company').val(),
-    age: $('#age').val(),
-    phone: $('#phone').val(),
-    address: $('#address').val()
-  };
-}
-function editCustomer(item) {
+};
+
+const getFormData = () => ({
+  id: undefined,
+  name: $('#name').val(),
+  company: $('#company').val(),
+  age: $('#age').val(),
+  phone: $('#phone').val(),
+  address: $('#address').val(),
+});
+
+const editCustomer = async (item) => {
   // GET /example/api/portal/users/customers/:id -- get customer info
-  customers[item.id].read().then(
-    displayForm,
-    function(xhr) {
-      alert('Error happened while loading customer info.');
-    }
-  );
-}
-function deleteCustomer(item) {
-  if (confirm('Delete customer?')) {
-    // DELETE /example/api/portal/users/customers/:id
-    customers[item.id].delete().then(function() {
-      $('.list tr.customer-' + item.id).remove();
-    });
+  try {
+    const { body } = await customers[item.id].read();
+    displayForm(body);
+  } catch (error) {
+    console.log(error);
+    alert('Error happened while loading customer info.');
   }
-}
+};
+
+const deleteCustomer = async (item) => {
+  if (!confirm('Delete customer?')) {
+    return;
+  }
+
+  // DELETE /example/api/portal/users/customers/:id
+  try {
+    await customers[item.id].delete();
+    $('.list tr.customer-' + item.id).remove();
+  } catch (error) {
+    console.log(error);
+  }
+};

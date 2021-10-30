@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.lib.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "../../dist/deferred-data-access",
+    "declarationDir": "../../dist/deferred-data-access",
+    "declaration": true
+  }
+}

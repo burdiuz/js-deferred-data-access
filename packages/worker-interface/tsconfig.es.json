@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.lib.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "../../dist/worker-interface",
+    "declarationDir": "../../dist/worker-interface",
+    "declaration": true
+  }
+}

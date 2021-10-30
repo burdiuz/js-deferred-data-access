@@ -13,7 +13,9 @@ interface RESTPathMethods extends Promise<unknown> {
   delete: RESTMethod;
 }
 
-type RESTPath = RESTPathMethods & { [key: string]: RESTPath };
+type RESTPath = RESTPathMethods & { forLatest: () => Promise<unknown> } & {
+  [key: string]: RESTPath;
+};
 
 export interface RESTObject {
   [key: string]: RESTPath;

@@ -1,0 +1,14 @@
+{
+  "name": "@actualwave/deferred-data-access",
+  "version": "2.0.0",
+  "main": "dist/deferred-data-access.js",
+  "module": "index.js",
+  "types": "index.d.ts",
+  "scripts": {
+    "build": "tsc --project tsconfig.es.json && rollup -c rollup.config.js"
+  },
+  "dependencies": {
+    "@actualwave/has-own": "^0.0.3",
+    "@actualwave/weak-storage": "^0.1.0"
+  }
+}

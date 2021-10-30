@@ -1,9 +1,16 @@
 ///<reference path="../../../typings/@actualwave/deferred-data-access/utils/index.d.ts" />
 import { handle } from '@actualwave/deferred-data-access';
+import { latestCallFor, recordHandlerCalls } from '@actualwave/deferred-data-access/record';
 import { generateRequest, Request } from './request';
 import { callFetchFn } from './fetch';
-import { ICommandList } from '@actualwave/deferred-data-access/utils';
+import {
+  ICommandList,
+  CommandContext,
+} from '@actualwave/deferred-data-access/utils';
 import { RESTObject } from './types';
+import { ProxyCommand } from '@actualwave/deferred-data-access/proxy';
+
+const LATEST_METHOD = 'forLatest';
 
 const getResponse = async (
   response: Response,
@@ -24,19 +31,31 @@ export const createRESTObject = (
   baseUrl: string,
   requestFn: (r: Request) => Request = (r) => r
 ) => {
-  const wrap = handle(async (command: ICommandList) => {
-    const request: Request = requestFn(await generateRequest(command));
-    const response: Response = await callFetchFn(request.url, request);
-    const contentType: string = response.headers.get('Content-Type') || '';
+  const wrap = handle(
+    recordHandlerCalls(
+      async (command: ICommandList, context?: CommandContext) => {
+        if (
+          context &&
+          command.type === ProxyCommand.METHOD_CALL &&
+          command.name === LATEST_METHOD
+        ) {
+          return latestCallFor(context);
+        }
 
-    const body = await getResponse(response, contentType);
+        const request: Request = requestFn(await generateRequest(command));
+        const response: Response = await callFetchFn(request.url, request);
+        const contentType: string = response.headers.get('Content-Type') || '';
 
-    return {
-      body,
-      contentType,
-      response,
-    };
-  });
+        const body = await getResponse(response, contentType);
+
+        return {
+          body,
+          contentType,
+          response,
+        };
+      }
+    )
+  );
 
   return wrap(baseUrl) as RESTObject;
 };

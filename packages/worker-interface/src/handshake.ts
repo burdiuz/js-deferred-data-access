@@ -66,7 +66,8 @@ const handshakeWorker =
     const intervalFn = () => postMessage({ id, root });
 
     if (handshakeInterval) {
-      intervalId = setInterval(intervalFn, handshakeInterval);
+      // FIXME TS2322: Type 'Timer' is not assignable to type 'number'.
+      intervalId = setInterval(intervalFn, handshakeInterval) as unknown as number;
     } else {
       intervalFn();
     }

@@ -1,0 +1,26 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "paths": {
+      "@actualwave/deferred-data-access": ["packages/deferred-data-access/index.ts"],
+      "@actualwave/deferred-data-access/command": ["packages/deferred-data-access/command/index.ts"],
+      "@actualwave/deferred-data-access/proxy": ["packages/deferred-data-access/proxy/index.ts"],
+      "@actualwave/deferred-data-access/resource": ["packages/deferred-data-access/resource/index.ts"],
+      "@actualwave/deferred-data-access/record": ["packages/deferred-data-access/record/index.ts"],
+      "@actualwave/deferred-data-access/utils": ["packages/deferred-data-access/utils/index.ts"],
+    }
+  },
+  "files": [],
+  "include": [],
+  "references": [
+    {
+      "path": "./tsconfig.lib.json"
+    },
+    {
+      "path": "./tsconfig.es.json"
+    },
+    {
+      "path": "./tsconfig.spec.json"
+    }
+  ]
+}

@@ -1,8 +1,0 @@
-{
-  "name": "@actualwave/deferred-data-access",
-  "version": "2.0.0",
-  "dependencies": {
-    "@actualwave/has-own": "^0.0.2",
-    "@actualwave/weak-storage": "^0.0.3"
-  }
-}

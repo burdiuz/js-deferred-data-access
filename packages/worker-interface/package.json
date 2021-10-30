@@ -1,7 +1,13 @@
 {
   "name": "@actualwave/worker-interface",
-  "description": "WorkerInterface is an extension to WebWorkers interface that allows requesting resources from WebWorkers directly using dot notation.",
   "version": "1.0.0",
+  "main": "dist/worker-interface.js",
+  "module": "index.js",
+  "types": "index.d.ts",
+  "scripts": {
+    "build": "tsc --project tsconfig.es.json && rollup -c rollup.config.js"
+  },
+  "description": "WorkerInterface is an extension to WebWorkers interface that allows requesting resources from WebWorkers directly using dot notation.",
   "keywords": [
     "events",
     "webworker",

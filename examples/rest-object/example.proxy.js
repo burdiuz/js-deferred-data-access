@@ -1,106 +1,58 @@
-/**
- * Created by Oleg Galaburda on 27.03.16.
- */
+const api = RESTObject.createRESTObject('/example/api');
+const customers = api.portal.users.customers;
 
-/**
- * @callback CREATEAction
- * @param {...Object} data
- * @returns {APIEndpoint}
- */
-
-/**
- * @callback PreventDefaultAction
- * @returns {APIEndpoint}
- */
-
-/**
- * @callback RouteAction
- * @param {String} route
- * @returns {APIEndpoint}
- */
-
-/**
- * @callback CRUDAction
- * @param {Object} [body]
- * @param {Object} [params]
- * @returns {Promise}
- */
-
-/**
- * @typedef {Promise} CRUDRoute
- * @property {CRUDAction} create
- * @property {CRUDAction} read
- * @property {CRUDAction} update
- * @property {CRUDAction} delete
- * @property {RouteAction} route
- * @property {PreventDefaultAction} preventDefault
- */
-
-/**
- * @typedef {CRUDRoute|Object.<string, CRUDRoute>|CREATEAction} APIEndpoint
- */
-
-/**
- * Custom API description goes here:
- * @typedef {APIEndpoint} API
- * @property {APIEndpoint} portal.users.customers CRUD for customers
- */
-
-/**
- * @type {API}
- */
-var api = RESTObject.create('/example/api');
-/**
- * @type {CREATEAction}
- */
-var customers = api.portal.users.customers.preventDefault();
-
-$(function() {
+$(() => {
   reloadList();
-  $('button.save').on('click', function(event) {
+
+  $('button.save').on('click', async (event) => {
     event.preventDefault();
-    var item = getFormData();
+    const item = getFormData();
     item.id = $('form.edit').data('item').id;
-    // POST /example/api/portal/users/customers/:id -- update customer info
+    // PUT /example/api/portal/users/customers/:id -- update customer info
     customers[item.id] = item;
-    RESTObject.getDeepestChild(customers).then(
-      reloadList
-    );
+    await customers.forLatest();
+    reloadList();
   });
-  $('button.add').on('click', function(event) {
+
+  $('button.add').on('click', async (event) => {
     event.preventDefault();
-    // PUT /example/api/portal/users/customers -- create new customer
-    customers(getFormData()).then(
-      reloadList,
-      function() {
-        alert('Error happened when adding new customer.');
-      }
-    );
+    // POST /example/api/portal/users/customers -- create new customer
+    try {
+      await customers(getFormData());
+      reloadList();
+    } catch (error) {
+      console.log(error);
+      alert('Error happened when adding new customer.');
+    }
   });
 });
-function reloadList() {
+
+const reloadList = async () => {
   $('.list tbody').empty();
   // GET /example/api/portal/users/customers -- get list of customers
-  customers.read().then(
-    displayList,
-    function(xhr) {
-      alert('Error happened while loading customers list.');
-    }
-  );
-}
-function displayList(list) {
+  try {
+    const { body } = await customers.read();
+    displayList(body);
+  } catch (error) {
+    console.log(error);
+    alert('Error happened while loading customers list.');
+  }
+};
+
+const displayList = (list) => {
   var $container = $('.list tbody');
   $container.empty();
-  $.each(list, function(index, item) {
-    var $el = $('<tr>\
-                       <td>' + item.name + '</td>\
-                       <td><a href="" class="delete">Delete</a></td>\
-                     </tr>');
+
+  $.each(list, (index, item) => {
+    var $el = $(
+      `<tr>
+        <td>${item.name}</td>
+        <td><a href="" class="delete">Delete</a></td>
+       </tr>`
+    );
     $el.addClass('customer-' + item.id);
-    $el.on('click', 'td', function() {
-      editCustomer(item);
-    });
-    $el.on('click', 'a.delete', function(event) {
+    $el.on('click', 'td', () => editCustomer(item));
+    $el.on('click', 'a.delete', (event) => {
       event.preventDefault();
       event.stopImmediatePropagation();
       deleteCustomer(item);
@@ -108,8 +60,9 @@ function displayList(list) {
     $el.data('item', item);
     $container.append($el);
   });
-}
-function displayForm(data) {
+};
+
+const displayForm = (data) => {
   $('#name').val(data.name);
   $('#company').val(data.company);
   $('#age').val(data.age);
@@ -117,31 +70,33 @@ function displayForm(data) {
   $('#address').val(data.address);
   $('form.edit').data('item', data);
   $('button.save').removeClass('hidden');
-}
-function getFormData() {
-  return {
-    name: $('#name').val(),
-    company: $('#company').val(),
-    age: $('#age').val(),
-    phone: $('#phone').val(),
-    address: $('#address').val()
-  };
-}
-function editCustomer(item) {
+};
+
+const getFormData = () => ({
+  id: undefined,
+  name: $('#name').val(),
+  company: $('#company').val(),
+  age: $('#age').val(),
+  phone: $('#phone').val(),
+  address: $('#address').val(),
+});
+
+const editCustomer = async (item) => {
   // GET /example/api/portal/users/customers/:id -- get customer info
-  customers[item.id].then(
-    displayForm,
-    function(xhr) {
-      alert('Error happened while loading customer info.');
-    }
-  );
-}
-function deleteCustomer(item) {
+  try {
+    const { body } = await customers[item.id];
+    displayForm(body);
+  } catch (error) {
+    console.log(error);
+    alert('Error happened while loading customer info.');
+  }
+};
+
+const deleteCustomer = async (item) => {
   if (confirm('Delete customer?')) {
     // DELETE /example/api/portal/users/customers/:id
     delete customers[item.id];
-    RESTObject.getDeepestChild(customers).then(function() {
-      $('.list tr.customer-' + item.id).remove();
-    });
+    await customers.forLatest();
+    $('.list tr.customer-' + item.id).remove();
   }
-}
+};

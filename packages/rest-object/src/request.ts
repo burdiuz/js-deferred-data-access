@@ -10,6 +10,9 @@ import {
   PropertyName,
 } from '@actualwave/deferred-data-access/utils';
 
+const CONTENT_TYPE = 'Content-Type';
+const JSON_TYPE = 'application/json';
+
 const CRUD_METHODS: { [key: string]: string } = {
   create: 'POST',
   read: 'GET',
@@ -46,9 +49,44 @@ const getBodyByType = ({ type, value }: ICommand): unknown => {
   }
 };
 
-const prepareBody = (body: any): unknown => {
+const defineContentTypeHeader = (request: Request): Request => {
+  let { headers } = request;
+
+  if (!headers) {
+    headers = {};
+  }
+
+  const headersImpl = headers as {
+    set: (name: string, value: string) => void;
+    get: (name: string) => string | undefined;
+  };
+
+  if (typeof headersImpl.set === 'function') {
+    if (!headersImpl.get(CONTENT_TYPE)) {
+      headersImpl.set(CONTENT_TYPE, JSON_TYPE);
+    }
+
+    return request;
+  }
+
+  const headersObj = headers as { [key: string]: string };
+
+  if (!headersObj[CONTENT_TYPE]) {
+    request = {
+      ...request,
+      headers: {
+        ...headersObj,
+        [CONTENT_TYPE]: JSON_TYPE,
+      },
+    };
+  }
+
+  return request;
+};
+
+const prepareBody = (body: any, request: Request): Request => {
   if (!body) {
-    return body;
+    return request;
   }
 
   const proto = Object.getPrototypeOf(body);
@@ -58,7 +96,10 @@ const prepareBody = (body: any): unknown => {
     proto === Array.prototype ||
     typeof body.toJSON === 'function'
   ) {
-    return JSON.stringify(body);
+    return defineContentTypeHeader({
+      ...request,
+      body: JSON.stringify(body),
+    });
   }
 
   return body;
@@ -84,7 +125,8 @@ const getURLFromChain = async (chain: ICommandList): Promise<string> => {
 export type Request = {
   url: string;
   method: string;
-  body: unknown;
+  body?: unknown;
+  headers?: unknown;
 };
 
 export const generateRequest = async (
@@ -93,17 +135,16 @@ export const generateRequest = async (
   const { type, name, value } = command;
 
   if (
-    type !== ProxyCommand.METHOD_CALL &&
+    type !== ProxyCommand.METHOD_CALL ||
     !isCRUDMethod(name as PropertyName)
   ) {
     const url = await getURLFromChain(command);
     const body = getBodyByType(command);
 
-    return {
+    return prepareBody(body, {
       url,
       method: httpMethodByType(type),
-      body: prepareBody(body),
-    };
+    });
   }
 
   const [queryParams, body, config] = value as any[];
@@ -111,9 +152,10 @@ export const generateRequest = async (
   const query = queryParams ? new URLSearchParams(queryParams).toString() : '';
 
   return {
-    url: query ? `${url}&${query}` : url,
-    method: httpMethodByName(String(name)),
-    body: prepareBody(body),
+    ...prepareBody(body, {
+      url: query ? `${url}&${query}` : url,
+      method: httpMethodByName(String(name)),
+    }),
     ...config,
   };
 };

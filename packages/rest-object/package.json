@@ -1,6 +1,12 @@
 {
   "name": "@actualwave/rest-object",
   "version": "1.0.0",
+  "main": "dist/rest-object.js",
+  "module": "index.js",
+  "types": "index.d.ts",
+  "scripts": {
+    "build": "tsc --project tsconfig.es.json && rollup -c rollup.config.js"
+  },
   "description": "RESTObject allows remote data access via dot notation and operations with object properties instead of classic URL based actions.",
   "keywords": [
     "data",
