@@ -41,7 +41,7 @@ export const applyRemoteRequest = ({
   const target = extractResourceFrom(context);
   const name = command.name as PropertyName;
 
-  if (!target) {
+  if (type !== ProxyCommand.APPLY && !target) {
     throw new Error(
       `Cannot excute command ${type}/${String(
         name

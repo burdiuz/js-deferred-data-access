@@ -84,7 +84,7 @@ customers['111'] = { name: 'New User' };
 delete customers['111'];
 ```
 
-There are no way to get a Promise on setting new value or deleting field, so we don't know when these operations complete. To wait for completion we may use `forLatest()` method.
+There are no way to get a Promise on setting new value or deleting field, so we don't know when these operations complete. To wait for completion we may use `forLatest()` method. It returns Promise for last HTTP request for this endpoint object.
 ```javascript
 const api = createRESTObject('/example/api');
 const customers = api.portal.users.customers;
