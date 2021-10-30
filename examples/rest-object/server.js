@@ -47,7 +47,6 @@ app.get('/example/api/portal/users/customers', (req, res) => {
 
 app.post('/example/api/portal/users/customers', (req, res) => {
   const data = req.body;
-  console.log('DATA:', req);
   if (data && data.name) {
     data.id = String(++lastId);
     customers[data.id] = data;
