@@ -1,5 +1,5 @@
 {
-  "name": "rest-object",
+  "name": "worker-interface",
   "version": "1.0.0",
   "description": "",
   "scripts": {
@@ -9,7 +9,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "body-parser": "^1.19.0",
     "express": "^4.17.1"
   }
 }

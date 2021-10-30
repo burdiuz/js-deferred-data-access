@@ -3,9 +3,9 @@
  */
 'use strict';
 
-(function(express){
+(function (express) {
   this.use(express.static('.'));
-  this.listen(8081, function(){
-	console.log('Server started...');
+  this.listen(8081, () => {
+    console.log('Server started...');
   });
 }).apply(require('express')(), [require('express')]);

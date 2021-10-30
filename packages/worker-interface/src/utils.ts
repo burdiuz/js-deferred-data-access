@@ -2,8 +2,14 @@ import {
   createUIDGenerator,
   ICommandList,
 } from '@actualwave/deferred-data-access/utils';
-import { ProxyCommand } from '@actualwave/deferred-data-access/proxy';
+import {
+  ProxyCommand,
+  unwrapProxy,
+} from '@actualwave/deferred-data-access/proxy';
 import { RequestMessage, ResponseMessage } from './types';
+import { isWrappedWithProxy } from '@actualwave/deferred-data-access/proxy';
+import { pool } from './request';
+import { Resource } from '@actualwave/deferred-data-access/resource';
 
 const EVENT_TYPE = 'message';
 
@@ -20,6 +26,32 @@ export enum MessageType {
 export const generateId = createUIDGenerator('wi');
 
 export const generateMessageId = createUIDGenerator('m');
+
+const lookupForResource = async (value: unknown): Promise<unknown> => {
+  if (!value) {
+    return value;
+  }
+
+  if (value instanceof Array) {
+    const list = [];
+    for (let item of value) {
+      list.push(await lookupForResource(item));
+    }
+    return list;
+  }
+
+  if (isWrappedWithProxy(value)) {
+    const target = await unwrapProxy(value);
+    return lookupForResource(target);
+  }
+
+  if (typeof value === 'function') {
+    const resource = pool.set(value) as Resource;
+    return resource.toObject();
+  }
+
+  return value;
+};
 
 /*
 Message signature
@@ -55,7 +87,9 @@ export const createRequestMessage =
       }
 
       // prepare arguments for Function.apply()
-      command.value = [exeContext, command.value];
+      command.value = [exeContext, await lookupForResource(command.value)];
+    } else {
+      command.value = await lookupForResource(command.value);
     }
 
     return {

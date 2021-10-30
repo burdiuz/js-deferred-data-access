@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WorkerEventDispatcher Example</title>
-  <!--link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"
-        integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"
+    integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
   <style type="text/css">
     iframe {
       height: 600px;
@@ -13,79 +14,83 @@
   </style>
   <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"
-          integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS"
-          crossorigin="anonymous"></script-->
-  <script type="text/javascript" src="../bower_components/event-dispatcher/dist/event-dispatcher.js"></script>
-  <script type="text/javascript" src="../bower_components/messageport-dispatcher/dist/messageport-dispatcher.js"></script>
-  <script type="text/javascript" src="../bower_components/worker-event-dispatcher/dist/worker-event-dispatcher.js"></script>
-  <script type="text/javascript" src="../dist/worker-interface.js"></script>
+    integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS"
+    crossorigin="anonymous"></script>
+  <script type="text/javascript" src="./worker-interface.umd.js"></script>
   <script type="text/javascript">
     // DedicatedWorker UI
-    (function() {
+    let workerApi;
 
-      var api = new WorkerInterface('webworker.js');
+    (async () => {
+      // Wait until handshake is complete, promise resolved with WorkerInterface object
+      workerApi = await WorkerInterface.initializeHost({
+        worker: './webworker.js',
+      });
+      const { root: api } = workerApi;
 
       console.log('Interface created');
-      api.get('callHandler').call(null, api.get('requestTime')).then(function(data) {
-        console.log('setHandler called', arguments);
-      });
-      api.then(function(obj) {
-        console.log('Interface ready!', obj);
-        api.get('requestTime').call().then(function(data) {
-          console.log('requestTime resolved', arguments);
-        });
-      });
 
-      return;
+      { // Call requestTime() function from Worker API
+        const time = await api.requestTime();
+        console.log('### requestTime called:', new Date(time));
+      }
 
-      $(document).ready(function() {
-        $('.start').on('click', function(event) {
-          controller.start();
-        });
-        $('.stop').on('click', function(event) {
-          controller.stop();
-        });
+      { // Call callHandler() function from Worker API and pass requestTime() function as an argument
+        const time = await api.callHandler(api.requestTime);
+        console.log('### callHandler called:', time);
+      }
+
+      console.log('Interface ready!', api);
+      api.requestTime().then((time) => {
+        console.log('### requestTime called', time);
+      });
+      api.callHandler(api.requestTime).then((time) => {
+        console.log('### callHandler called', time);
       });
     })();
+
+    let intervalId = 0;
+
+    $(document).ready(() => {
+      $('.start').on('click', (event) => {
+        const requestFn = async () => {
+          const time = await workerApi.root.requestTime();
+          $('.time').val(time);
+        };
+
+        clearInterval(intervalId);
+        intervalId = setInterval(requestFn, 1000);
+        requestFn();
+      });
+      $('.stop').on('click', (event) => {
+        clearInterval(intervalId);
+        $('.time').val('');
+      });
+    });
   </script>
 </head>
+
 <body>
-<!--div class="container">
-  <div class="row">
-    <div class="col-xs-12">
-      <h4>Dedicated Worker Example</h4>
-      Timestamp values are returned from worker after request.
+  <div class="container">
+    <div class="row">
+      <div class="col-xs-12">
+        <h4>Dedicated Worker Example</h4>
+        Timestamp values are returned from worker after request.
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-xs-4 form-group">
+        <label for="time">Time:</label>
+        <input type="text" class="time form-control" id="time" readonly>
+      </div>
+    </div>
+    <div class="row" style="margin-bottom: 100px;">
+      <div class="col-xs-4 form-group">
+        <button class="btn btn-primary start">Start</button>
+        <button class="btn btn-default stop">Stop</button>
+      </div>
     </div>
   </div>
-  <div class="row">
-    <div class="col-xs-4 form-group">
-      <label for="time">Time:</label>
-      <input type="text" class="time form-control" id="time" readonly>
-    </div>
-  </div>
-  <div class="row" style="margin-bottom: 100px;">
-    <div class="col-xs-4form-group">
-      <button class="btn btn-primary start">Start</button>
-      <button class="btn btn-default stop">Stop</button>
-    </div>
-  </div>
-  <div class="row">
-    <div class="col-xs-12">
-      <h4>Shared Worker Example</h4>
-      Create some windows and they will communicate between each other via shared worker.
-    </div>
-  </div>
-  <div class="row">
-    <div class="col-xs-12 form-group">
-      You can open more 'chat' tabs and they will keep connection. <button class="btn btn-primary create-shared">Create page with SharedWorker</button>
-    </div>
-  </div>
-  <div class="row">
-    <iframe class="col-xs-6" src="sharedworker_ui.html">
-    </iframe>
-    <iframe class="col-xs-6" src="sharedworker_ui.html">
-    </iframe>
-  </div>
-</div-->
 </body>
+
 </html>

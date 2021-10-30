@@ -10,7 +10,7 @@ export default [
     output: {
       file: '../../dist/worker-interface/dist/worker-interface.umd.js',
       format: 'umd',
-      name: 'RESTObject',
+      name: 'WorkerInterface',
       sourcemap: true,
     },
     plugins: [
