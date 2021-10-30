@@ -1,5 +1,3 @@
-///<reference path="../../../typings/@actualwave/deferred-data-access/utils/index.d.ts" />
-///<reference path="../../../typings/@actualwave/deferred-data-access/resource/index.d.ts" />
 import { ResourceObject } from '@actualwave/deferred-data-access/resource';
 import { ICommand } from '@actualwave/deferred-data-access/utils';
 import { InterfaceType, MessageType } from './utils';

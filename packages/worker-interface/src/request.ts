@@ -1,6 +1,3 @@
-///<reference path="../../../typings/@actualwave/deferred-data-access/utils/index.d.ts" />
-///<reference path="../../../typings/@actualwave/deferred-data-access/proxy/index.d.ts" />
-///<reference path="../../../typings/@actualwave/deferred-data-access/resource/index.d.ts" />
 import { ProxyCommand } from '@actualwave/deferred-data-access/proxy';
 import {
   getRegistry,

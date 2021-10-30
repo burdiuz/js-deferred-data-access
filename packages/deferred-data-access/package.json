@@ -5,7 +5,11 @@
   "module": "index.js",
   "types": "index.d.ts",
   "scripts": {
-    "build": "tsc --project tsconfig.es.json && rollup -c rollup.config.js"
+    "build": "tsc --project tsconfig.es.json && rollup -c rollup.config.js",
+    "postinstall": "npm run build"
+  },
+  "publishConfig": {
+    "directory": "../../dist/deferred-data-access"
   },
   "dependencies": {
     "@actualwave/has-own": "^0.0.3",

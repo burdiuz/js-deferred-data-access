@@ -5,7 +5,7 @@
   "module": "index.js",
   "types": "index.d.ts",
   "scripts": {
-    "build": "tsc --project tsconfig.es.json && rollup -c rollup.config.js"
+    "build": "tsc --project tsconfig.es.json && rollup -c rollup.config.js --preserveSymlinks"
   },
   "description": "WorkerInterface is an extension to WebWorkers interface that allows requesting resources from WebWorkers directly using dot notation.",
   "keywords": [

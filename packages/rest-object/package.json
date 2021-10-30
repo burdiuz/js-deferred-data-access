@@ -5,7 +5,7 @@
   "module": "index.js",
   "types": "index.d.ts",
   "scripts": {
-    "build": "tsc --project tsconfig.es.json && rollup -c rollup.config.js"
+    "build": "tsc --project tsconfig.es.json && rollup -c rollup.config.js --preserveSymlinks"
   },
   "description": "RESTObject allows remote data access via dot notation and operations with object properties instead of classic URL based actions.",
   "keywords": [

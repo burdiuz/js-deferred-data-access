@@ -1,4 +1,3 @@
-///<reference path="../../../typings/@actualwave/deferred-data-access/utils/index.d.ts" />
 import { handle } from '@actualwave/deferred-data-access';
 import { latestCallFor, recordHandlerCalls } from '@actualwave/deferred-data-access/record';
 import { generateRequest, Request } from './request';

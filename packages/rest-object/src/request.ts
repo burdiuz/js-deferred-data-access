@@ -1,5 +1,3 @@
-///<reference path="../../../typings/@actualwave/deferred-data-access/utils/index.d.ts" />
-///<reference path="../../../typings/@actualwave/deferred-data-access/proxy/index.d.ts" />
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { hasOwn } from '@actualwave/has-own';
 import { ProxyCommand } from '@actualwave/deferred-data-access/proxy';
