@@ -11,11 +11,9 @@ import { isWrappedWithProxy } from '@actualwave/deferred-data-access/proxy';
 import { pool } from './request';
 import { Resource } from '@actualwave/deferred-data-access/resource';
 
-const EVENT_TYPE = 'message';
-
 export enum InterfaceType {
   HOST = 'host',
-  WORKER = 'worker',
+  GUEST = 'guest',
 }
 
 export enum MessageType {
@@ -137,10 +135,12 @@ export const createIsMessage =
     target === data.target;
 
 interface ResolveOrTimeoutConfig<T> {
-  handler: (
-    resolve: (data: T) => void,
-    reject?: (data: unknown) => void
-  ) => unknown;
+  handler:
+    | Promise<T>
+    | ((
+        resolve: (data: T) => void,
+        reject?: (data: unknown) => void
+      ) => unknown);
   timeout: number;
   timeoutError: string;
   onTimeout?: (msg: string) => void;
@@ -152,7 +152,8 @@ export const resolveOrTimeout = <T>({
   timeoutError = `Async operation didn't complete in ${timeout}ms.`,
   onTimeout,
 }: ResolveOrTimeoutConfig<T>): Promise<T> => {
-  const promise = new Promise<T>(handler);
+  const promise =
+    typeof handler === 'function' ? new Promise<T>(handler) : handler;
 
   return timeout
     ? Promise.race<Promise<T>>([
@@ -167,75 +168,5 @@ export const resolveOrTimeout = <T>({
     : promise;
 };
 
-export const findEventEmitter = (worker: unknown): unknown => {
-  if (worker) {
-    return worker;
-  }
-
-  if (typeof self === 'object') {
-    return self;
-  }
-
-  throw new Error(
-    'EventEmitter is not defined, please provide EventEmitter interface via "worker" or "eventEmitter" property.'
-  );
-};
-
-export const findMessagePort = (worker: unknown): unknown => {
-  if (worker) {
-    return worker;
-  }
-
-  if (typeof self === 'object') {
-    return self;
-  }
-
-  throw new Error(
-    'MessagePort is not defined, please provide MessagePort interface via "worker" or "messagePort" property.'
-  );
-};
-
 export const getMessageEventData = (event: any) =>
   event instanceof Event ? (event as Event & { data: any }).data : event;
-
-type DataCallback = (data: unknown) => void;
-
-export const createSubscriberFns = (
-  instance: any
-): {
-  subscribe: (fn: DataCallback) => void;
-  unsubscribe: (fn: DataCallback) => void;
-} => {
-  if (instance.addEventListener) {
-    return {
-      subscribe: (listener: DataCallback) =>
-        instance.addEventListener(EVENT_TYPE, listener),
-      unsubscribe: (listener: DataCallback) =>
-        instance.removeEventListener(EVENT_TYPE, listener),
-    };
-  }
-
-  if (instance.addListener) {
-    return {
-      subscribe: (listener: DataCallback) =>
-        instance.addListener(EVENT_TYPE, listener),
-      unsubscribe: (listener: DataCallback) =>
-        instance.removeListener(EVENT_TYPE, listener),
-    };
-  }
-
-  if (instance.on) {
-    return {
-      subscribe: (listener: DataCallback) => instance.on(EVENT_TYPE, listener),
-      unsubscribe: (listener: DataCallback) =>
-        instance.off(EVENT_TYPE, listener),
-    };
-  }
-
-  throw new Error(
-    'Worker instance does not implement EventEmitter insterface, ' +
-      'it must expose "addEventListener"/"removeEventListener", ' +
-      '"addListener"/"removeListener" or ' +
-      '"on"/"off" method pair.'
-  );
-};

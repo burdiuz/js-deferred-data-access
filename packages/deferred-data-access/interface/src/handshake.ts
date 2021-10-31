@@ -11,6 +11,7 @@ import {
   resolveOrTimeout,
 } from './utils';
 
+// leader
 const handshakeHost =
   ({
     id,
@@ -18,7 +19,7 @@ const handshakeHost =
     isMessage,
     subscribe,
     unsubscribe,
-    postMessage,
+    sendMessage,
   }: HandshakeReceiverData) =>
   (resolve: (data: HandshakeResponse) => void) => {
     const handshakeHandler = (event: unknown) => {
@@ -29,21 +30,22 @@ const handshakeHost =
       }
 
       unsubscribe(handshakeHandler);
-      postMessage({ id, root });
+      sendMessage({ id, root });
       resolve(data);
     };
 
     subscribe(handshakeHandler);
   };
 
-const handshakeWorker =
+// follower
+const handshakeGuest =
   ({
     id,
     root,
     isMessage,
     subscribe,
     unsubscribe,
-    postMessage,
+    sendMessage,
     handshakeInterval,
   }: HandshakeSenderData) =>
   (resolve: (data: HandshakeResponse) => void) => {
@@ -63,7 +65,7 @@ const handshakeWorker =
 
     subscribe(handshakeHandler);
 
-    const intervalFn = () => postMessage({ id, root });
+    const intervalFn = () => sendMessage({ id, root });
 
     if (handshakeInterval) {
       // FIXME TS2322: Type 'Timer' is not assignable to type 'number'.
@@ -87,7 +89,7 @@ export const handshake = ({
   const handler =
     type === InterfaceType.HOST
       ? handshakeHost(data as HandshakeReceiverData)
-      : handshakeWorker(data as HandshakeSenderData);
+      : handshakeGuest(data as HandshakeSenderData);
 
   return resolveOrTimeout<HandshakeResponse>({
     handler,

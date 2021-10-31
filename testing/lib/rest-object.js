@@ -1,127 +1,166 @@
-import { hasOwn } from '@actualwave/has-own';
-import { handle } from '@actualwave/deferred-data-access';
-import { ProxyCommand } from '@actualwave/deferred-data-access/proxy/index.js';
-import fetch from 'node-fetch';
+'use strict';
 
+Object.defineProperty(exports, '__esModule', { value: true });
+
+var hasOwn = require('@actualwave/has-own');
+var proxy = require('@actualwave/deferred-data-access/proxy');
+var deferredDataAccess = require('@actualwave/deferred-data-access');
+var record = require('@actualwave/deferred-data-access/record');
+
+let fetchFn = typeof fetch === 'function'
+    ? fetch
+    : () => {
+        throw new Error('fetch() global function is not available.');
+    };
+const getFetchFn = () => fetchFn;
+const setFetchFn = (fn) => {
+    fetchFn = fn;
+};
+const callFetchFn = (url, params) => fetchFn(url, params);
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+const CONTENT_TYPE = 'Content-Type';
+const JSON_TYPE = 'application/json';
 const CRUD_METHODS = {
-  create: 'POST',
-  read: 'GET',
-  patch: 'PATCH',
-  update: 'PUT',
-  delete: 'DELETE',
+    create: 'POST',
+    read: 'GET',
+    patch: 'PATCH',
+    update: 'PUT',
+    delete: 'DELETE',
 };
-
 const httpMethodByType = (type) => {
-  switch (type) {
-    case ProxyCommand.GET:
-      return 'GET';
-    case ProxyCommand.SET:
-      return 'PUT';
-    case ProxyCommand.DELETE_PROPERTY:
-      return 'DELETE';
-    case ProxyCommand.APPLY:
-    case ProxyCommand.METHOD_CALL:
-      return 'POST';
-  }
-};
-
-const httpMethodByName = (name) => CRUD_METHODS[name];
-
-const getBodyByType = ({ type, value }) => {
-  switch (type) {
-    case ProxyCommand.SET:
-      return value;
-    case ProxyCommand.APPLY:
-    case ProxyCommand.METHOD_CALL:
-      return value[0];
-    default:
-      return undefined;
-  }
-};
-
-const prepareBody = (body) => {
-  if (!body) {
-    return body;
-  }
-
-  const proto = Object.getPrototypeOf(body);
-
-  if (
-    proto === Object.prototype ||
-    proto === Array.prototype ||
-    typeof body.toJSON === 'function'
-  ) {
-    return JSON.stringify(body);
-  }
-
-  return body;
-};
-
-const isCRUDMethod = (name) => hasOwn(CRUD_METHODS, name);
-
-const getURLFromChain = async (chain) => {
-  let last = chain;
-
-  const url = chain.reduce((part, item) => {
-    last = item;
-
-    return `/${item.name}${part}`;
-  }, '');
-
-  const base = await last.context;
-
-  return `${base || ''}${url}`;
-};
-
-const generateRequest = async (command) => {
-  const { type, name, value } = command;
-
-  const base = await command.reduce((_, chain) => chain, null).context;
-
-  if (type !== ProxyCommand.METHOD_CALL && !isCRUDMethod(name)) {
-    const url = await getURLFromChain(command);
-    const body = getBodyByType(command);
-
-    return {
-      url,
-      method: httpMethodByType(type),
-      body: prepareBody(body),
-    };
-  }
-
-  const [queryParams, body, config] = value;
-  const url = await getURLFromChain(command.prev);
-  const query = queryParams ? new URLSearchParams(queryParams).toString() : '';
-
-  return {
-    url: query ? `${url}&${query}` : url,
-    method: httpMethodByName(name),
-    body: prepareBody(body),
-    ...config,
-  };
-};
-
-export const createRESTObject = (baseUrl, requestFn = (r) => r) => {
-  const wrap = handle(async (command) => {
-    const request = requestFn(await generateRequest(command));
-    const response = await fetch(request.url, request);
-    const contentType = response.headers.get('Content-Type');
-    let body = response.body;
-
-    if (/^\w+\/json(?:[^a-z]|$)/i.test(contentType)) {
-      body = await response.json();
-    } else if (/^text\//i.test(contentType)) {
-      body = await response.text();
-    } else if (contentType.indexOf('multipart/form-data') === 0) {
-      body = await response.formData();
+    switch (type) {
+        case proxy.ProxyCommand.SET:
+            return 'PUT';
+        case proxy.ProxyCommand.DELETE_PROPERTY:
+            return 'DELETE';
+        case proxy.ProxyCommand.APPLY:
+        case proxy.ProxyCommand.METHOD_CALL:
+            return 'POST';
+        default:
+            return 'GET';
     }
-
-    return {
-      body,
-      contentType,
-      response,
-    };
-  });
-
-  return wrap(baseUrl);
 };
+const httpMethodByName = (name) => CRUD_METHODS[name];
+const getBodyByType = ({ type, value }) => {
+    switch (type) {
+        case proxy.ProxyCommand.SET:
+            return value;
+        case proxy.ProxyCommand.APPLY:
+        case proxy.ProxyCommand.METHOD_CALL:
+            return value[0];
+        default:
+            return undefined;
+    }
+};
+const defineContentTypeHeader = (request) => {
+    let { headers } = request;
+    if (!headers) {
+        headers = {};
+    }
+    const headersImpl = headers;
+    if (typeof headersImpl.set === 'function') {
+        if (!headersImpl.get(CONTENT_TYPE)) {
+            headersImpl.set(CONTENT_TYPE, JSON_TYPE);
+        }
+        return request;
+    }
+    const headersObj = headers;
+    if (!headersObj[CONTENT_TYPE]) {
+        request = {
+            ...request,
+            headers: {
+                ...headersObj,
+                [CONTENT_TYPE]: JSON_TYPE,
+            },
+        };
+    }
+    return request;
+};
+const prepareBody = (body, request) => {
+    if (!body) {
+        return request;
+    }
+    const proto = Object.getPrototypeOf(body);
+    if (proto === Object.prototype ||
+        proto === Array.prototype ||
+        typeof body.toJSON === 'function') {
+        return defineContentTypeHeader({
+            ...request,
+            body: JSON.stringify(body),
+        });
+    }
+    return body;
+};
+const isCRUDMethod = (name) => hasOwn.hasOwn(CRUD_METHODS, name);
+const getURLFromChain = async (chain) => {
+    let last = chain;
+    const url = chain.reduce((part, item) => {
+        last = item;
+        return `/${String(item.name)}${part}`;
+    }, '');
+    const base = await last.context;
+    return `${base || ''}${url}`;
+};
+const generateRequest = async (command) => {
+    const { type, name, value } = command;
+    if (type !== proxy.ProxyCommand.METHOD_CALL ||
+        !isCRUDMethod(name)) {
+        const url = await getURLFromChain(command);
+        const body = getBodyByType(command);
+        return prepareBody(body, {
+            url,
+            method: httpMethodByType(type),
+        });
+    }
+    const [queryParams, body, config] = value;
+    const url = await getURLFromChain(command.prev);
+    const query = queryParams ? new URLSearchParams(queryParams).toString() : '';
+    return {
+        ...prepareBody(body, {
+            url: query ? `${url}&${query}` : url,
+            method: httpMethodByName(String(name)),
+        }),
+        ...config,
+    };
+};
+
+const LATEST_METHOD = 'forLatest';
+const getResponse = async (response, contentType) => {
+    if (/^\w+\/json(?:[^a-z]|$)/i.test(contentType)) {
+        return response.json();
+    }
+    else if (/^text\//i.test(contentType)) {
+        return response.text();
+    }
+    else if (contentType.indexOf('multipart/form-data') === 0) {
+        return response.formData();
+    }
+    return response.body;
+};
+const createRESTObject = (baseUrl, requestFn = (r) => r) => {
+    const wrap = deferredDataAccess.handle(record.recordHandlerCalls(async (command, context) => {
+        if (context &&
+            command.type === proxy.ProxyCommand.METHOD_CALL &&
+            command.name === LATEST_METHOD) {
+            return record.latestCallFor(context);
+        }
+        const request = requestFn(await generateRequest(command));
+        const response = await callFetchFn(request.url, request);
+        const contentType = response.headers.get('Content-Type') || '';
+        const body = await getResponse(response, contentType);
+        return {
+            body,
+            contentType,
+            response,
+        };
+    }));
+    return wrap(baseUrl);
+};
+
+exports.callFetchFn = callFetchFn;
+exports.createRESTObject = createRESTObject;
+exports.generateRequest = generateRequest;
+exports.getFetchFn = getFetchFn;
+exports.setFetchFn = setFetchFn;
+//# sourceMappingURL=rest-object.js.map

@@ -4,6 +4,7 @@
     "paths": {
       "@actualwave/deferred-data-access": ["packages/deferred-data-access/index.ts"],
       "@actualwave/deferred-data-access/command": ["packages/deferred-data-access/command/index.ts"],
+      "@actualwave/deferred-data-access/interface": ["packages/deferred-data-access/interface/index.ts"],
       "@actualwave/deferred-data-access/proxy": ["packages/deferred-data-access/proxy/index.ts"],
       "@actualwave/deferred-data-access/resource": ["packages/deferred-data-access/resource/index.ts"],
       "@actualwave/deferred-data-access/record": ["packages/deferred-data-access/record/index.ts"],
