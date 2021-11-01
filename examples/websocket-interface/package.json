@@ -1,5 +1,5 @@
 {
-  "name": "rest-object",
+  "name": "websocket-interface",
   "version": "1.0.0",
   "description": "",
   "private": true,
@@ -11,6 +11,8 @@
   "license": "ISC",
   "dependencies": {
     "body-parser": "^1.19.0",
-    "express": "^4.17.1"
+    "express": "^4.17.1",
+    "ws": "^7.2.1"
+
   }
 }

@@ -20,10 +20,11 @@ const handshakeHost =
     subscribe,
     unsubscribe,
     sendMessage,
+    preprocessResponse = (data: unknown) => data,
   }: HandshakeReceiverData) =>
   (resolve: (data: HandshakeResponse) => void) => {
     const handshakeHandler = (event: unknown) => {
-      const data = getMessageEventData(event);
+      const data = getMessageEventData(preprocessResponse(event));
 
       if (!isMessage(data)) {
         return;
@@ -47,12 +48,13 @@ const handshakeGuest =
     unsubscribe,
     sendMessage,
     handshakeInterval,
+    preprocessResponse = (data: unknown) => data,
   }: HandshakeSenderData) =>
   (resolve: (data: HandshakeResponse) => void) => {
     let intervalId: number;
 
     const handshakeHandler = (event: unknown) => {
-      const data = getMessageEventData(event);
+      const data = getMessageEventData(preprocessResponse(event));
 
       if (!isMessage(data)) {
         return;
@@ -69,7 +71,10 @@ const handshakeGuest =
 
     if (handshakeInterval) {
       // FIXME TS2322: Type 'Timer' is not assignable to type 'number'.
-      intervalId = setInterval(intervalFn, handshakeInterval) as unknown as number;
+      intervalId = setInterval(
+        intervalFn,
+        handshakeInterval
+      ) as unknown as number;
     } else {
       intervalFn();
     }

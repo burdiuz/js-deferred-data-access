@@ -40,6 +40,7 @@ import {
   handshakeTimeout,
   responseTimeout,
   handshakeInterval,
+  preprocessResponse,
 }
 */
 export const initialize = async ({
@@ -52,7 +53,12 @@ export const initialize = async ({
     ? (pool.set(apiRoot as any) as Resource).toObject()
     : undefined;
 
-  const { subscribe, unsubscribe, sendMessage } = params;
+  const {
+    subscribe,
+    unsubscribe,
+    sendMessage,
+    preprocessResponse = (data: unknown) => data,
+  } = params;
 
   const { id: remoteId, root: remoteRoot } = await handshake({
     id,
@@ -67,7 +73,7 @@ export const initialize = async ({
   const createResponse = createResponseMessage(id);
 
   const messageHandler = async (event: unknown) => {
-    const data = getMessageEventData(event) as MessageBase;
+    const data = getMessageEventData(preprocessResponse(event)) as MessageBase;
 
     if (!isMessage(data)) {
       return;
@@ -132,9 +138,13 @@ export const initialize = async ({
 
       const resultPromise = resolveOrTimeout({
         handler: async (resolve, reject) => {
-          const request = await createRequest(command, context, id);
-          sendMessage(request);
-          pendingRequests.set(id, { resolve, reject });
+          try{
+            const request = await createRequest(command, context, id);
+            sendMessage(request);
+            pendingRequests.set(id, { resolve, reject });
+          } catch(error) {
+            reject(error);
+          }
         },
         timeout: responseTimeout || 0,
         timeoutError,

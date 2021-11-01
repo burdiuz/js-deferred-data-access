@@ -31,7 +31,8 @@ export const findMessagePort = (worker: unknown): unknown => {
 };
 
 export const createSubscriberFns = (
-  instance: any
+  instance: any,
+  eventType = EVENT_TYPE
 ): {
   subscribe: (fn: DataCallback) => void;
   unsubscribe: (fn: DataCallback) => void;
@@ -39,26 +40,26 @@ export const createSubscriberFns = (
   if (instance.addEventListener) {
     return {
       subscribe: (listener: DataCallback) =>
-        instance.addEventListener(EVENT_TYPE, listener),
+        instance.addEventListener(eventType, listener),
       unsubscribe: (listener: DataCallback) =>
-        instance.removeEventListener(EVENT_TYPE, listener),
+        instance.removeEventListener(eventType, listener),
     };
   }
 
   if (instance.addListener) {
     return {
       subscribe: (listener: DataCallback) =>
-        instance.addListener(EVENT_TYPE, listener),
+        instance.addListener(eventType, listener),
       unsubscribe: (listener: DataCallback) =>
-        instance.removeListener(EVENT_TYPE, listener),
+        instance.removeListener(eventType, listener),
     };
   }
 
   if (instance.on) {
     return {
-      subscribe: (listener: DataCallback) => instance.on(EVENT_TYPE, listener),
+      subscribe: (listener: DataCallback) => instance.on(eventType, listener),
       unsubscribe: (listener: DataCallback) =>
-        instance.off(EVENT_TYPE, listener),
+        instance.off(eventType, listener),
     };
   }
 

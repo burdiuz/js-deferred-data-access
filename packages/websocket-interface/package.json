@@ -1,0 +1,33 @@
+{
+  "name": "@actualwave/websocket-interface",
+  "version": "1.0.0",
+  "main": "dist/websocket-interface.js",
+  "module": "index.js",
+  "types": "index.d.ts",
+  "scripts": {
+    "build": "tsc --project tsconfig.es.json && rollup -c rollup.config.js --preserveSymlinks"
+  },
+  "description": "WebsocketInterface is an interface for RPC.",
+  "keywords": [
+    "websocket",
+    "socket",
+    "rpc",
+    "remote",
+    "call",
+    "procedure"
+  ],
+  "homepage": "https://github.com/burdiuz/js-deferred-data-access/tree/master/packages/websocket-interface",
+  "bugs": {
+    "url": "https://github.com/burdiuz/js-deferred-data-access/issues",
+    "email": "burdiuz@gmail.com"
+  },
+  "license": "MIT",
+  "author": "Oleg Galaburda <burdiuz@gmail.com> (http://actualwave.com/)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/burdiuz/js-deferred-data-access.git"
+  },
+  "dependencies": {
+    "@actualwave/deferred-data-access": "^2.0.0"
+  }
+}

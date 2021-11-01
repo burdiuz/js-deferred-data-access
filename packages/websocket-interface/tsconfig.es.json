@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.lib.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "../../dist/websocket-interface",
+    "declarationDir": "../../dist/websocket-interface",
+    "declaration": true
+  }
+}

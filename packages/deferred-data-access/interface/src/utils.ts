@@ -139,7 +139,7 @@ interface ResolveOrTimeoutConfig<T> {
     | Promise<T>
     | ((
         resolve: (data: T) => void,
-        reject?: (data: unknown) => void
+        reject: (data: unknown) => void
       ) => unknown);
   timeout: number;
   timeoutError: string;

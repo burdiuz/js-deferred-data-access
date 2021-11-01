@@ -6,6 +6,7 @@ export type InterfaceCallbacks = {
   subscribe: (listener: (event: unknown) => void) => void;
   unsubscribe: (listener: (event: unknown) => void) => void;
   sendMessage: (data: unknown) => void;
+  preprocessResponse?: (data: unknown) => unknown;
 };
 
 export type HandshakeReceiverData = InterfaceCallbacks & {
