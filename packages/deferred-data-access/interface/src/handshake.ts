@@ -11,7 +11,7 @@ import {
   resolveOrTimeout,
 } from './utils';
 
-// leader
+// leader (HOST): waits for guest to initiate, then replies
 const handshakeHost =
   ({
     id,
@@ -38,7 +38,7 @@ const handshakeHost =
     subscribe(handshakeHandler);
   };
 
-// follower
+// follower (GUEST): initiates handshake by sending its identity, waits for host reply
 const handshakeGuest =
   ({
     id,
@@ -51,7 +51,8 @@ const handshakeGuest =
     preprocessResponse = (data: unknown) => data,
   }: HandshakeSenderData) =>
   (resolve: (data: HandshakeResponse) => void) => {
-    let intervalId: number;
+    // Use ReturnType to avoid the TS2322 Timer/number mismatch across environments
+    let intervalId: ReturnType<typeof setInterval> | undefined;
 
     const handshakeHandler = (event: unknown) => {
       const data = getMessageEventData(preprocessResponse(event));
@@ -61,7 +62,11 @@ const handshakeGuest =
       }
 
       unsubscribe(handshakeHandler);
-      clearInterval(intervalId);
+
+      if (intervalId !== undefined) {
+        clearInterval(intervalId);
+      }
+
       resolve(data);
     };
 
@@ -70,11 +75,7 @@ const handshakeGuest =
     const intervalFn = () => sendMessage({ id, root });
 
     if (handshakeInterval) {
-      // FIXME TS2322: Type 'Timer' is not assignable to type 'number'.
-      intervalId = setInterval(
-        intervalFn,
-        handshakeInterval
-      ) as unknown as number;
+      intervalId = setInterval(intervalFn, handshakeInterval);
     } else {
       intervalFn();
     }

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>query-builder Example</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"
+    integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+  <style>
+    body { font-family: Helvetica, sans-serif; padding: 20px; }
+    .chain-display { font-family: monospace; font-size: 15px; padding: 10px 14px;
+                     background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px;
+                     min-height: 40px; color: #2c3e50; }
+    .descriptor-display { background: #1e1e2e; color: #cdd6f4; border-radius: 4px;
+                          padding: 12px; font-family: monospace; font-size: 12px;
+                          min-height: 60px; }
+    .btn + .btn { margin-left: 4px; }
+    .btn-group + .btn-group { margin-left: 4px; }
+    h2 small { color: #888; }
+    pre.code { background: #1e1e2e; color: #cdd6f4; border-radius: 4px; padding: 12px; font-size: 12px; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <p><a href="../">&larr; All examples</a></p>
+  <h2>query-builder <small>proxy access → QueryDescriptor</small></h2>
+  <p class="text-muted">
+    Proxy property accesses and method calls are captured into a serialisable
+    <code>QueryDescriptor</code> array. Build a query chain below and see the descriptor
+    that would be sent to a server-side resolver.
+  </p>
+
+  <div class="row">
+    <div class="col-sm-5">
+      <h4>Build a query chain</h4>
+      <div class="form-group">
+        <div class="btn-group">
+          <button class="btn btn-default btn-sm" onclick="addStep('get','users')">users</button>
+          <button class="btn btn-default btn-sm" onclick="addStep('get','posts')">posts</button>
+          <button class="btn btn-default btn-sm" onclick="addStep('get','comments')">comments</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="input-group input-group-sm">
+          <span class="input-group-addon">call</span>
+          <input type="text" class="form-control" id="call-name" placeholder="method" value="findById">
+          <input type="text" class="form-control" id="call-arg" placeholder="arg" value="42">
+          <span class="input-group-btn">
+            <button class="btn btn-default" onclick="addCall()">+</button>
+          </span>
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="btn-group">
+          <button class="btn btn-default btn-sm" onclick="addStep('get','name')">name</button>
+          <button class="btn btn-default btn-sm" onclick="addStep('get','title')">title</button>
+          <button class="btn btn-default btn-sm" onclick="addStep('get','email')">email</button>
+          <button class="btn btn-default btn-sm" onclick="addStep('get','author')">author</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="input-group input-group-sm">
+          <span class="input-group-addon">index</span>
+          <input type="number" class="form-control" id="idx-val" value="0" min="0">
+          <span class="input-group-btn">
+            <button class="btn btn-default" onclick="addIndex()">+</button>
+          </span>
+        </div>
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="reset()">Reset</button>
+
+      <hr>
+      <h4>Preset examples</h4>
+      <button class="btn btn-default btn-sm" onclick="loadPreset('user-name')">User name</button>
+      <button class="btn btn-default btn-sm" onclick="loadPreset('post-title')">Post title</button>
+      <button class="btn btn-default btn-sm" onclick="loadPreset('comment-list')">Comment list item</button>
+    </div>
+
+    <div class="col-sm-7">
+      <h4>Chain expression</h4>
+      <div class="chain-display" id="chain-display">api</div>
+
+      <h4 style="margin-top:14px">QueryDescriptor <small class="text-muted">(JSON sent to resolver)</small></h4>
+      <div class="descriptor-display" id="descriptor"></div>
+
+      <h4 style="margin-top:14px">Resolver code</h4>
+      <pre class="code">const api = createQueryProxy(async (query) => {
+  // query is the descriptor array below
+  const res = await fetch('/api/query', {
+    method: 'POST',
+    body: JSON.stringify(query),
+  });
+  return res.json();
+});
+
+// With batching — all awaits in same tick
+// share one HTTP request
+const resolver = createBatchingResolver(
+  async (queries) => fetchBatch(queries)
+);</pre>
+    </div>
+  </div>
+</div>
+
+<script>
+const steps = [];
+
+const PRESETS = {
+  'user-name':    [{ type:'call', name:'users', args:[] }, { type:'call', name:'findById', args:[1] }, { type:'get', name:'name' }],
+  'post-title':   [{ type:'call', name:'posts', args:[] }, { type:'index', index:0 }, { type:'get', name:'title' }],
+  'comment-list': [{ type:'get', name:'users' }, { type:'call', name:'findById', args:[42] }, { type:'get', name:'comments' }, { type:'index', index:0 }, { type:'get', name:'body' }],
+};
+
+function addStep(type, name) {
+  steps.push({ type, name });
+  render();
+}
+
+function addCall() {
+  const name = document.getElementById('call-name').value.trim();
+  const arg  = document.getElementById('call-arg').value.trim();
+  if (!name) return;
+  let val; try { val = JSON.parse(arg); } catch { val = arg; }
+  steps.push({ type: 'call', name, args: arg ? [val] : [] });
+  render();
+}
+
+function addIndex() {
+  const idx = parseInt(document.getElementById('idx-val').value);
+  steps.push({ type: 'index', index: isNaN(idx) ? 0 : idx });
+  render();
+}
+
+function reset() { steps.length = 0; render(); }
+
+function loadPreset(key) {
+  steps.length = 0;
+  steps.push(...PRESETS[key]);
+  render();
+}
+
+function render() {
+  // Build chain expression string
+  let chain = 'api';
+  for (const s of steps) {
+    if (s.type === 'get')   chain += `.${s.name}`;
+    if (s.type === 'call')  chain += `.${s.name}(${s.args.map(a => JSON.stringify(a)).join(', ')})`;
+    if (s.type === 'index') chain += `[${s.index}]`;
+  }
+  document.getElementById('chain-display').textContent = steps.length ? `await ${chain}` : 'api  (empty chain)';
+  document.getElementById('descriptor').textContent = steps.length
+    ? JSON.stringify(steps, null, 2)
+    : '// chain is empty — add steps above';
+}
+
+render();
+</script>
+</body>
+</html>

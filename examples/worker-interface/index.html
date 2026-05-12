@@ -1,28 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>WorkerEventDispatcher Example</title>
+  <title>Worker Interface Example</title>
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"
     integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
-  <style type="text/css">
-    iframe {
-      height: 600px;
-    }
+  <style>
+    body { font-family: Helvetica, sans-serif; padding: 20px; }
+    iframe { height: 600px; }
   </style>
-  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"
-    integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS"
-    crossorigin="anonymous"></script>
-  <script type="text/javascript" src="./worker-interface.umd.js"></script>
-  <script type="text/javascript">
-    // DedicatedWorker UI
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+  <script src="./worker-interface.umd.js"></script>
+  <script>
     let workerApi;
 
     (async () => {
-      // Wait until handshake is complete, promise resolved with WorkerInterface object
       workerApi = await WorkerInterface.initializeHost({
         worker: './webworker.js',
       });
@@ -30,78 +23,77 @@
 
       console.log('Interface created');
 
-      { // Call requestTime() function from Worker API
+      {
+        // Call requestTime() from the Worker API
         const time = await api.requestTime();
-        console.log('### requestTime called:', new Date(time));
-      }
-
-      { // Call callHandler() function from Worker API and pass requestTime() function as an argument
-        const time = await api.callHandler(api.requestTime);
-        console.log('### callHandler called:', time);
+        console.log('requestTime():', new Date(time));
       }
 
       {
+        // Pass api.requestTime as a callback — the worker calls it back
+        const time = await api.callHandler(api.requestTime);
+        console.log('callHandler(requestTime):', time);
+      }
+
+      {
+        // Access a resource-wrapped private API using a password
         const secretApi = api.getPrivateAPI('password1');
         const secretData = await secretApi.secretData();
+        console.log('secretData():', secretData);
       }
 
       {
+        // Alternative: unwrap a resource descriptor via workerApi.wrap()
         const apiResource = await api.getPrivateAPI('password1');
         const secretApi = workerApi.wrap(apiResource);
         const secretData = await secretApi.secretData();
+        console.log('secretData() via wrap():', secretData);
       }
 
-      console.log('Interface ready!', api);
-      api.requestTime().then((time) => {
-        console.log('### requestTime called', time);
-      });
-      api.callHandler(api.requestTime).then((time) => {
-        console.log('### callHandler called', time);
-      });
+      console.log('Interface ready');
     })();
 
     let intervalId = 0;
 
     $(document).ready(() => {
-      $('.start').on('click', (event) => {
-        const requestFn = async () => {
+      $('.start').on('click', () => {
+        const tick = async () => {
           const time = await workerApi.root.requestTime();
           $('.time').val(time);
         };
-
         clearInterval(intervalId);
-        intervalId = setInterval(requestFn, 1000);
-        requestFn();
+        intervalId = setInterval(tick, 1000);
+        tick();
       });
-      $('.stop').on('click', (event) => {
+
+      $('.stop').on('click', () => {
         clearInterval(intervalId);
         $('.time').val('');
       });
     });
   </script>
 </head>
-
 <body>
   <div class="container">
+    <h2>Worker Interface Example <small>DDA proxy to a Web Worker</small></h2>
+    <p class="text-muted">
+      The main page and the Worker communicate through <code>postMessage</code> using DDA proxies.
+      <code>api.requestTime()</code> calls a function defined in the Worker and returns its result
+      as a plain Promise.
+    </p>
+
     <div class="row">
       <div class="col-xs-12">
-        <h4>Dedicated Worker Example</h4>
-        Timestamp values are returned from worker after request.
-      </div>
-    </div>
-    <div class="row">
-      <div class="col-xs-4 form-group">
-        <label for="time">Time:</label>
-        <input type="text" class="time form-control" id="time" readonly>
-      </div>
-    </div>
-    <div class="row" style="margin-bottom: 100px;">
-      <div class="col-xs-4 form-group">
-        <button class="btn btn-primary start">Start</button>
-        <button class="btn btn-default stop">Stop</button>
+        <div class="form-group" style="max-width:260px">
+          <label for="time">Timestamp from Worker:</label>
+          <input type="text" class="time form-control" id="time" readonly>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-primary start">Start polling</button>
+          <button class="btn btn-default stop">Stop</button>
+        </div>
       </div>
     </div>
   </div>
 </body>
-
 </html>

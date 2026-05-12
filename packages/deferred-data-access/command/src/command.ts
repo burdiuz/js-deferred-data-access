@@ -10,7 +10,10 @@ export class Command implements ICommand {
     public readonly name?: PropertyName,
     public readonly value?: unknown,
     public readonly context?: CommandContext
-  ) {}
+  ) {
+    Object.defineProperty(this, 'type', { value: type, writable: false, configurable: false });
+    Object.defineProperty(this, 'name', { value: name, writable: false, configurable: false });
+  }
 
   toObject(includeContext = false): ICommand {
     const { type, name, value, context } = this;
@@ -24,13 +27,9 @@ export class Command implements ICommand {
 
   toJSON(includeContext = false): string {
     const { type, name, value, context } = this;
-
-    return JSON.stringify([
-      type,
-      name,
-      value,
-      includeContext ? context : undefined,
-    ]);
+    return includeContext
+      ? JSON.stringify([type, name, value, context])
+      : JSON.stringify([type, name, value]);
   }
 
   static fromJSON(jsonString: string): ICommand {

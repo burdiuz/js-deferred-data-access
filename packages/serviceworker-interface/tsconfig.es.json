@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.lib.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "../../dist/serviceworker-interface",
+    "declarationDir": "../../dist/serviceworker-interface",
+    "declaration": true
+  }
+}

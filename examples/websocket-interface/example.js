@@ -3,13 +3,13 @@ let api;
 $(() => {
   $('button.save').on('click', async (event) => {
     event.preventDefault();
-    var item = getFormData();
+    const item = getFormData();
     item.id = $('form.edit').data('item').id;
     try {
       await api.root.updateCustomer(item.id, item);
       reloadList();
     } catch (error) {
-      console.log(error);
+      console.error(error);
     }
   });
 
@@ -19,37 +19,34 @@ $(() => {
       await api.root.addCustomer(getFormData());
       reloadList();
     } catch (error) {
-      console.log(error);
+      console.error(error);
       alert('Error happened when adding new customer.');
     }
   });
 });
 
 const reloadList = async () => {
-  $('.list tbody').empty();
   try {
     const list = await api.root.listCustomers();
     displayList(list);
   } catch (error) {
-    console.log(error);
+    console.error(error);
     alert('Error happened while loading customers list.');
   }
 };
 
 const displayList = (list) => {
-  var $container = $('.list tbody');
+  const $container = $('.list tbody');
   $container.empty();
+
   $.each(list, (index, item) => {
-    var $el = $(
-      `<tr>
-          <td>${item.name}</td>
-          <td><a href="" class="delete">Delete</a></td>
-       </tr>`
+    const $el = $(
+      `<tr class="customer-${item.id}">
+        <td>${item.name}</td>
+        <td><a href="" class="delete">Delete</a></td>
+      </tr>`
     );
-    $el.addClass('customer-' + item.id);
-    $el.on('click', 'td', () => {
-      editCustomer(item);
-    });
+    $el.on('click', 'td', () => editCustomer(item));
     $el.on('click', 'a.delete', (event) => {
       event.preventDefault();
       event.stopImmediatePropagation();
@@ -84,27 +81,23 @@ const editCustomer = async (item) => {
     const body = await api.root.getCustomer(item.id);
     displayForm(body);
   } catch (error) {
-    console.log(error);
+    console.error(error);
     alert('Error happened while loading customer info.');
   }
 };
 
 const deleteCustomer = async (item) => {
-  if (!confirm('Delete customer?')) {
-    return;
-  }
-
+  if (!confirm('Delete customer?')) return;
   try {
     await api.root.removeCustomer(item.id);
-    $('.list tr.customer-' + item.id).remove();
+    $(`.list tr.customer-${item.id}`).remove();
   } catch (error) {
-    console.log(error);
+    console.error(error);
   }
 };
 
-// we have to keep copy of API object to not let Garbage Collector take it.
+// Exposed to server — server calls updateList() to push real-time updates
 const root = {
-  // can be called by server
   updateList(list) {
     displayList(list);
   },
@@ -113,10 +106,8 @@ const root = {
 (async () => {
   const ws = new WebSocket('ws://localhost:8081/rpc');
 
-  api = await WebSocketInterface.initializeClient({
-    ws,
-    root,
-  });
+  api = await WebSocketInterface.initializeClient({ ws, root });
 
+  $('#status').text('Connected ✓');
   reloadList();
 })();

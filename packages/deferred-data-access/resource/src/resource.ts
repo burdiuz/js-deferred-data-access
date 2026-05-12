@@ -7,6 +7,8 @@ export class Resource extends IdOwner {
     public readonly type: string
   ) {
     super();
+    Object.defineProperty(this, 'pool', { value: pool, writable: false, configurable: false });
+    Object.defineProperty(this, 'type', { value: type, writable: false, configurable: false });
   }
 
   toObject(): ResourceObject {
@@ -30,9 +32,8 @@ export const createResource = (
   type?: string
 ) => new Resource(pool, type || typeof target);
 
-export const isResourceObject = (obj: any) =>
-  obj &&
-  // type signature is not enough for non-ts env
+export const isResourceObject = (obj: unknown): obj is ResourceObject =>
+  obj != null &&
   typeof obj === 'object' &&
-  typeof obj.id === 'string' &&
-  typeof obj.poolId === 'string';
+  typeof (obj as Record<string, unknown>).id === 'string' &&
+  typeof (obj as Record<string, unknown>).poolId === 'string';

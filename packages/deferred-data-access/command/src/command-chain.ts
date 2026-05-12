@@ -9,14 +9,19 @@ import {
 import { Command } from './command';
 
 export class CommandChain extends Command implements ICommandList {
+  // prev is intentionally mutable only within this class — external mutation
+  // (e.g. dropCommandChain) should use the dedicated method below.
+  readonly prev: ICommandChain | undefined;
+
   constructor(
-    public prev: ICommandChain | undefined,
+    prev: ICommandChain | undefined,
     type: string,
     name?: PropertyName,
     value?: unknown,
     context?: CommandContext
   ) {
     super(type, name, value, context);
+    this.prev = prev;
   }
 
   *[Symbol.iterator]() {
@@ -66,6 +71,16 @@ export class CommandChain extends Command implements ICommandList {
     } while (node);
 
     return result;
+  }
+
+  /**
+   * Returns a new CommandChain that is identical to this one but with the
+   * `prev` link severed, rather than mutating the existing instance in-place.
+   * Use this instead of `delete command.prev` to avoid corrupting shared chain
+   * references held by other code.
+   */
+  withoutPrev(): CommandChain {
+    return new CommandChain(undefined, this.type, this.name, this.value, this.context);
   }
 
   static fromCommand(

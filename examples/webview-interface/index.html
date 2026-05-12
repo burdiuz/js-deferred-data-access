@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>webview-interface Example</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"
+    integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+  <style>
+    body { font-family: Helvetica, sans-serif; padding: 20px; }
+    pre.code { background: #1e1e2e; color: #cdd6f4; border-radius: 4px; padding: 14px;
+               font-size: 12px; overflow-x: auto; line-height: 1.6; }
+    .badge-env { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 10px;
+                 background: #fcf3cf; color: #856404; border: 1px solid #ffc107; }
+    h2 small { color: #888; }
+    .diagram { background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px;
+               padding: 16px; font-family: monospace; font-size: 12px; text-align: center; }
+    .log-box { background: #1e1e2e; color: #cdd6f4; border-radius: 4px; padding: 10px;
+               font-family: monospace; font-size: 12px; min-height: 100px; max-height: 200px; overflow-y: auto; }
+    .log-box .ok   { color: #a6e3a1; }
+    .log-box .info { color: #89b4fa; }
+    .log-box .err  { color: #f38ba8; }
+    .transport-row { display: flex; align-items: center; justify-content: center;
+                     gap: 12px; margin: 8px 0; font-size: 12px; font-family: monospace; }
+    .box-rn  { background: #1e3a5f; color: #7ec8f5; padding: 6px 12px; border-radius: 4px; }
+    .box-wv  { background: #1a4731; color: #6ee7b7; padding: 6px 12px; border-radius: 4px; }
+    .arrow   { color: #888; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <p><a href="../">&larr; All examples</a></p>
+  <h2>webview-interface <small>React Native ↔ WebView bidirectional DDA</small></h2>
+  <p>
+    <span class="badge-env">⚠ Requires a React Native host — runs in a WebView</span>
+  </p>
+  <p class="text-muted" style="margin-top:10px">
+    The transport between React Native and its WebView is <strong>asymmetric</strong>:
+    RN injects JavaScript to send, while the WebView calls
+    <code>window.ReactNativeWebView.postMessage()</code> to reply.
+    <code>webview-interface</code> hides this asymmetry behind DDA's standard
+    bidirectional RPC model.
+  </p>
+
+  <div class="row" style="margin-top:16px">
+    <div class="col-sm-12">
+      <div class="diagram">
+        <div class="transport-row">
+          <span class="box-rn">React Native (HOST)</span>
+          <span class="arrow">─ injectJavaScript() ──▶</span>
+          <span class="box-wv">WebView / Browser (GUEST)</span>
+        </div>
+        <div class="transport-row">
+          <span class="box-rn">React Native (HOST)</span>
+          <span class="arrow">◀── ReactNativeWebView.postMessage() ─</span>
+          <span class="box-wv">WebView / Browser (GUEST)</span>
+        </div>
+        <div style="margin-top:8px;color:#888">
+          Both sides get a DDA root proxy — call each other like ordinary async functions.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row" style="margin-top:16px">
+    <div class="col-sm-6">
+      <h4>React Native side <small>(HOST)</small></h4>
+      <pre class="code">import { useRef, useCallback, useEffect } from 'react';
+import WebView from 'react-native-webview';
+import { initializeHost }
+  from '@actualwave/webview-interface';
+
+export default function EditorScreen() {
+  const webViewRef = useRef(null);
+  const onMessageRef = useRef(null);
+
+  // Stable handler — ref keeps it out of React diffing
+  const handleMessage = useCallback(
+    e => onMessageRef.current?.(e), []
+  );
+
+  useEffect(() => {
+    if (!webViewRef.current) return;
+
+    const { onMessage, connection } = initializeHost({
+      webView: webViewRef.current,
+      root: {
+        getConfig: () => ({ theme: 'dark', fontSize: 14 }),
+        saveFile: content => persist(content),
+      },
+    });
+
+    onMessageRef.current = onMessage;
+
+    connection.then(({ root: webApi, stop }) => {
+      webApi.setContent('console.log("hello")');
+      return () => { onMessageRef.current = null; stop(); };
+    });
+  }, []);
+
+  return (
+    &lt;WebView ref={webViewRef}
+             source={{ uri: 'https://…/editor' }}
+             onMessage={handleMessage} /&gt;
+  );
+}</pre>
+    </div>
+    <div class="col-sm-6">
+      <h4>WebView side <small>(GUEST)</small></h4>
+      <pre class="code">import { initializeGuest }
+  from '@actualwave/webview-interface';
+
+// Runs inside the WebView page (browser context).
+// window.ReactNativeWebView must be present.
+
+const { root: nativeApi, stop } =
+  await initializeGuest({
+    root: {
+      setContent(code) {
+        editor.setValue(code);
+      },
+      getContent() {
+        return editor.getValue();
+      },
+    },
+  });
+
+// Call React Native methods
+const config = await nativeApi.getConfig();
+editor.setTheme(config.theme);
+
+// React Native pushes updates too
+nativeApi.saveFile(editor.getValue());</pre>
+    </div>
+  </div>
+
+  <div class="row" style="margin-top:16px">
+    <div class="col-sm-12">
+      <h4>In-page loopback simulator</h4>
+      <p class="text-muted" style="font-size:13px">
+        Since we cannot run React Native here, the demo below wires two in-page objects
+        using the same <code>injectJavaScript</code> / <code>postMessage</code> shim
+        that the real transport uses. Click <strong>Run demo</strong> to see DDA calls
+        crossing the simulated bridge.
+      </p>
+      <button class="btn btn-primary" onclick="runDemo()">Run demo</button>
+      <button class="btn btn-default" onclick="clearLog()">Clear</button>
+      <div class="log-box" id="log" style="margin-top:10px"></div>
+    </div>
+  </div>
+
+  <div class="row" style="margin-top:16px">
+    <div class="col-sm-12">
+      <h4>Transport details</h4>
+      <pre class="code">// HOST → GUEST (React Native → WebView)
+// DDA message is JSON-stringified twice to produce a safe JS string literal:
+webView.injectJavaScript(
+  `window.dispatchEvent(new MessageEvent('message',{data:${JSON.stringify(JSON.stringify(msg))}}));true;`
+);
+
+// GUEST → HOST (WebView → React Native)
+window.ReactNativeWebView.postMessage(JSON.stringify(msg));
+// Received in React Native via &lt;WebView onMessage={e =&gt; handle(e.nativeEvent.data)} /&gt;</pre>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── Loopback shim ───────────────────────────────────────────────────────────
+// Simulates the RN ↔ WebView asymmetric transport in a single browser page.
+
+const logEl = document.getElementById('log');
+function appendLog(cls, msg) {
+  const d = document.createElement('div');
+  d.className = cls;
+  d.textContent = `[${new Date().toLocaleTimeString()}]  ${msg}`;
+  logEl.appendChild(d);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+function clearLog() { logEl.innerHTML = ''; }
+
+async function runDemo() {
+  clearLog();
+
+  // ── Shared listener sets (mimic subscribe/unsubscribe) ───────────────────
+  const hostListeners = new Set();
+  const guestListeners = new Set();
+
+  // ── HOST side (simulated React Native) ──────────────────────────────────
+  // sendMessage = injectJavaScript → dispatches to guestListeners
+  // subscribe/unsubscribe = hostListeners (fed by WebView's postMessage)
+
+  // ── GUEST side (simulated WebView) ──────────────────────────────────────
+  // sendMessage = ReactNativeWebView.postMessage → hostListeners
+  // subscribe/unsubscribe = guestListeners
+
+  // Minimal DDA-style handshake + request/response (inline, no library import)
+  let seq = 0;
+  const pendingHost  = new Map();
+  const pendingGuest = new Map();
+
+  // ── DDA message protocol simulation ──────────────────────────────────────
+  const HOST_ID  = 'rn-host';
+  const GUEST_ID = 'webview-guest';
+
+  function hostSend(data) {
+    appendLog('info', `HOST  → injectJS  ${JSON.stringify(data).slice(0,60)}`);
+    // inject → guest receives via window 'message' event
+    setTimeout(() => guestListeners.forEach(fn => fn({ data: JSON.stringify(data) })), 2);
+  }
+
+  function guestSend(data) {
+    appendLog('info', `GUEST → postMessage ${JSON.stringify(data).slice(0,60)}`);
+    // postMessage → host receives via onMessage prop; nativeEvent.data is a string
+    setTimeout(() => hostListeners.forEach(fn => fn({ nativeEvent: { data: JSON.stringify(data) } })), 2);
+  }
+
+  // HOST: exposes a calculator API
+  const hostRoot = {
+    add(a, b)      { return a + b; },
+    multiply(a, b) { return a * b; },
+    greet(name)    { return `Hello from React Native, ${name}!`; },
+  };
+
+  // GUEST: exposes an editor API
+  let editorContent = '';
+  const guestRoot = {
+    setContent(code) { editorContent = code; return true; },
+    getContent()     { return editorContent; },
+  };
+
+  // ── Simple request/response over the simulated bridge ────────────────────
+  // HOST calls GUEST
+  hostListeners.add(({ nativeEvent: { data } }) => {
+    const msg = JSON.parse(data);
+    if (msg.type !== 'request' || msg.target !== HOST_ID) return;
+    const { id, method, args } = msg;
+    let value, error;
+    try { value = hostRoot[method]?.(...args); }
+    catch(e) { error = e.message; }
+    hostSend({ type: 'response', id, source: HOST_ID, target: GUEST_ID, value, error });
+  });
+
+  // GUEST calls HOST
+  guestListeners.add(({ data }) => {
+    const msg = JSON.parse(data);
+    if (msg.type !== 'request' || msg.target !== GUEST_ID) return;
+    const { id, method, args } = msg;
+    let value, error;
+    try { value = guestRoot[method]?.(...args); }
+    catch(e) { error = e.message; }
+    guestSend({ type: 'response', id, source: GUEST_ID, target: HOST_ID, value, error });
+  });
+
+  // Response routing
+  hostListeners.add(({ nativeEvent: { data } }) => {
+    const msg = JSON.parse(data);
+    if (msg.type !== 'response' || msg.target !== HOST_ID) return;
+    const cb = pendingHost.get(msg.id);
+    if (cb) { pendingHost.delete(msg.id); msg.error ? cb.reject(new Error(msg.error)) : cb.resolve(msg.value); }
+  });
+  guestListeners.add(({ data }) => {
+    const msg = JSON.parse(data);
+    if (msg.type !== 'response' || msg.target !== GUEST_ID) return;
+    const cb = pendingGuest.get(msg.id);
+    if (cb) { pendingGuest.delete(msg.id); msg.error ? cb.reject(new Error(msg.error)) : cb.resolve(msg.value); }
+  });
+
+  const hostCall = (method, args = []) => new Promise((resolve, reject) => {
+    const id = seq++;
+    pendingGuest.set(id, { resolve, reject });
+    guestSend({ type: 'request', id, source: GUEST_ID, target: HOST_ID, method, args });
+  });
+
+  const guestCall = (method, args = []) => new Promise((resolve, reject) => {
+    const id = seq++;
+    pendingHost.set(id, { resolve, reject });
+    hostSend({ type: 'request', id, source: HOST_ID, target: GUEST_ID, method, args });
+  });
+
+  // ── Demo sequence ─────────────────────────────────────────────────────────
+  appendLog('ok', 'Bridge established (loopback shim)');
+
+  appendLog('info', 'HOST calls GUEST: setContent("const x = 42;")');
+  const setOk = await guestCall('setContent', ['const x = 42;']);
+  appendLog('ok', `setContent → ${setOk}`);
+
+  appendLog('info', 'GUEST calls HOST: add(7, 35)');
+  const sum = await hostCall('add', [7, 35]);
+  appendLog('ok', `add(7, 35) → ${sum}`);
+
+  appendLog('info', 'GUEST calls HOST: multiply(6, 7)');
+  const product = await hostCall('multiply', [6, 7]);
+  appendLog('ok', `multiply(6, 7) → ${product}`);
+
+  appendLog('info', 'GUEST calls HOST: greet("WebView")');
+  const greeting = await hostCall('greet', ['WebView']);
+  appendLog('ok', `greet → "${greeting}"`);
+
+  appendLog('info', 'HOST calls GUEST: getContent()');
+  const content = await guestCall('getContent', []);
+  appendLog('ok', `getContent → "${content}"`);
+
+  appendLog('ok', 'Demo complete.');
+}
+</script>
+</body>
+</html>

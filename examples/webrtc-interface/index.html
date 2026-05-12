@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>webrtc-interface Example</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"
+    integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+  <style>
+    body { font-family: Helvetica, sans-serif; padding: 20px; }
+    pre.code { background: #1e1e2e; color: #cdd6f4; border-radius: 4px; padding: 14px;
+               font-size: 12px; overflow-x: auto; line-height: 1.6; }
+    .badge-env { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 10px;
+                 background: #fcf3cf; color: #856404; border: 1px solid #ffc107; }
+    h2 small { color: #888; }
+    .diagram { background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px;
+               padding: 16px; font-family: monospace; font-size: 12px; text-align: center; }
+    .log-box { background: #1e1e2e; color: #cdd6f4; border-radius: 4px; padding: 10px;
+               font-family: monospace; font-size: 12px; min-height: 100px; max-height: 180px; overflow-y: auto; }
+    .log-box .ok   { color: #a6e3a1; }
+    .log-box .info { color: #89b4fa; }
+    .log-box .err  { color: #f38ba8; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <p><a href="../">&larr; All examples</a></p>
+  <h2>webrtc-interface <small>peer-to-peer DDA over RTCDataChannel</small></h2>
+  <p>
+    <span class="badge-env">⚠ Requires WebRTC signalling to connect two peers</span>
+  </p>
+  <p class="text-muted" style="margin-top:10px">
+    Once an <code>RTCDataChannel</code> is open, wrap it with <code>createDataChannelInterface()</code>
+    and get full bidirectional DDA RPC with automatic JSON serialisation. Use <code>waitForOpen()</code>
+    to safely await a connecting channel before handing it off.
+  </p>
+
+  <div class="row">
+    <div class="col-sm-12">
+      <div class="diagram">
+        Peer A (HOST) &nbsp;
+        <code>createDataChannelInterface({ channel, type: HOST, root: hostApi })</code>
+        &nbsp;⟵ RTCDataChannel ⟶&nbsp;
+        <code>createDataChannelInterface({ channel, type: GUEST, root: guestApi })</code>
+        &nbsp; Peer B (GUEST)
+      </div>
+    </div>
+  </div>
+
+  <div class="row" style="margin-top:16px">
+    <div class="col-sm-6">
+      <h4>Loopback demo <small>(same-page P2P via RTCPeerConnection)</small></h4>
+      <p class="text-muted" style="font-size:13px">
+        Creates two peer connections in the same tab (no signalling server needed).
+        The HOST exposes a calculator API; the GUEST calls it.
+      </p>
+      <button class="btn btn-primary" onclick="runLoopback()">Run loopback demo</button>
+      <button class="btn btn-default" onclick="clearLog()">Clear</button>
+      <div class="log-box" id="log" style="margin-top:10px"></div>
+    </div>
+    <div class="col-sm-6">
+      <h4>Real usage code</h4>
+      <pre class="code">import { createDataChannelInterface, waitForOpen }
+  from '@actualwave/webrtc-interface';
+import { InterfaceType }
+  from '@actualwave/deferred-data-access/interface';
+
+// After RTCPeerConnection signalling…
+const open = await waitForOpen(channel, 5_000);
+
+const { root: peerApi, stop } =
+  await createDataChannelInterface({
+    channel: open,
+    type: InterfaceType.HOST,  // or GUEST
+    root: localApi,
+    handshakeTimeout: 5_000,
+  });
+
+// Call the remote peer
+const result = await peerApi.compute(42);
+
+// Auto-stop on channel close
+channel.addEventListener('close', stop);</pre>
+    </div>
+  </div>
+
+  <div class="row" style="margin-top:16px">
+    <div class="col-sm-12">
+      <h4>waitForOpen() states</h4>
+      <pre class="code">// readyState: 'open'       → resolves immediately
+// readyState: 'connecting' → resolves when 'open' event fires (optional timeout)
+// readyState: 'closing'    → rejects immediately
+// readyState: 'closed'     → rejects immediately
+
+const ch = await waitForOpen(dataChannel, 5_000); // 5 s timeout
+const { root } = await createDataChannelInterface({ channel: ch, type, root: myApi });</pre>
+    </div>
+  </div>
+</div>
+
+<script>
+const logEl = document.getElementById('log');
+function appendLog(cls, msg) {
+  const d = document.createElement('div');
+  d.className = cls;
+  d.textContent = `[${new Date().toLocaleTimeString()}]  ${msg}`;
+  logEl.appendChild(d);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+function clearLog() { logEl.innerHTML = ''; }
+
+// Inline minimal DDA-style bidirectional RPC over RTCDataChannel
+async function runLoopback() {
+  if (!window.RTCPeerConnection) {
+    appendLog('err', 'RTCPeerConnection not available in this browser.');
+    return;
+  }
+
+  appendLog('info', 'Creating two RTCPeerConnection instances (loopback)…');
+
+  const pcA = new RTCPeerConnection();
+  const pcB = new RTCPeerConnection();
+
+  // Trickle ICE
+  pcA.onicecandidate = e => e.candidate && pcB.addIceCandidate(e.candidate);
+  pcB.onicecandidate = e => e.candidate && pcA.addIceCandidate(e.candidate);
+
+  const chA = pcA.createDataChannel('dda');
+  let chB;
+  pcB.ondatachannel = e => { chB = e.channel; };
+
+  const offer  = await pcA.createOffer();
+  await pcA.setLocalDescription(offer);
+  await pcB.setRemoteDescription(offer);
+  const answer = await pcB.createAnswer();
+  await pcB.setLocalDescription(answer);
+  await pcA.setRemoteDescription(answer);
+
+  // Wait for channel open
+  await new Promise(r => { chA.onopen = r; });
+  appendLog('ok', 'RTCDataChannel open (both sides)');
+
+  // Simple request/response protocol (simulating DDA)
+  let seq = 0;
+  const pending = new Map();
+
+  chA.onmessage = e => {
+    const { id, result, error } = JSON.parse(e.data);
+    const cb = pending.get(id);
+    if (cb) { pending.delete(id); cb(result, error); }
+  };
+
+  // HOST API: simple calculator
+  chB.onmessage = e => {
+    const { id, method, args } = JSON.parse(e.data);
+    let result, error;
+    switch (method) {
+      case 'add':      result = args[0] + args[1]; break;
+      case 'multiply': result = args[0] * args[1]; break;
+      case 'greet':    result = `Hello, ${args[0]}!`; break;
+      default:         error  = `Unknown method: ${method}`;
+    }
+    chB.send(JSON.stringify({ id, result, error }));
+  };
+
+  const call = (method, ...args) => new Promise((res, rej) => {
+    const id = seq++;
+    pending.set(id, (result, error) => error ? rej(new Error(error)) : res(result));
+    chA.send(JSON.stringify({ id, method, args }));
+  });
+
+  // Demo calls
+  appendLog('info', 'Calling remote add(10, 32)…');
+  const sum = await call('add', 10, 32);
+  appendLog('ok', `add(10, 32) → ${sum}`);
+
+  appendLog('info', 'Calling remote multiply(6, 7)…');
+  const product = await call('multiply', 6, 7);
+  appendLog('ok', `multiply(6, 7) → ${product}`);
+
+  appendLog('info', 'Calling remote greet("World")…');
+  const greeting = await call('greet', 'World');
+  appendLog('ok', `greet("World") → "${greeting}"`);
+
+  appendLog('info', 'Closing connections.');
+  chA.close(); chB.close();
+  pcA.close(); pcB.close();
+}
+</script>
+</body>
+</html>

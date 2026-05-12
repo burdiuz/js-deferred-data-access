@@ -1,14 +1,14 @@
 import typescript from '@rollup/plugin-typescript';
 import resolve from '@rollup/plugin-node-resolve';
 import commonJS from '@rollup/plugin-commonjs';
-import { terser } from 'rollup-plugin-terser';
+import terser from '@rollup/plugin-terser';
 import copy from 'rollup-plugin-copy';
 
 export default [
   {
     input: './index.ts',
     output: {
-      file: '../../dist/websocket-interface/dist/websocket-interface.umd.js',
+      file: '../../dist/websocket-interface/websocket-interface.umd.js',
       format: 'umd',
       name: 'WebSocketInterface',
       sourcemap: true,
@@ -17,7 +17,11 @@ export default [
       copy({
         targets: [
           {
-            src: ['README.md', 'LICENSE', 'package.json'],
+            src: ['README.md', 'SKILL.md', 'package.json'],
+            dest: '../../dist/websocket-interface',
+          },
+          {
+            src: ['../../LICENSE'],
             dest: '../../dist/websocket-interface',
           },
         ],
@@ -25,6 +29,7 @@ export default [
       }),
       typescript({
         tsconfig: './tsconfig.lib.json',
+        outDir: '../../dist/websocket-interface',
       }),
       resolve(),
       commonJS({
@@ -35,14 +40,16 @@ export default [
   },
   {
     input: './index.ts',
+    external: [/^@actualwave\/deferred-data-access/],
     output: {
-      file: '../../dist/websocket-interface/dist/websocket-interface.js',
+      file: '../../dist/websocket-interface/websocket-interface.js',
       format: 'cjs',
       sourcemap: true,
     },
     plugins: [
       typescript({
         tsconfig: './tsconfig.lib.json',
+        outDir: '../../dist/websocket-interface',
       }),
     ],
   },

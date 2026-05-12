@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>broadcast-interface Example</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"
+    integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+  <style>
+    body { font-family: Helvetica, sans-serif; padding: 20px; }
+    .log-box { background: #1e1e2e; color: #cdd6f4; border-radius: 4px; padding: 10px;
+               font-family: monospace; font-size: 12px; min-height: 100px; max-height: 220px;
+               overflow-y: auto; }
+    .log-box .send { color: #89b4fa; }
+    .log-box .recv { color: #a6e3a1; }
+    .log-box .info { color: #94e2d5; }
+    h2 small { color: #888; }
+    .counter-display { font-size: 48px; font-weight: bold; text-align: center; padding: 20px;
+                       background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px;
+                       margin-bottom: 10px; }
+    pre.code { background: #1e1e2e; color: #cdd6f4; border-radius: 4px; padding: 12px; font-size: 12px; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <p><a href="../">&larr; All examples</a></p>
+  <h2>broadcast-interface <small>multi-tab shared state</small></h2>
+  <p class="text-muted">
+    This tab owns a counter and broadcasts mutations via <code>BroadcastChannel</code>.
+    Open the same URL in another tab &mdash; both tabs stay in sync in real time.
+    The <code>createBroadcastInterface</code> wrapper wires DDA's bidirectional RPC
+    protocol on top of the native BroadcastChannel API.
+  </p>
+
+  <div class="row">
+    <div class="col-sm-5">
+      <div class="panel panel-default">
+        <div class="panel-heading"><strong>Shared counter</strong></div>
+        <div class="panel-body">
+          <div class="counter-display" id="counter">0</div>
+          <div class="btn-group btn-group-justified">
+            <div class="btn-group">
+              <button class="btn btn-default btn-lg" onclick="send('decrement')">−</button>
+            </div>
+            <div class="btn-group">
+              <button class="btn btn-danger btn-lg" onclick="send('reset')">Reset</button>
+            </div>
+            <div class="btn-group">
+              <button class="btn btn-primary btn-lg" onclick="send('increment')">+</button>
+            </div>
+          </div>
+          <p class="text-muted text-center" style="margin-top:10px;font-size:12px">
+            Changes sync to all tabs on channel <code>demo:counter</code>
+          </p>
+        </div>
+      </div>
+      <button class="btn btn-default btn-block" onclick="openPeer()">
+        Open peer tab &rarr;
+      </button>
+    </div>
+
+    <div class="col-sm-7">
+      <div style="margin-bottom:6px"><strong>BroadcastChannel message log</strong>
+        <button class="btn btn-xs btn-default pull-right" onclick="clearLog()">Clear</button></div>
+      <div class="log-box" id="log"></div>
+
+      <h4 style="margin-top:16px">How it works</h4>
+      <pre class="code">// HOST tab: exposes the API
+const { stop } = await createBroadcastInterface({
+  channelName: 'demo:counter',
+  type: InterfaceType.HOST,
+  root: { increment, decrement, reset, value },
+});
+
+// GUEST tab: calls the API
+const { root, stop } = await createBroadcastInterface({
+  channelName: 'demo:counter',
+  type: InterfaceType.GUEST,
+});
+await root.increment();
+const n = await root.value();</pre>
+    </div>
+  </div>
+</div>
+
+<script>
+// Demo uses native BroadcastChannel directly (no DDA library needed to run)
+const CHANNEL = 'demo:counter';
+let count = 0;
+
+const channel = new BroadcastChannel(CHANNEL);
+
+channel.onmessage = (evt) => {
+  const { action } = evt.data;
+  applyAction(action);
+  appendLog('recv', `← received "${action}" from peer tab`);
+};
+
+function applyAction(action) {
+  if (action === 'increment') count++;
+  if (action === 'decrement') count--;
+  if (action === 'reset')     count = 0;
+  document.getElementById('counter').textContent = count;
+}
+
+function send(action) {
+  applyAction(action);
+  channel.postMessage({ action });
+  appendLog('send', `→ broadcast "${action}"  (counter now ${count})`);
+}
+
+function openPeer() {
+  window.open(location.href, '_blank');
+  appendLog('info', '↗ opened peer tab on same channel');
+}
+
+const logEl = document.getElementById('log');
+function appendLog(cls, msg) {
+  const d = document.createElement('div');
+  d.className = cls;
+  d.textContent = `[${new Date().toLocaleTimeString()}]  ${msg}`;
+  logEl.appendChild(d);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+function clearLog() { logEl.innerHTML = ''; }
+
+appendLog('info', `Listening on BroadcastChannel "${CHANNEL}"`);
+</script>
+</body>
+</html>

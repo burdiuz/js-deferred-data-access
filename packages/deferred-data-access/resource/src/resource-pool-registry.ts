@@ -1,4 +1,3 @@
-import { hasOwn } from '@actualwave/has-own';
 import { IdOwner } from '@actualwave/deferred-data-access/utils';
 import { getDefaultResourcePool } from './default-resource-pool';
 import { ResourcePool } from './resource-pool';
@@ -24,7 +23,7 @@ export class ResourcePoolRegistry extends IdOwner {
    * Register ResourcePool instance.
    */
   register(pool: ResourcePool): boolean {
-    if (hasOwn(this.pools, pool.id)) return false;
+    if (Object.hasOwn(this.pools, pool.id)) return false;
 
     this.pools[pool.id] = pool;
     return true;
@@ -41,7 +40,7 @@ export class ResourcePoolRegistry extends IdOwner {
    * Check if ResourcePool registered in this registry instance.
    */
   isRegistered(pool: ResourcePool): boolean {
-    return hasOwn(this.pools, pool.id);
+    return Object.hasOwn(this.pools, pool.id);
   }
 
   /**

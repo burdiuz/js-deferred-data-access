@@ -18,19 +18,47 @@ const extractResourceFrom = (value: unknown): any => {
 
   const { poolId, id } = value as ResourceObject;
 
-  const pool = getRegistry().get(poolId);
+  const resourcePool = getRegistry().get(poolId);
 
-  if (!pool) {
+  if (!resourcePool) {
     throw new Error(`Resource Pool "${poolId}" does not exist.`);
   }
 
-  const target = pool.getById(id);
+  const target = resourcePool.getById(id);
 
-  if (!target) {
+  if (target === undefined) {
     throw new Error(`Resource "${id}" does not exist, pool "${poolId}".`);
   }
 
   return target;
+};
+
+type CommandDispatch = (
+  target: any,
+  name: PropertyName,
+  value: unknown,
+) => unknown;
+
+const commandDispatch: Partial<Record<ProxyCommand, CommandDispatch>> = {
+  [ProxyCommand.GET]: (target, name) => target[name],
+
+  [ProxyCommand.SET]: (target, name, value) => {
+    target[name] = extractResourceFrom(value);
+    return target[name];
+  },
+
+  [ProxyCommand.DELETE_PROPERTY]: (target, name) => delete target[name],
+
+  [ProxyCommand.APPLY]: (target, _name, value) => {
+    const [exeContext, args] = value as [unknown, unknown[]];
+    return target.apply(
+      extractResourceFrom(exeContext),
+      (args as unknown[]).map(extractResourceFrom)
+    );
+  },
+
+  [ProxyCommand.METHOD_CALL]: (target, name, value) =>
+    target[name](...(value as unknown[]).map(extractResourceFrom)),
 };
 
 export const applyRemoteRequest = ({
@@ -43,37 +71,27 @@ export const applyRemoteRequest = ({
 
   if (type !== ProxyCommand.APPLY && !target) {
     throw new Error(
-      `Cannot excute command ${type}/${String(
-        name
-      )} on non existent target(${target}).`
+      // Fix typo: "excute" → "execute"
+      `Cannot execute command ${type}/${String(name)} on non-existent target (${target}).`
     );
   }
 
-  let result;
+  const dispatch = commandDispatch[type as ProxyCommand];
 
-  switch (type) {
-    case ProxyCommand.GET:
-      result = target[name];
-      break;
-    case ProxyCommand.SET:
-      return (target[name] = extractResourceFrom(value));
-    case ProxyCommand.DELETE_PROPERTY:
-      return delete target[name];
-    case ProxyCommand.APPLY:
-      {
-        const [exeContext, args] = value as [unknown, unknown[]];
-        result = target.apply(
-          extractResourceFrom(exeContext),
-          args.map(extractResourceFrom)
-        );
-      }
-      break;
-    case ProxyCommand.METHOD_CALL:
-      result = target[name](...(value as unknown[]).map(extractResourceFrom));
-      break;
+  if (!dispatch) {
+    throw new Error(
+      `Unknown command type "${type}" cannot be applied remotely.`
+    );
   }
 
-  if (result && typeof result === 'function') {
+  const result = dispatch(target, name, value);
+
+  // For SET and DELETE, return the result directly without wrapping
+  if (type === ProxyCommand.SET || type === ProxyCommand.DELETE_PROPERTY) {
+    return result;
+  }
+
+  if (result !== null && result !== undefined && typeof result === 'function') {
     const resource = pool.set(result) as Resource;
     return resource.toObject();
   }

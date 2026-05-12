@@ -30,16 +30,6 @@ const createSetTrap =
       return false;
     }
 
-    /* TODO why this might be needed?
-    if (isNameSymbol(name)) {
-      target.then((context: any) => {
-        context[name] = value;
-      });
-
-      return false;
-    }
-    */
-
     handler(ProxyCommand.SET, name, value, target);
     return true;
   };
@@ -59,16 +49,12 @@ const proxyHasTrap = (wrapper: ProxyWrapper, name: PropertyName): boolean => {
     return (wrapper as any)[name];
   }
 
-  // because of this Promise does not call ProxyWrapper.then() and just returns it.
-  // if change to true, it will subscribe to ProxyWrapper.then() and wait for it to resolve
+  // Because of this, Promise does not call ProxyWrapper.then() and just returns it.
+  // If changed to true, it will subscribe to ProxyWrapper.then() and wait for it to resolve.
   return false;
 };
 
 const proxyOwnKeysTrap = () => Object.getOwnPropertyNames(EXCLUSIONS);
-
-// INFO You cannot enumerate properties of request object, this may possibly require processing a lot of data
-const proxyEnumerateTrap = () =>
-  Object.getOwnPropertyNames(EXCLUSIONS)[Symbol.iterator]();
 
 const proxyGetOwnPropertyDescriptorTrap = (
   wrapper: ProxyWrapper,
@@ -83,13 +69,14 @@ const proxyGetOwnPropertyDescriptorTrap = (
 
 export const createProxyTrapsObject = (
   handler: ProxyHandler
-): { [key: string]: (...args: never[]) => unknown } => ({
+): { [key: string]: (...args: any[]) => unknown } => ({
   get: createGetTrap(handler),
   apply: createApplyTrap(handler),
   set: createSetTrap(handler),
   deleteProperty: createDeletePropertyTrap(handler),
   has: proxyHasTrap,
   ownKeys: proxyOwnKeysTrap,
-  enumerate: proxyEnumerateTrap,
+  // NOTE: `enumerate` trap was removed from the ES Proxy spec and is a no-op
+  // in all modern runtimes — removed to avoid confusion.
   getOwnPropertyDescriptor: proxyGetOwnPropertyDescriptorTrap,
 });

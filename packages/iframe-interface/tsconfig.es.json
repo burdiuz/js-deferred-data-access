@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.lib.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "../../dist/iframe-interface",
+    "declarationDir": "../../dist/iframe-interface",
+    "declaration": true
+  }
+}

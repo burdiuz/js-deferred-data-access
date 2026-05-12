@@ -1,0 +1,38 @@
+{
+  "name": "@actualwave/iframe-interface",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "iframe-interface.js",
+  "module": "index.js",
+  "types": "index.d.ts",
+  "scripts": {
+    "build": "tsc --project tsconfig.es.json && rollup -c rollup.config.js",
+    "test": "jest",
+    "test:coverage": "jest --coverage"
+  },
+  "description": "Bidirectional DDA proxy channel between a parent page and an embedded iframe via postMessage.",
+  "keywords": [
+    "iframe",
+    "postMessage",
+    "proxy",
+    "deferred-data-access",
+    "rpc"
+  ],
+  "homepage": "https://github.com/burdiuz/js-deferred-data-access/tree/master/packages/iframe-interface",
+  "bugs": {
+    "url": "https://github.com/burdiuz/js-deferred-data-access/issues",
+    "email": "burdiuz@gmail.com"
+  },
+  "license": "MIT",
+  "author": "Oleg Galaburda <burdiuz@gmail.com> (http://actualwave.com/)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/burdiuz/js-deferred-data-access.git"
+  },
+  "publishConfig": {
+    "directory": "../../dist/iframe-interface"
+  },
+  "dependencies": {
+    "@actualwave/deferred-data-access": "^2.0.1"
+  }
+}

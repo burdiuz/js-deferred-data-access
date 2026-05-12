@@ -1,14 +1,14 @@
 import typescript from '@rollup/plugin-typescript';
 import resolve from '@rollup/plugin-node-resolve';
 import commonJS from '@rollup/plugin-commonjs';
-import { terser } from 'rollup-plugin-terser';
+import terser from '@rollup/plugin-terser';
 import copy from 'rollup-plugin-copy';
 
 export default [
   {
     input: './index.ts',
     output: {
-      file: '../../dist/worker-interface/dist/worker-interface.umd.js',
+      file: '../../dist/worker-interface/worker-interface.umd.js',
       format: 'umd',
       name: 'WorkerInterface',
       sourcemap: true,
@@ -17,7 +17,11 @@ export default [
       copy({
         targets: [
           {
-            src: ['README.md', 'LICENSE', 'package.json'],
+            src: ['README.md', 'SKILL.md', 'package.json'],
+            dest: '../../dist/worker-interface',
+          },
+          {
+            src: ['../../LICENSE'],
             dest: '../../dist/worker-interface',
           },
         ],
@@ -25,6 +29,7 @@ export default [
       }),
       typescript({
         tsconfig: './tsconfig.lib.json',
+        outDir: '../../dist/worker-interface',
       }),
       resolve(),
       commonJS({
@@ -35,14 +40,16 @@ export default [
   },
   {
     input: './index.ts',
+    external: [/^@actualwave\/deferred-data-access/],
     output: {
-      file: '../../dist/worker-interface/dist/worker-interface.js',
+      file: '../../dist/worker-interface/worker-interface.js',
       format: 'cjs',
       sourcemap: true,
     },
     plugins: [
       typescript({
         tsconfig: './tsconfig.lib.json',
+        outDir: '../../dist/worker-interface',
       }),
     ],
   },

@@ -1,13 +1,18 @@
-import { hasOwn } from '@actualwave/has-own';
 import { PropertyName } from '@actualwave/deferred-data-access/utils';
 import { CommandChain } from '@actualwave/deferred-data-access/command';
 import { ProxyCommand, getMethodCallContext } from './command';
 import { API_PROP, EXCLUSIONS } from './types';
 
-export const isNameExcluded = (name: PropertyName) => name === API_PROP || hasOwn(EXCLUSIONS, name);
+export const isNameExcluded = (name: PropertyName) => name === API_PROP || Object.hasOwn(EXCLUSIONS, name);
 
 export const isNameSymbol = (name: PropertyName) => typeof name === 'symbol';
 
+/**
+ * Walks a CommandChain and resolves it against a live target.
+ * Only GET and APPLY commands are supported — all other command types
+ * (SET, DELETE_PROPERTY, METHOD_CALL) are write/side-effect operations
+ * that cannot be replayed safely and will throw.
+ */
 export const followCommandChain = async <T = unknown>(
   head: CommandChain,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -15,11 +20,11 @@ export const followCommandChain = async <T = unknown>(
 ): Promise<T> => {
   let target = context;
 
-  if (!context) {
+  if (context === undefined) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     target = head.prev
       ? await followCommandChain(head.prev as CommandChain)
-      : head.context;
+      : await head.context;
   }
 
   const { type, name, value } = head;
@@ -29,9 +34,9 @@ export const followCommandChain = async <T = unknown>(
       return target[name as PropertyName];
     case ProxyCommand.APPLY:
       return target.apply(getMethodCallContext(head), value as never[]);
+    default:
+      throw new Error(
+        `Command "${type}" cannot be followed. Only ProxyCommand.GET and ProxyCommand.APPLY are supported by followCommandChain.`
+      );
   }
-
-  throw new Error(
-    `Unknown command "${type}" cannot be followed, only ProxyCommand.GET and APPLY are allowed.`
-  );
 };

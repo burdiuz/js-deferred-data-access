@@ -1,1 +1,1 @@
-export * from './src/websocket-interface';
+export * from './src/worker-interface';

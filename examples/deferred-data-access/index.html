@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>deferred-data-access Example</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"
+    integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+  <style>
+    body { font-family: Helvetica, sans-serif; padding: 20px; }
+    .log { background: #1e1e2e; color: #cdd6f4; border-radius: 4px; padding: 12px; min-height: 120px;
+           max-height: 260px; overflow-y: auto; font-family: monospace; font-size: 12px; }
+    .log .cmd  { color: #89b4fa; }
+    .log .res  { color: #a6e3a1; }
+    .log .err  { color: #f38ba8; }
+    .log .info { color: #94e2d5; }
+    pre.code { background: #1e1e2e; color: #cdd6f4; border-radius: 4px; padding: 14px;
+               font-size: 12px; overflow-x: auto; }
+    .btn + .btn { margin-left: 6px; }
+    h2 small { color: #888; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <p><a href="../">&larr; All examples</a></p>
+  <h2>deferred-data-access <small>proxy command handler</small></h2>
+  <p class="text-muted">
+    Every property access, assignment, and method call on a wrapped object becomes a typed
+    <strong>command</strong> delivered to an async handler. The command chain is only
+    resolved when you <code>await</code> the expression.
+  </p>
+
+  <div class="row">
+    <div class="col-sm-5">
+      <div class="panel panel-default">
+        <div class="panel-heading"><strong>Target object</strong></div>
+        <div class="panel-body">
+          <pre id="target-display" style="margin:0;background:#f9f9f9;font-size:12px"></pre>
+        </div>
+      </div>
+      <h4>Try operations</h4>
+      <div class="form-group">
+        <label>GET property</label>
+        <div class="input-group">
+          <input type="text" class="form-control" id="get-key" value="user.name" placeholder="e.g. user.name">
+          <span class="input-group-btn">
+            <button class="btn btn-default" onclick="doGet()">GET</button>
+          </span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>SET property</label>
+        <div class="input-group">
+          <input type="text" class="form-control" id="set-key" value="user.age" style="width:40%">
+          <input type="text" class="form-control" id="set-val" value="31" style="width:40%">
+          <span class="input-group-btn">
+            <button class="btn btn-default" onclick="doSet()">SET</button>
+          </span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>CALL method</label>
+        <div class="input-group">
+          <input type="text" class="form-control" id="call-name" value="greet" placeholder="method">
+          <input type="text" class="form-control" id="call-args" value="World" placeholder="arg">
+          <span class="input-group-btn">
+            <button class="btn btn-default" onclick="doCall()">CALL</button>
+          </span>
+        </div>
+      </div>
+      <button class="btn btn-sm btn-default" onclick="clearLog()">Clear log</button>
+    </div>
+
+    <div class="col-sm-7">
+      <h4>Command log</h4>
+      <div class="log" id="log"></div>
+      <div style="margin-top:12px">
+        <h4>Handler code <small>(conceptual)</small></h4>
+        <pre class="code">const wrap = handle(async (command, context) => {
+  const target = await context;
+
+  switch (command.type) {
+    case ProxyCommand.GET:
+      return target[command.name];
+
+    case ProxyCommand.SET:
+      target[command.name] = command.value;
+      return command.value;
+
+    case ProxyCommand.METHOD_CALL:
+      return target[command.name](
+        ...(command.value ?? [])
+      );
+  }
+});
+
+const proxy = wrap(myObject);
+const name  = await proxy.user.name; // → handler fires</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Minimal inline implementation of the DDA proxy concept
+const target = {
+  user: { name: 'Alice', age: 30, role: 'admin' },
+  settings: { theme: 'light', lang: 'en' },
+  greet(who) { return `Hello, ${who}!`; },
+  add(a, b)  { return a + b; },
+};
+
+const log = document.getElementById('log');
+const logLine = (cls, text) => {
+  const d = document.createElement('div');
+  d.className = cls;
+  d.textContent = text;
+  log.appendChild(d);
+  log.scrollTop = log.scrollHeight;
+};
+
+// Command handler (simulated)
+const commandLog = [];
+function makeProxy(obj, path) {
+  return new Proxy(obj, {
+    get(t, name) {
+      if (typeof name === 'symbol' || name === 'then' || name === 'catch' || name === 'finally') return t[name];
+      const val = t[name];
+      const full = path ? `${path}.${name}` : name;
+      if (typeof val === 'function') {
+        return (...args) => {
+          const result = val.apply(t, args);
+          commandLog.push({ type: 'METHOD_CALL', path: full, args, result });
+          logLine('cmd', `→ METHOD_CALL  ${full}(${args.map(a=>JSON.stringify(a)).join(', ')})`);
+          logLine('res', `   result: ${JSON.stringify(result)}`);
+          return Promise.resolve(result);
+        };
+      }
+      if (val !== null && typeof val === 'object') return makeProxy(val, full);
+      commandLog.push({ type: 'GET', path: full, result: val });
+      logLine('cmd', `→ GET  ${full}`);
+      logLine('res', `   value: ${JSON.stringify(val)}`);
+      return Promise.resolve(val);
+    },
+    set(t, name, newVal) {
+      if (typeof name === 'symbol') { t[name] = newVal; return true; }
+      const full = path ? `${path}.${name}` : name;
+      logLine('cmd', `→ SET  ${full} = ${JSON.stringify(newVal)}`);
+      t[name] = newVal;
+      updateDisplay();
+      return true;
+    },
+  });
+}
+const proxy = makeProxy(target, '');
+
+function resolvePath(obj, dotPath) {
+  return dotPath.split('.').reduce((o, k) => o?.[k], obj);
+}
+
+async function doGet() {
+  const key = document.getElementById('get-key').value.trim();
+  logLine('info', `await proxy.${key}`);
+  try {
+    const parts = key.split('.');
+    let cur = proxy;
+    for (const p of parts) cur = cur[p];
+    const val = await cur;
+    logLine('res', `   → ${JSON.stringify(val)}`);
+  } catch(e) {
+    logLine('err', `   error: ${e.message}`);
+  }
+}
+
+async function doSet() {
+  const key = document.getElementById('set-key').value.trim();
+  const raw = document.getElementById('set-val').value.trim();
+  let val; try { val = JSON.parse(raw); } catch { val = raw; }
+  logLine('info', `proxy.${key} = ${JSON.stringify(val)}`);
+  const parts = key.split('.');
+  let cur = proxy;
+  for (const p of parts.slice(0, -1)) cur = cur[p];
+  cur[parts[parts.length - 1]] = val;
+}
+
+async function doCall() {
+  const name = document.getElementById('call-name').value.trim();
+  const raw  = document.getElementById('call-args').value.trim();
+  const args = raw ? [raw] : [];
+  logLine('info', `await proxy.${name}(${args.map(a=>JSON.stringify(a)).join(', ')})`);
+  try {
+    const result = await proxy[name](...args);
+    logLine('res', `   → ${JSON.stringify(result)}`);
+  } catch(e) {
+    logLine('err', `   error: ${e.message}`);
+  }
+}
+
+function clearLog() { log.innerHTML = ''; }
+
+function updateDisplay() {
+  document.getElementById('target-display').textContent = JSON.stringify(target, null, 2);
+}
+
+updateDisplay();
+</script>
+</body>
+</html>

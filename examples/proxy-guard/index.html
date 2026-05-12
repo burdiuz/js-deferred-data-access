@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>proxy-guard Example</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"
+    integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+  <style>
+    body { font-family: Helvetica, sans-serif; padding: 20px; }
+    .result-ok  { color: #3c763d; font-weight: bold; }
+    .result-err { color: #a94442; font-weight: bold; }
+    .log-box { background: #1e1e2e; color: #cdd6f4; border-radius: 4px; padding: 10px;
+               font-family: monospace; font-size: 12px; min-height: 80px; max-height: 200px; overflow-y: auto; }
+    .log-box .ok   { color: #a6e3a1; }
+    .log-box .deny { color: #f38ba8; }
+    .log-box .info { color: #89b4fa; }
+    h2 small { color: #888; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <p><a href="../">&larr; All examples</a></p>
+  <h2>proxy-guard <small>policy &amp; permission layer</small></h2>
+  <p class="text-muted">
+    Every proxy command is evaluated against a rule set before execution.
+    Rules can allow, deny, transform, or add before/after hooks. Select a role and try operations.
+  </p>
+
+  <div class="row">
+    <div class="col-sm-5">
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <strong>Current session role</strong>
+        </div>
+        <div class="panel-body">
+          <div class="btn-group" id="role-group">
+            <button class="btn btn-default active" onclick="setRole('guest')">Guest</button>
+            <button class="btn btn-default"        onclick="setRole('user')">User</button>
+            <button class="btn btn-default"        onclick="setRole('admin')">Admin</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel panel-default">
+        <div class="panel-heading"><strong>Try an operation</strong></div>
+        <div class="panel-body">
+          <table class="table table-condensed" style="margin:0">
+            <thead><tr><th>Operation</th><th>Result</th><th></th></tr></thead>
+            <tbody id="op-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-sm-7">
+      <div class="panel panel-default">
+        <div class="panel-heading"><strong>Target object</strong></div>
+        <div class="panel-body">
+          <pre id="target-display" style="margin:0;background:#f9f9f9;font-size:12px"></pre>
+        </div>
+      </div>
+      <div style="margin-bottom:6px"><strong>Access log</strong>
+        <button class="btn btn-xs btn-default pull-right" onclick="clearLog()">Clear</button></div>
+      <div class="log-box" id="log"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+class PermissionError extends Error {
+  constructor(msg) { super(msg); this.name = 'PermissionError'; }
+}
+
+// Inline implementation of proxy-guard (reactive Proxy mode)
+function createGuardedProxy(target, { context: ctxFn, rules, defaultPolicy = 'allow' }) {
+  const makeProxy = (obj, path) => new Proxy(typeof obj === 'function' ? obj : Object(obj), {
+    get(t, name) {
+      if (typeof name === 'symbol' || name === 'then' || name === 'catch') return t[name];
+      const fullPath = path ? `${path}.${name}` : name;
+      return new Promise(async (resolve, reject) => {
+        try {
+          const ctx = ctxFn ? await ctxFn() : undefined;
+          const cmd = { type: 'GET', name, path: fullPath };
+          const ok = await evalRules(rules, cmd, ctx, defaultPolicy);
+          if (!ok) { reject(new PermissionError(`Access denied: ${fullPath}`)); return; }
+          const val = t[name];
+          if (val !== null && typeof val === 'object') resolve(makeProxy(val, fullPath));
+          else resolve(val);
+        } catch(e) { reject(e); }
+      });
+    },
+    set(t, name, newVal) {
+      if (typeof name === 'symbol') { t[name] = newVal; return true; }
+      const fullPath = path ? `${path}.${name}` : name;
+      (async () => {
+        const ctx = ctxFn ? await ctxFn() : undefined;
+        const cmd = { type: 'SET', name, path: fullPath };
+        try {
+          const ok = await evalRules(rules, cmd, ctx, defaultPolicy);
+          if (ok) t[name] = newVal;
+          else throw new PermissionError(`Access denied: ${fullPath}`);
+        } catch(e) { onError(e); }
+      })();
+      return true;
+    },
+  });
+  return makeProxy(target, '');
+}
+
+async function evalRules(rules, cmd, ctx, defaultPolicy) {
+  for (const rule of rules) {
+    if (rule.match) {
+      if (rule.match.type && rule.match.type !== cmd.type) continue;
+      if (rule.match.name) {
+        const mn = rule.match.name;
+        if (Array.isArray(mn) ? !mn.includes(cmd.name) : mn !== cmd.name) continue;
+      }
+    }
+    if (rule.before) await rule.before(cmd, ctx);
+    if (rule.deny !== undefined) {
+      const denied = typeof rule.deny === 'function' ? await rule.deny(cmd, ctx) : rule.deny;
+      if (denied) return false;
+    }
+    if (rule.allow !== undefined) {
+      const ok = typeof rule.allow === 'function' ? await rule.allow(cmd, ctx) : rule.allow;
+      if (!rule.continue) return ok;
+    }
+    if (!rule.continue) break;
+  }
+  return defaultPolicy === 'allow';
+}
+
+let onError = () => {};
+
+// The protected settings object
+const settings = { theme: 'light', maxRetries: 3, secretKey: 'sk-prod-abc123', apiVersion: 2 };
+
+let currentRole = 'guest';
+function setRole(role) {
+  currentRole = role;
+  document.querySelectorAll('#role-group .btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  renderTable();
+}
+
+const guard = createGuardedProxy(settings, {
+  context: () => currentRole,
+  defaultPolicy: 'deny',
+  rules: [
+    { match: { name: ['theme', 'apiVersion'] }, allow: () => true },
+    { match: { name: 'maxRetries' },            allow: (_, role) => role === 'user' || role === 'admin' },
+    { match: { name: 'secretKey' },             allow: (_, role) => role === 'admin' },
+    { match: { type: 'SET' },                   allow: (_, role) => role === 'admin' },
+    {
+      before: (cmd, role) => appendLog('info', `[audit] ${role} → ${cmd.type} ${cmd.path}`),
+      continue: true,
+    },
+  ],
+});
+
+const operations = [
+  { label: 'Read theme',      op: () => guard.theme },
+  { label: 'Read maxRetries', op: () => guard.maxRetries },
+  { label: 'Read secretKey',  op: () => guard.secretKey },
+  { label: 'Set theme=dark',  op: () => { guard.theme = 'dark'; return Promise.resolve('(applied)'); } },
+];
+
+function renderTable() {
+  const tbody = document.getElementById('op-table');
+  tbody.innerHTML = operations.map((o, i) =>
+    `<tr>
+       <td>${o.label}</td>
+       <td id="res-${i}"><span class="text-muted">—</span></td>
+       <td><button class="btn btn-xs btn-primary" onclick="tryOp(${i})">Try</button></td>
+     </tr>`
+  ).join('');
+  document.getElementById('target-display').textContent = JSON.stringify(settings, null, 2);
+}
+
+async function tryOp(i) {
+  const cell = document.getElementById(`res-${i}`);
+  cell.innerHTML = '<span class="text-muted">…</span>';
+  try {
+    const result = await operations[i].op();
+    cell.innerHTML = `<span class="result-ok">✓ ${JSON.stringify(result)}</span>`;
+    appendLog('ok', `✓ allowed → ${JSON.stringify(result)}`);
+    document.getElementById('target-display').textContent = JSON.stringify(settings, null, 2);
+  } catch(e) {
+    cell.innerHTML = `<span class="result-err">✗ ${e.message}</span>`;
+    appendLog('deny', `✗ denied: ${e.message}`);
+  }
+}
+
+const logEl = document.getElementById('log');
+function appendLog(cls, msg) {
+  const d = document.createElement('div');
+  d.className = cls;
+  d.textContent = msg;
+  logEl.appendChild(d);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+function clearLog() { logEl.innerHTML = ''; }
+
+onError = e => appendLog('deny', `✗ ${e.message}`);
+
+renderTable();
+</script>
+</body>
+</html>

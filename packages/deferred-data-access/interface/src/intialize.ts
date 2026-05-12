@@ -28,21 +28,6 @@ import {
   resolveOrTimeout,
 } from './utils';
 
-/*
-{
-  id,
-  type,
-  root,
-  remoteId, // we might expect a connection with matching ID
-  subscribe,
-  unsubscribe,
-  sendMessage,
-  handshakeTimeout,
-  responseTimeout,
-  handshakeInterval,
-  preprocessResponse,
-}
-*/
 export const initialize = async ({
   id: initId,
   root: apiRoot,
@@ -66,7 +51,8 @@ export const initialize = async ({
     ...params,
   } as HandshakeData);
 
-  const pendingRequests = new Map(); // {[key: string]: { resolve: (value) => void, reject: (error) => void }}
+  // Tracks in-flight requests: messageId → { resolve, reject }
+  const pendingRequests = new Map<string, { resolve: (v: unknown) => void; reject: (e: unknown) => void }>();
 
   const isMessage = createIsMessage(id);
   const createRequest = createRequestMessage(id, remoteId);
@@ -80,33 +66,36 @@ export const initialize = async ({
     }
 
     switch (data.type) {
-      case MessageType.REQUEST:
-        {
-          const request = data as RequestMessage;
-          try {
-            const value = await applyRemoteRequest(request);
-
-            sendMessage(createResponse(request, value));
-          } catch (error: any) {
-            sendMessage(
-              createResponse(request, undefined, { message: error.message })
-            );
-          }
+      case MessageType.REQUEST: {
+        const request = data as RequestMessage;
+        try {
+          const value = await applyRemoteRequest(request);
+          sendMessage(createResponse(request, value));
+        } catch (error: any) {
+          sendMessage(
+            createResponse(request, undefined, { message: error.message })
+          );
         }
         break;
-      case MessageType.RESPONSE:
-        {
-          const { id, value, error } = data as ResponseMessage;
-          const { resolve, reject } = pendingRequests.get(id) || {};
+      }
+      case MessageType.RESPONSE: {
+        const { id, value, error } = data as ResponseMessage;
+        const pending = pendingRequests.get(id);
 
-          // if error present call reject, if not -- call resolve
-          if (reject && error) {
-            reject(error);
-          } else if (resolve) {
-            resolve(value);
-          }
+        if (!pending) {
+          return;
+        }
+
+        pendingRequests.delete(id);
+
+        // Settle exactly once — delete before calling to prevent double-settle
+        if (error) {
+          pending.reject(error);
+        } else {
+          pending.resolve(value);
         }
         break;
+      }
     }
   };
 
@@ -121,42 +110,32 @@ export const initialize = async ({
     async (
       command: ICommandList,
       context: CommandContext | undefined,
-      // wrap() is a partially applied handle(), so it makes possible to apply same command handlers to other objects
       wrap: (context: CommandContext, command?: ICommandChain) => unknown
     ) => {
       const { responseTimeout } = params;
 
-      /*
-      If target is not a resource, there are no need to send command to remote, it can be resolved immediately.
-      Need to know if there will be such cases.
-    */
-
-      const id = generateMessageId();
+      const msgId = generateMessageId();
       const timeoutError = `Could not receive command ${command.type}/${String(
         command.name
       )} response in ${responseTimeout}ms.`;
 
       const resultPromise = resolveOrTimeout({
         handler: async (resolve, reject) => {
-          try{
-            const request = await createRequest(command, context, id);
+          try {
+            const request = await createRequest(command, context, msgId);
+            // Register before sending to eliminate the race between send and response arrival
+            pendingRequests.set(msgId, { resolve, reject });
             sendMessage(request);
-            pendingRequests.set(id, { resolve, reject });
-          } catch(error) {
+          } catch (error) {
             reject(error);
           }
         },
         timeout: responseTimeout || 0,
         timeoutError,
         onTimeout: () => {
-          const rq = pendingRequests.get(id);
-
-          if (!rq) {
-            return;
-          }
-
-          rq.reject(new Error(timeoutError));
-          pendingRequests.delete(id);
+          // resolveOrTimeout already rejected the race promise.
+          // We only need to clean up the pending entry here.
+          pendingRequests.delete(msgId);
         },
       });
 

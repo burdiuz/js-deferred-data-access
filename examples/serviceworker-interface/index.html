@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>serviceworker-interface Example</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"
+    integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+  <style>
+    body { font-family: Helvetica, sans-serif; padding: 20px; }
+    pre.code { background: #1e1e2e; color: #cdd6f4; border-radius: 4px; padding: 14px;
+               font-size: 12px; overflow-x: auto; line-height: 1.6; }
+    .badge-env { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 10px;
+                 background: #fcf3cf; color: #856404; border: 1px solid #ffc107; }
+    h2 small { color: #888; }
+    .log-box { background: #1e1e2e; color: #cdd6f4; border-radius: 4px; padding: 10px;
+               font-family: monospace; font-size: 12px; min-height: 80px; max-height: 160px;
+               overflow-y: auto; }
+    .log-box .ok   { color: #a6e3a1; }
+    .log-box .err  { color: #f38ba8; }
+    .log-box .info { color: #89b4fa; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <p><a href="../">&larr; All examples</a></p>
+  <h2>serviceworker-interface <small>page ↔ service worker</small></h2>
+  <p>
+    <span class="badge-env">⚠ Requires HTTPS or localhost</span>
+  </p>
+  <p class="text-muted" style="margin-top:10px">
+    The page is the <strong>GUEST</strong> (initiates the handshake) and the service worker is
+    the <strong>HOST</strong> (waits). A dedicated per-client DDA session is created on the
+    first message from each tab so multiple tabs can each have independent RPC connections
+    to the same service worker.
+  </p>
+
+  <div class="row">
+    <div class="col-sm-6">
+      <h4>SW registration demo</h4>
+      <p class="text-muted" style="font-size:13px">
+        The buttons below exercise real Service Worker registration and messaging if you serve
+        this folder from <code>localhost</code> with <code>npm run serve</code>.
+      </p>
+      <button class="btn btn-primary" onclick="registerSW()">Register service worker</button>
+      <button class="btn btn-default" onclick="clearLog()">Clear log</button>
+      <div class="log-box" id="log" style="margin-top:10px"></div>
+    </div>
+    <div class="col-sm-6">
+      <h4>Page code <small>(GUEST)</small></h4>
+      <pre class="code">import { createPageInterface }
+  from '@actualwave/serviceworker-interface';
+
+await navigator.serviceWorker.register('/sw.js');
+await navigator.serviceWorker.ready;
+
+const { root: swApi, stop } = await createPageInterface({
+  root: {
+    notifyUser(msg) {
+      showBanner(msg);
+    },
+  },
+  handshakeTimeout: 5_000,
+});
+
+// Call SW methods
+const stats = await swApi.getCacheStats();
+console.log('Cached:', stats.count);
+
+await swApi.clearExpiredCache();</pre>
+    </div>
+  </div>
+
+  <div class="row" style="margin-top:16px">
+    <div class="col-sm-6">
+      <h4>Service worker code <small>(HOST)</small></h4>
+      <pre class="code">// sw.js
+import { createWorkerInterface }
+  from '@actualwave/serviceworker-interface';
+
+const server = createWorkerInterface({
+  root: makeSwApi(), // per-instance
+  handshakeTimeout: 5_000,
+  onConnect({ clientId, root: pageApi }) {
+    console.log('Client:', clientId);
+
+    // Push back to the page
+    pageApi.notifyUser('SW ready!');
+  },
+});
+
+// sw.js is HOST — one session per tab
+self.addEventListener('activate', () => server.stop());</pre>
+    </div>
+    <div class="col-sm-6">
+      <h4>Key design notes</h4>
+      <ul>
+        <li><strong>Page = GUEST</strong>: initiates handshake pings so the SW doesn't need to discover clients.</li>
+        <li><strong>Per-client sessions</strong>: each tab gets its own isolated DDA session identified by <code>event.source.id</code>.</li>
+        <li><strong>Bidirectional</strong>: the SW can call methods on the page (e.g. push notifications, cache events) just like the page calls SW methods.</li>
+        <li><strong>Auto-cleanup</strong>: disconnecting a tab disposes its session; the SW's global listener stays active for new connections.</li>
+      </ul>
+      <p class="text-muted" style="font-size:12px">
+        See <code>page.ts</code> and <code>sw.ts</code> in this folder for full TypeScript examples.
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+const logEl = document.getElementById('log');
+function appendLog(cls, msg) {
+  const d = document.createElement('div');
+  d.className = cls;
+  d.textContent = `[${new Date().toLocaleTimeString()}]  ${msg}`;
+  logEl.appendChild(d);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+function clearLog() { logEl.innerHTML = ''; }
+
+async function registerSW() {
+  if (!('serviceWorker' in navigator)) {
+    appendLog('err', 'Service Worker API not available in this context.');
+    return;
+  }
+  try {
+    appendLog('info', 'Registering service worker…');
+    const reg = await navigator.serviceWorker.register('./sw-demo.js', { scope: './' });
+    appendLog('ok',  `Registered: scope = ${reg.scope}`);
+    await navigator.serviceWorker.ready;
+    appendLog('ok',  'Service worker is active and ready.');
+    appendLog('info', 'In a real app, createPageInterface() would open the DDA channel now.');
+  } catch(e) {
+    appendLog('err', `Registration failed: ${e.message}`);
+    appendLog('info', 'Tip: serve this folder over HTTP (npm run serve) — file:// does not support SW.');
+  }
+}
+</script>
+</body>
+</html>

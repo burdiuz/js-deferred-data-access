@@ -8,7 +8,7 @@ $(() => {
     event.preventDefault();
     const item = getFormData();
     item.id = $('form.edit').data('item').id;
-    // PUT /example/api/portal/users/customers/:id -- update customer info
+    // PUT /example/api/portal/users/customers/:id via proxy SET + forLatest()
     customers[item.id] = item;
     await customers.forLatest();
     reloadList();
@@ -16,41 +16,39 @@ $(() => {
 
   $('button.add').on('click', async (event) => {
     event.preventDefault();
-    // POST /example/api/portal/users/customers -- create new customer
+    // POST /example/api/portal/users/customers via proxy call
     try {
       await customers(getFormData());
       reloadList();
     } catch (error) {
-      console.log(error);
+      console.error(error);
       alert('Error happened when adding new customer.');
     }
   });
 });
 
 const reloadList = async () => {
-  $('.list tbody').empty();
-  // GET /example/api/portal/users/customers -- get list of customers
+  // GET /example/api/portal/users/customers
   try {
     const { body } = await customers.read();
     displayList(body);
   } catch (error) {
-    console.log(error);
+    console.error(error);
     alert('Error happened while loading customers list.');
   }
 };
 
 const displayList = (list) => {
-  var $container = $('.list tbody');
+  const $container = $('.list tbody');
   $container.empty();
 
   $.each(list, (index, item) => {
-    var $el = $(
-      `<tr>
+    const $el = $(
+      `<tr class="customer-${item.id}">
         <td>${item.name}</td>
         <td><a href="" class="delete">Delete</a></td>
-       </tr>`
+      </tr>`
     );
-    $el.addClass('customer-' + item.id);
     $el.on('click', 'td', () => editCustomer(item));
     $el.on('click', 'a.delete', (event) => {
       event.preventDefault();
@@ -82,21 +80,20 @@ const getFormData = () => ({
 });
 
 const editCustomer = async (item) => {
-  // GET /example/api/portal/users/customers/:id -- get customer info
+  // GET /example/api/portal/users/customers/:id via proxy GET
   try {
     const { body } = await customers[item.id];
     displayForm(body);
   } catch (error) {
-    console.log(error);
+    console.error(error);
     alert('Error happened while loading customer info.');
   }
 };
 
 const deleteCustomer = async (item) => {
-  if (confirm('Delete customer?')) {
-    // DELETE /example/api/portal/users/customers/:id
-    delete customers[item.id];
-    await customers.forLatest();
-    $('.list tr.customer-' + item.id).remove();
-  }
+  if (!confirm('Delete customer?')) return;
+  // DELETE /example/api/portal/users/customers/:id via proxy delete
+  delete customers[item.id];
+  await customers.forLatest();
+  $(`.list tr.customer-${item.id}`).remove();
 };

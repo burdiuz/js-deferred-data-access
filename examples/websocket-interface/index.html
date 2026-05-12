@@ -1,63 +1,38 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>RESTObject Example</title>
+  <title>WebSocket Interface Example</title>
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"
     integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
-  <style type="text/css">
-    body {
-      font: Helvetica;
-    }
-
-    th,
-    td {
-      padding: 4px;
-    }
-
-    table tbody tr:nth-child(even) {
-      background-color: #FAFAFA;
-    }
-
-    table tbody tr:hover {
-      cursor: pointer;
-      background-color: #E0F0F0;
-    }
-
-    table tbody td:last-child {
-      width: 15%;
-    }
-
-    table thead th {
-      background-color: #AAEEFF;
-    }
+  <style>
+    body { font-family: Helvetica, sans-serif; padding: 20px; }
+    th, td { padding: 4px 8px; }
+    table tbody tr:nth-child(even) { background-color: #fafafa; }
+    table tbody tr:hover { cursor: pointer; background-color: #e0f0f0; }
+    table tbody td:last-child { width: 15%; }
+    table thead th { background-color: #aaeeff; }
+    .status { font-size: 12px; color: #888; margin-bottom: 8px; }
   </style>
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"
     integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
-  <script type="text/javascript" src="websocket-interface.umd.js"></script>
-  <script type="text/javascript" src="example.js"></script>
-  <!--script type="text/javascript" src="example.proxy.js"></script-->
+  <script src="./websocket-interface.umd.js"></script>
+  <script src="./example.js"></script>
 </head>
-
 <body>
   <div class="container">
+    <h2>WebSocket Interface Example <small>DDA proxy over a WebSocket connection</small></h2>
+    <p class="text-muted">
+      Client calls <code>api.root.addCustomer()</code>, <code>api.root.listCustomers()</code> etc.
+      as plain async functions — the calls are transparently routed to the server over WebSocket.
+      The server also pushes an updated list to the client every 2.5 s via <code>api.root.updateList()</code>.
+    </p>
+    <p class="status" id="status">Connecting…</p>
+
     <div class="row">
-      <div class="col-xs-12">
-        <h2>RESTObject Example</h2>
-      </div>
-    </div>
-    <div class="row">
-      <div class="col-xs-6">
-        <h4>Customer Add/Edit form</h4>
-      </div>
-      <div class="col-xs-6">
-        <h4>Customer list</h4>
-      </div>
-    </div>
-    <div class="row">
-      <div class="col-xs-6">
+      <div class="col-sm-5">
+        <h4>Add / Edit customer</h4>
         <form class="edit">
           <div class="form-group">
             <label for="name">Name</label>
@@ -69,23 +44,22 @@
           </div>
           <div class="form-group">
             <label for="age">Age</label>
-            <input type="number" min="25" max="120" class="form-control" id="age">
+            <input type="number" min="18" max="120" class="form-control" id="age">
           </div>
           <div class="form-group">
             <label for="phone">Phone</label>
-            <input type="phone" class="form-control" id="phone">
+            <input type="tel" class="form-control" id="phone">
           </div>
           <div class="form-group">
             <label for="address">Address</label>
             <input type="text" class="form-control" id="address">
           </div>
-          <button class="save btn btn-lg btn-primary btn-block hidden">Save Changes</button>
-          <button class="add btn btn-lg btn-default btn-block">Add as New</button>
+          <button class="save btn btn-primary btn-block hidden">Save Changes</button>
+          <button class="add btn btn-default btn-block">Add as New</button>
         </form>
       </div>
-      <div class="col-xs-6">
-      </div>
-      <div class="col-xs-6">
+      <div class="col-sm-7">
+        <h4>Customer list</h4>
         <table class="list" width="100%">
           <thead>
             <tr>
@@ -93,12 +67,10 @@
               <th></th>
             </tr>
           </thead>
-          <tbody>
-          </tbody>
+          <tbody></tbody>
         </table>
       </div>
     </div>
   </div>
 </body>
-
 </html>

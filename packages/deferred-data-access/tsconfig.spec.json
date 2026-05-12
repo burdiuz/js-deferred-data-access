@@ -1,15 +1,32 @@
 {
-  "extends": "./tsconfig.json",
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "../../dist/out-tsc",
+    "outDir": "./dist/out-tsc",
     "module": "commonjs",
-    "types": ["jest", "node"]
+    "target": "ES2022",
+    "lib": ["ES2022", "dom"],
+    "strict": false,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "moduleResolution": "node16",
+    "types": ["jest", "node"],
+    "paths": {
+      "@actualwave/deferred-data-access": ["./index.ts"],
+      "@actualwave/deferred-data-access/command": ["./command/index.ts"],
+      "@actualwave/deferred-data-access/interface": ["./interface/index.ts"],
+      "@actualwave/deferred-data-access/proxy": ["./proxy/index.ts"],
+      "@actualwave/deferred-data-access/resource": ["./resource/index.ts"],
+      "@actualwave/deferred-data-access/record": ["./record/index.ts"],
+      "@actualwave/deferred-data-access/utils": ["./utils/index.ts"]
+    }
   },
   "include": [
     "**/*.spec.ts",
-    "**/*.spec.tsx",
-    "**/*.spec.js",
-    "**/*.spec.jsx",
-    "**/*.d.ts"
+    "**/*.test.ts",
+    "**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
   ]
 }

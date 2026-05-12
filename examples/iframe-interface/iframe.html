@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Counter Widget</title>
+  <script src="./iframe-interface.umd.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 16px;
+      background: #f0f4f8;
+    }
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    h3 { margin: 0 0 12px; font-size: 14px; color: #555; text-transform: uppercase; letter-spacing: 1px; }
+    .count {
+      font-size: 48px;
+      font-weight: bold;
+      text-align: center;
+      color: #2c5f8a;
+      margin: 12px 0;
+    }
+    .btns { display: flex; gap: 8px; justify-content: center; margin-top: 12px; }
+    button {
+      padding: 8px 20px;
+      font-size: 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .dec { background: #e74c3c; color: white; }
+    .inc { background: #27ae60; color: white; }
+    .rst { background: #95a5a6; color: white; font-size: 13px; padding: 8px 14px; }
+    .log {
+      margin-top: 12px;
+      font-size: 11px;
+      color: #888;
+      max-height: 80px;
+      overflow-y: auto;
+    }
+    .log p { margin: 2px 0; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h3>Counter Widget</h3>
+    <div class="count" id="countDisplay">0</div>
+    <div class="btns">
+      <button class="dec" id="decBtn">−</button>
+      <button class="inc" id="incBtn">+</button>
+      <button class="rst" id="rstBtn">Reset</button>
+    </div>
+    <div class="log" id="log"></div>
+  </div>
+
+  <script>
+    let count = 0;
+
+    const display = document.getElementById('countDisplay');
+    const logEl = document.getElementById('log');
+
+    function updateDisplay() {
+      display.textContent = count;
+    }
+
+    function addLog(msg) {
+      const p = document.createElement('p');
+      p.textContent = new Date().toLocaleTimeString() + ' — ' + msg;
+      logEl.prepend(p);
+    }
+
+    // Local button handlers
+    document.getElementById('incBtn').onclick = () => { count++; updateDisplay(); addLog('Incremented locally'); };
+    document.getElementById('decBtn').onclick = () => { count--; updateDisplay(); addLog('Decremented locally'); };
+    document.getElementById('rstBtn').onclick = () => { count = 0; updateDisplay(); addLog('Reset locally'); };
+
+    // Connect to parent via iframe-interface
+    IframeInterface.initializeIframe({
+      root: {
+        increment() { count++; updateDisplay(); return count; },
+        decrement() { count--; updateDisplay(); return count; },
+        reset()     { count = 0; updateDisplay(); return count; },
+        getCount()  { return count; },
+      },
+    }).then(({ root: parent }) => {
+      addLog('Connected to parent page');
+
+      // Read the user's name from the parent
+      parent.getUser().then(user => {
+        addLog('Parent user: ' + user.name);
+      });
+
+      // Notify parent whenever local buttons are clicked
+      document.getElementById('incBtn').addEventListener('click', () => {
+        parent.onCountChange(count);
+      });
+      document.getElementById('decBtn').addEventListener('click', () => {
+        parent.onCountChange(count);
+      });
+      document.getElementById('rstBtn').addEventListener('click', () => {
+        parent.onCountChange(count);
+      });
+    });
+  </script>
+</body>
+</html>

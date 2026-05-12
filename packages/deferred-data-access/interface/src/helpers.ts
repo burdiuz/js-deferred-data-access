@@ -64,7 +64,7 @@ export const createSubscriberFns = (
   }
 
   throw new Error(
-    'Worker instance does not implement EventEmitter insterface, ' +
+    'Target does not implement EventEmitter insterface, ' +
       'it must expose "addEventListener"/"removeEventListener", ' +
       '"addListener"/"removeListener" or ' +
       '"on"/"off" method pair.'

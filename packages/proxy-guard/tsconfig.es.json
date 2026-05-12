@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.lib.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "../../dist/proxy-guard",
+    "declarationDir": "../../dist/proxy-guard",
+    "declaration": true
+  }
+}

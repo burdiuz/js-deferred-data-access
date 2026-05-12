@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.lib.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "../../dist/idb-proxy",
+    "declarationDir": "../../dist/idb-proxy",
+    "declaration": true
+  }
+}

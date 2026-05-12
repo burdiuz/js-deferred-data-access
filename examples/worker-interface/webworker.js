@@ -1,6 +1,3 @@
-/**
- * Created by Oleg Galaburda on 10.02.16.
- */
 importScripts('./worker-interface.umd.js');
 
 const privateAPI = {
@@ -15,25 +12,21 @@ const api = WorkerInterface.initializeWorker({
     requestTime() {
       return Date.now();
     },
+
+    // Demonstrates passing a function reference from the main thread as a callback.
+    // The worker receives it as a DDA proxy and can call it remotely.
     callHandler(handler) {
-      /*
-        This is just an example of executing a callback function
-        passed from a web application that is actually a refrence to "requestTime".
-      */
       return handler();
     },
+
     async getPrivateAPI(secret) {
-      if (secret !== 'password1') {
-        return null;
-      }
+      if (secret !== 'password1') return null;
 
       const { pool } = await api;
-
       const resource = pool.set(privateAPI);
-
       return resource.toObject();
     },
   },
 });
 
-console.log('Worker script was imported.');
+console.log('Worker script loaded.');

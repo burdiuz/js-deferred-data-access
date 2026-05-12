@@ -1,5 +1,5 @@
 /*
-  Property name could be a string or an instance of Symbol
+  Property name could be a string or an instance of Symbol.
 */
 export type PropertyName = string | symbol;
 
@@ -9,8 +9,12 @@ export interface IResource {
   type: string;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type CommandContext = Promise<unknown | IResource>;
+/*
+  CommandContext is always a Promise. The resolved value may be either a plain
+  object/value or an IResource descriptor (used over message-passing boundaries).
+  `Promise<unknown>` is intentionally broad here — callers narrow as needed.
+*/
+export type CommandContext = Promise<unknown>;
 
 export interface ICommand {
   type: string;
@@ -20,8 +24,8 @@ export interface ICommand {
 }
 
 export interface ICommandChain extends ICommand {
-  prev?: ICommandChain;
-  toObject(): ICommand;
+  readonly prev?: ICommandChain;
+  toObject(includeContext?: boolean): ICommand;
 }
 
 export interface ICommandList extends ICommandChain {
@@ -35,11 +39,14 @@ export interface ICommandList extends ICommandChain {
 }
 
 /*
- Function supplied by user, it is being called for a command
+  Function supplied by the user, called once per command.
+  - command: the full command chain describing what was intercepted
+  - context: the Promise that resolves to the target object, if known
+  - wrap: partially-applied handle() — lets the handler recursively proxy
+    return values with the same command handler
 */
 export type CommandHandler = (
   command: ICommandList,
   context: CommandContext | undefined,
-  // wrap() is a partially applied handle(), so it makes possible to apply same command handlers to other objects
   wrap: (context: CommandContext, command?: ICommandChain) => unknown
 ) => Promise<unknown>;

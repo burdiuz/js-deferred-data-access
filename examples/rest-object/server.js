@@ -1,7 +1,6 @@
-/**
- * Created by Oleg Galaburda on 23.07.15.
- */
 'use strict';
+
+const express = require('express');
 
 let lastId = 20;
 
@@ -12,37 +11,25 @@ const customers = (() => {
   const data = {};
   let length = lastId;
   while (length--) {
-    var item = {
+    const item = {
       id: String(length + 1),
       name: fnames[(Math.random() * fnames.length) >> 0] + ' ' + lnames[(Math.random() * lnames.length) >> 0],
       company: cmpnies[(Math.random() * cmpnies.length) >> 0],
       age: 25 + parseInt(Math.random() * 35),
       phone: '000-555-55-55',
-      address: String((Math.random() * 500) >> 0) + ' Street st.'
+      address: String((Math.random() * 500) >> 0) + ' Street st.',
     };
     data[item.id] = item;
   }
   return data;
 })();
 
-var express = require('express');
-var bodyParser = require('body-parser');
-
-var app = express();
-app.use(bodyParser.json()); // for parsing application/json
-//app.use(bodyParser.urlencoded({extended: true})); // for parsing application/x-www-form-urlencoded
+const app = express();
+app.use(express.json());
 
 app.get('/example/api/portal/users/customers', (req, res) => {
-  const list = [];
-  for (var name in customers) {
-    if (!customers.hasOwnProperty(name)) continue;
-    var item = customers[name];
-    list.push({
-      id: item.id,
-      name: item.name
-    });
-  }
-  res.json(list).end();
+  const list = Object.values(customers).map(({ id, name }) => ({ id, name }));
+  res.json(list);
 });
 
 app.post('/example/api/portal/users/customers', (req, res) => {
@@ -50,49 +37,39 @@ app.post('/example/api/portal/users/customers', (req, res) => {
   if (data && data.name) {
     data.id = String(++lastId);
     customers[data.id] = data;
-    res.json({
-      success: true,
-      id: data.id
-    }).end();
+    res.json({ success: true, id: data.id });
   } else {
-    res.status(400).json({success: false}).end();
+    res.status(400).json({ success: false });
   }
 });
 
 app.route('/example/api/portal/users/customers/:id')
   .get((req, res) => {
     const { id } = req.params;
-    if (customers.hasOwnProperty(id)) {
-      res.json(customers[id]).end();
-    } else {
-      res.status(400).json({success: false}).end();
-    }
+    customers[id] ? res.json(customers[id]) : res.status(404).json({ success: false });
   })
   .put((req, res) => {
     const { id } = req.params;
     const data = req.body;
-    if (customers.hasOwnProperty(id) && data && data.name && data.id === id) {
+    if (customers[id] && data && data.name && data.id === id) {
       customers[id] = data;
-      res.json({success: true}).end();
+      res.json({ success: true });
     } else {
-      res.status(400).json({success: false}).end();
+      res.status(400).json({ success: false });
     }
   })
   .delete((req, res) => {
     const { id } = req.params;
-    if (customers.hasOwnProperty(id)) {
+    if (customers[id]) {
       delete customers[id];
-      res.json({success: true}).end();
+      res.json({ success: true });
     } else {
-      res.status(400).json({success: false}).end();
+      res.status(404).json({ success: false });
     }
-  })
-  .post((req, res) => {
-    res.status(400).json({success: false}).end();
   });
 
 app.use(express.static('.'));
 
 app.listen(8081, () => {
-  console.log('Server started...');
+  console.log('REST Object example running at http://localhost:8081');
 });

@@ -5,9 +5,9 @@ import {
 import {
   ProxyCommand,
   unwrapProxy,
+  isWrappedWithProxy,
 } from '@actualwave/deferred-data-access/proxy';
 import { RequestMessage, ResponseMessage } from './types';
-import { isWrappedWithProxy } from '@actualwave/deferred-data-access/proxy';
 import { pool } from './request';
 import { Resource } from '@actualwave/deferred-data-access/resource';
 
@@ -26,13 +26,13 @@ export const generateId = createUIDGenerator('wi');
 export const generateMessageId = createUIDGenerator('m');
 
 const lookupForResource = async (value: unknown): Promise<unknown> => {
-  if (!value) {
+  if (value === null || value === undefined) {
     return value;
   }
 
-  if (value instanceof Array) {
+  if (Array.isArray(value)) {
     const list = [];
-    for (let item of value) {
+    for (const item of value) {
       list.push(await lookupForResource(item));
     }
     return list;
@@ -118,21 +118,20 @@ export const createResponseMessage =
 
 export const createIsHandshakeMessage =
   (id = '') =>
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (data: any): boolean =>
-    data &&
-    typeof data === 'object' &&
-    typeof data.id === 'string' &&
-    ((!id && data.id.match(/^wi/)) || (id && id === data.id));
+  (data: unknown): boolean => {
+    if (data == null || typeof data !== 'object') return false;
+    const dataId = (data as Record<string, unknown>).id;
+    if (typeof dataId !== 'string') return false;
+    return id ? id === dataId : /^wi/.test(dataId);
+  };
 
 export const createIsMessage =
   (target: string) =>
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (data: any): boolean =>
-    data &&
-    typeof data === 'object' &&
-    typeof data.id === 'string' &&
-    target === data.target;
+  (data: unknown): boolean => {
+    if (data == null || typeof data !== 'object') return false;
+    const { id, target: dataTarget } = data as Record<string, unknown>;
+    return typeof id === 'string' && target === dataTarget;
+  };
 
 interface ResolveOrTimeoutConfig<T> {
   handler:
@@ -155,17 +154,29 @@ export const resolveOrTimeout = <T>({
   const promise =
     typeof handler === 'function' ? new Promise<T>(handler) : handler;
 
-  return timeout
-    ? Promise.race<Promise<T>>([
-        promise,
-        new Promise((_, rej) =>
-          setTimeout(() => {
-            rej(timeoutError);
-            onTimeout && onTimeout(timeoutError);
-          }, timeout)
-        ),
-      ])
-    : promise;
+  if (!timeout) {
+    return promise;
+  }
+
+  let timeoutHandle: ReturnType<typeof setTimeout>;
+
+  const timeoutPromise = new Promise<never>((_, rej) => {
+    timeoutHandle = setTimeout(() => {
+      rej(timeoutError);
+      // Call onTimeout AFTER rejecting so the race is already settled.
+      // This prevents the double-rejection issue in initialize's onTimeout handler.
+      onTimeout && onTimeout(timeoutError);
+    }, timeout);
+  });
+
+  // Clear the timeout if the main promise wins the race
+  return Promise.race<T>([
+    promise.then(
+      (v) => { clearTimeout(timeoutHandle); return v; },
+      (e) => { clearTimeout(timeoutHandle); throw e; }
+    ),
+    timeoutPromise,
+  ]);
 };
 
 export const getMessageEventData = (event: any) =>

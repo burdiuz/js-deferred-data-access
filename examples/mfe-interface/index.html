@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>mfe-interface Example</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"
+    integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+  <style>
+    body { font-family: Helvetica, sans-serif; padding: 20px; }
+    .shell-panel { background: #1e3a5f; color: #fff; border-radius: 4px; padding: 16px; }
+    .shell-panel h4 { color: #7ec8f5; margin-top: 0; }
+    .mfe-panel   { background: #1a4731; color: #fff; border-radius: 4px; padding: 16px; }
+    .mfe-panel h4 { color: #6ee7b7; margin-top: 0; }
+    .event-log { background: #1e1e2e; color: #cdd6f4; border-radius: 4px; padding: 10px;
+                 font-family: monospace; font-size: 11px; min-height: 80px; max-height: 200px;
+                 overflow-y: auto; }
+    .event-log .shell { color: #89b4fa; }
+    .event-log .mfe   { color: #a6e3a1; }
+    .event-log .info  { color: #94e2d5; }
+    h2 small { color: #888; }
+    pre.code { background: #1e1e2e; color: #cdd6f4; border-radius: 4px; padding: 12px; font-size: 11px; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <p><a href="../">&larr; All examples</a></p>
+  <h2>mfe-interface <small>shell ↔ microfrontend</small></h2>
+  <p class="text-muted">
+    Both sides communicate via <code>CustomEvent</code>s dispatched on a shared DOM element.
+    The shell (<em>host</em>) and the MFE (<em>guest</em>) each register distinct event names
+    so messages don't echo back to the sender.
+  </p>
+
+  <div class="row" style="margin-bottom:14px">
+    <div class="col-sm-6">
+      <div class="shell-panel">
+        <h4>Shell (HOST)</h4>
+        <div class="form-group">
+          <label>Logged-in user</label>
+          <select class="form-control" id="shell-user" onchange="shellUpdateUser()">
+            <option value="alice">Alice (admin)</option>
+            <option value="bob">Bob (user)</option>
+            <option value="carol">Carol (guest)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Theme</label>
+          <div class="btn-group">
+            <button class="btn btn-sm btn-default active" id="theme-light" onclick="shellSetTheme('light')">Light</button>
+            <button class="btn btn-sm btn-default"        id="theme-dark"  onclick="shellSetTheme('dark')">Dark</button>
+          </div>
+        </div>
+        <button class="btn btn-sm btn-primary" onclick="shellPush()">Push notification to MFE</button>
+      </div>
+    </div>
+    <div class="col-sm-6">
+      <div class="mfe-panel">
+        <h4>Microfrontend (GUEST)</h4>
+        <button class="btn btn-sm btn-default" onclick="mfeReadUser()" style="margin-bottom:6px">Read user from shell</button>
+        <button class="btn btn-sm btn-default" onclick="mfeReadTheme()" style="margin-bottom:6px">Read theme from shell</button>
+        <button class="btn btn-sm btn-default" onclick="mfeNavigate()" style="margin-bottom:6px">Ask shell to navigate</button>
+        <div id="mfe-display" style="margin-top:8px;font-size:13px;min-height:40px">
+          <span style="opacity:.6">Click a button to call the shell API&hellip;</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <strong>CustomEvent log</strong>
+    <button class="btn btn-xs btn-default pull-right" onclick="clearLog()">Clear</button>
+  </div>
+  <div class="event-log" id="elog"></div>
+
+  <div class="row" style="margin-top:16px">
+    <div class="col-sm-12">
+      <h4>How it works</h4>
+      <pre class="code">// The MFE root element is the shared message bus
+const element = document.getElementById('mfe-checkout');
+
+// Shell side (HOST) — sends on HOST event, listens on GUEST event
+const { root: mfeApi } = await connectMFEInterface({
+  element, root: shellApi,
+});
+
+// MFE side (GUEST) — sends on GUEST event, listens on HOST event
+const { root: shellApi } = await initializeMFEInterface({
+  element, root: mfeApi,
+});
+
+// Bidirectional: both sides can call each other
+const user = await shellApi.auth.user();
+await mfeApi.refreshCart();</pre>
+    </div>
+  </div>
+</div>
+
+<script>
+// Simulate mfe-interface without the DDA library.
+// Both "sides" live in the same page and communicate via CustomEvents.
+
+const HOST_EVENT  = 'dda:host-message';
+const GUEST_EVENT = 'dda:guest-message';
+
+const bus = document.body; // shared element
+
+// Shell state
+const shellState = {
+  users: {
+    alice: { name: 'Alice', role: 'admin' },
+    bob:   { name: 'Bob',   role: 'user' },
+    carol: { name: 'Carol', role: 'guest' },
+  },
+  currentUser: 'alice',
+  theme: 'light',
+};
+
+// Shell API exposed to MFE via HOST events
+function handleMFERequest(data) {
+  const { id, method, args } = data;
+  appendLog('shell', `Shell ← MFE call: ${method}(${(args||[]).map(a=>JSON.stringify(a)).join(', ')})`);
+  let result;
+  switch (method) {
+    case 'auth.user':   result = shellState.users[shellState.currentUser]; break;
+    case 'theme.get':   result = shellState.theme; break;
+    case 'navigate':    result = `navigated to ${args[0]}`; appendLog('shell', `Shell: navigating to ${args[0]}`); break;
+    default:            result = null;
+  }
+  appendLog('shell', `Shell → MFE response: ${JSON.stringify(result)}`);
+  bus.dispatchEvent(new CustomEvent(HOST_EVENT, { detail: { id, result } }));
+}
+
+// MFE push handler
+function handleShellPush(data) {
+  const { method, args } = data;
+  appendLog('mfe', `MFE ← Shell push: ${method}(${(args||[]).map(a=>JSON.stringify(a)).join(', ')})`);
+  document.getElementById('mfe-display').innerHTML =
+    `<strong style="color:#6ee7b7">📨 Push received:</strong> ${method}(${JSON.stringify(args[0])})`;
+}
+
+let msgId = 1;
+const pending = new Map();
+
+bus.addEventListener(GUEST_EVENT, e => {
+  const data = e.detail;
+  if (data.result !== undefined) {
+    // It's a response to a shell request (not used in this demo)
+    return;
+  }
+  if (data.push) { handleShellPush(data); return; }
+  handleMFERequest(data);
+});
+
+bus.addEventListener(HOST_EVENT, e => {
+  const { id, result } = e.detail;
+  const cb = pending.get(id);
+  if (cb) { pending.delete(id); cb(result); }
+});
+
+// MFE side: call a method on the shell
+function mfeCall(method, args = []) {
+  return new Promise(resolve => {
+    const id = msgId++;
+    pending.set(id, resolve);
+    appendLog('mfe', `MFE → Shell call: ${method}`);
+    bus.dispatchEvent(new CustomEvent(GUEST_EVENT, { detail: { id, method, args } }));
+  });
+}
+
+async function mfeReadUser() {
+  const user = await mfeCall('auth.user');
+  document.getElementById('mfe-display').innerHTML =
+    `<strong style="color:#6ee7b7">User:</strong> ${user.name} <em>(${user.role})</em>`;
+}
+
+async function mfeReadTheme() {
+  const theme = await mfeCall('theme.get');
+  document.getElementById('mfe-display').innerHTML =
+    `<strong style="color:#6ee7b7">Theme:</strong> ${theme}`;
+}
+
+async function mfeNavigate() {
+  const result = await mfeCall('navigate', ['/checkout/confirm']);
+  document.getElementById('mfe-display').innerHTML =
+    `<strong style="color:#6ee7b7">Navigation:</strong> ${result}`;
+}
+
+function shellUpdateUser() {
+  shellState.currentUser = document.getElementById('shell-user').value;
+  appendLog('shell', `Shell: current user → ${shellState.currentUser}`);
+}
+
+function shellSetTheme(t) {
+  shellState.theme = t;
+  document.getElementById('theme-light').classList.toggle('active', t === 'light');
+  document.getElementById('theme-dark').classList.toggle('active', t === 'dark');
+  appendLog('shell', `Shell: theme → ${t}`);
+}
+
+function shellPush() {
+  appendLog('shell', 'Shell → MFE push: onNotification');
+  bus.dispatchEvent(new CustomEvent(GUEST_EVENT, {
+    detail: { push: true, method: 'onNotification', args: [{ type: 'info', text: 'Order shipped!' }] }
+  }));
+}
+
+const elogEl = document.getElementById('elog');
+function appendLog(side, msg) {
+  const d = document.createElement('div');
+  d.className = side;
+  d.textContent = `[${new Date().toLocaleTimeString()}]  ${msg}`;
+  elogEl.appendChild(d);
+  elogEl.scrollTop = elogEl.scrollHeight;
+}
+function clearLog() { elogEl.innerHTML = ''; }
+
+appendLog('info', 'Shell and MFE initialised on shared bus element');
+</script>
+</body>
+</html>

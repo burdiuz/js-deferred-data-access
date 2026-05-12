@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { hasOwn } from '@actualwave/has-own';
 import { ProxyCommand } from '@actualwave/deferred-data-access/proxy';
 import {
   ICommand,
@@ -104,7 +103,7 @@ const prepareBody = (body: any, request: Request): Request => {
 };
 
 const isCRUDMethod = (name: PropertyName): boolean =>
-  hasOwn(CRUD_METHODS, name);
+  Object.hasOwn(CRUD_METHODS, name);
 
 const getURLFromChain = async (chain: ICommandList): Promise<string> => {
   let last: ICommandChain = chain;

@@ -1,0 +1,46 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": [
+      "ES2022",
+      "dom"
+    ],
+    "module": "commonjs",
+    "moduleResolution": "node16",
+    "outDir": "./dist/out-tsc",
+    "strict": false,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "typeRoots": [
+      "./node_modules/@types"
+    ],
+    "types": [
+      "jest",
+      "node"
+    ],
+    "paths": {
+      "@actualwave/deferred-data-access/interface": [
+        "../../packages/deferred-data-access/interface/index.ts"
+      ],
+      "@actualwave/deferred-data-access/proxy": [
+        "../../packages/deferred-data-access/proxy/index.ts"
+      ],
+      "@actualwave/deferred-data-access/utils": [
+        "../../packages/deferred-data-access/utils/index.ts"
+      ],
+      "@actualwave/deferred-data-access": [
+        "../../packages/deferred-data-access/index.ts"
+      ]
+    }
+  },
+  "include": [
+    "**/*.spec.ts",
+    "**/*.test.ts",
+    "**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}

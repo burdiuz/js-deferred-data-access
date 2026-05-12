@@ -1,7 +1,7 @@
 {
   "name": "@actualwave/rest-object",
-  "version": "1.0.0",
-  "main": "dist/rest-object.js",
+  "version": "0.0.1",
+  "main": "rest-object.js",
   "module": "index.js",
   "types": "index.d.ts",
   "scripts": {
@@ -29,6 +29,6 @@
     "url": "https://github.com/burdiuz/js-deferred-data-access.git"
   },
   "dependencies": {
-    "@actualwave/deferred-data-access": "^2.0.0"
+    "@actualwave/deferred-data-access": "^2.0.1"
   }
 }

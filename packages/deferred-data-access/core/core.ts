@@ -45,9 +45,7 @@ const executePromiseMethod = (
       return context.catch(...args);
     default:
       throw new Error(
-        `Unexpected Error: Promise method "${String(
-          name
-        )}" could not be called.`
+        `Unexpected Error: Promise method "${String(name)}" could not be called.`
       );
   }
 };
@@ -56,7 +54,8 @@ const applyPromiseActivity = (
   command: CommandChain,
   commandHandler: CommandHandler,
   lazy: boolean,
-  wrap: (context: CommandContext, command?: ICommandChain) => unknown
+  wrap: (context: CommandContext, command?: ICommandChain) => unknown,
+  rawContext: CommandContext
 ) => {
   switch (command.type) {
     case ProxyCommand.GET: {
@@ -64,25 +63,17 @@ const applyPromiseActivity = (
       let { context } = command;
 
       if (lazy) {
-        // then() / catch() on lazy means we should call handler and subscribe to promise
-
         if (!prev) {
-          throw new Error(
-            `Unexpected Error: Proxy command GET has unknown context.`
-          );
+          // Root lazy access to a reserved name (then/catch) — no chain to resolve
+          // through, so use the raw context (the promise passed to wrap) directly.
+          context = rawContext;
+        } else {
+          // When lazy, context is a dummy promise, so we call handler with the previous
+          // command and use the result as the context to subscribe to.
+          context = commandHandler(prev as CommandChain, prev.context, wrap);
         }
-
-        // When lazy, context is a dummy promise, so we have to call handler with previous command and then use it as a context.
-        context = commandHandler(prev as CommandChain, prev.context, wrap);
-      } else {
-        // then() / catch() on non-lazy means we handler already called, just subscribe to promise of it
-        /* 
-           When not lazy, this promise was already created and is a context to this action.
-           Without wrapper we may get this error:
-           Uncaught TypeError: Method Promise.prototype.then called on incompatible receiver undefined
-        */
-        //return (context as any)[name as string](...(value as never[]));
       }
+      // When not lazy, context is already the live promise result — subscribe directly.
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return (...args: never[]) => (context as any)[name as string](...args);
@@ -99,27 +90,24 @@ const applyPromiseActivity = (
         command.name as PropertyName,
         command.value as never[]
       );
-    case ProxyCommand.APPLY:
-      {
-        const { prev } = command;
-        if (!prev?.context || !prev?.name) {
-          throw new Error(
-            `Unexpected Error: Could not apply Promise method of unknown context.`
-          );
-        }
-
-        return executePromiseMethod(
-          prev.context,
-          prev.name,
-          command.value as never[]
+    case ProxyCommand.APPLY: {
+      const { prev } = command;
+      if (!prev?.context || !prev?.name) {
+        throw new Error(
+          `Unexpected Error: Could not apply Promise method of unknown context.`
         );
       }
-      break;
+
+      return executePromiseMethod(
+        prev.context,
+        prev.name,
+        command.value as never[]
+      );
+    }
     default:
       throw new Error(
         `Command type "${command.type}" could not be executed as a Promise command.`
       );
-      break;
   }
 };
 
@@ -153,7 +141,8 @@ export const handle =
               childCommand,
               commandHandler,
               lazy,
-              wrap
+              wrap,
+              context
             );
           } else if (
             (type === ProxyCommand.APPLY || type === ProxyCommand.GET) &&
@@ -173,9 +162,14 @@ export const handle =
         getCommand() {
           return command;
         },
+        /**
+         * Returns a new chain with the prev link severed rather than mutating
+         * the existing command in-place. Safe for callers holding references.
+         */
         dropCommandChain() {
           if (command) {
-            delete command.prev;
+            // Replace the reference with a severed copy rather than mutating
+            command = (command as CommandChain).withoutPrev?.() ?? command;
           }
         },
       });

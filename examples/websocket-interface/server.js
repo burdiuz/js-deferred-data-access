@@ -1,3 +1,5 @@
+'use strict';
+
 const express = require('express');
 const { Server: WebSocketServer } = require('ws');
 const { initializeServer } = require('./websocket-interface.umd.js');
@@ -5,62 +7,18 @@ const { initializeServer } = require('./websocket-interface.umd.js');
 const app = express();
 const wss = new WebSocketServer({ noServer: true });
 
-/**
- * Created by Oleg Galaburda on 23.07.15.
- */
-('use strict');
-
 let lastId = 20;
 
 const customers = (() => {
-  const fnames = [
-    'Alex',
-    'Mark',
-    'David',
-    'Pater',
-    'Meg',
-    'Stewie',
-    'Oleg',
-    'Steve',
-    'Bill',
-    'John',
-  ];
-  const lnames = [
-    'Mile',
-    'Testovich',
-    'Meter',
-    'Inch',
-    'Cm',
-    'Tonn',
-    'Pound',
-    'Currency',
-    'Whatelse',
-    'Whoknows',
-    'Doe',
-  ];
-  const cmpnies = [
-    'Campaney',
-    'Comp Inc',
-    'Windows Inc',
-    'Beds Inc',
-    'Bottle Inc',
-    'Table Inc',
-    'Chair Inc',
-    'Phone Inc',
-    'Elgoog Inc',
-    'Employee Inc',
-    'Slavery Inc',
-    'Dark Science of XX Century Inc',
-  ];
+  const fnames = ['Alex', 'Mark', 'David', 'Pater', 'Meg', 'Stewie', 'Oleg', 'Steve', 'Bill', 'John'];
+  const lnames = ['Mile', 'Testovich', 'Meter', 'Inch', 'Cm', 'Tonn', 'Pound', 'Currency', 'Whatelse', 'Whoknows', 'Doe'];
+  const cmpnies = ['Campaney', 'Comp Inc', 'Windows Inc', 'Beds Inc', 'Bottle Inc', 'Table Inc', 'Chair Inc', 'Phone Inc', 'Elgoog Inc', 'Employee Inc', 'Slavery Inc', 'Dark Science of XX Century Inc'];
   const data = {};
   let length = lastId;
   while (length--) {
-    var item = {
+    const item = {
       id: String(length + 1),
-      name:
-        fnames[(Math.random() * fnames.length) >> 0] +
-        ' ' +
-        lnames[(Math.random() * lnames.length) >> 0],
+      name: fnames[(Math.random() * fnames.length) >> 0] + ' ' + lnames[(Math.random() * lnames.length) >> 0],
       company: cmpnies[(Math.random() * cmpnies.length) >> 0],
       age: 25 + parseInt(Math.random() * 35),
       phone: '000-555-55-55',
@@ -73,56 +31,35 @@ const customers = (() => {
 
 const root = {
   listCustomers() {
-    const list = [];
-    for (var name in customers) {
-      if (!customers.hasOwnProperty(name)) continue;
-      var item = customers[name];
-      list.push({
-        id: item.id,
-        name: item.name,
-      });
-    }
-
-    return list;
+    return Object.values(customers).map(({ id, name }) => ({ id, name }));
   },
 
   addCustomer(data) {
     if (data && data.name) {
       data.id = String(++lastId);
       customers[data.id] = data;
-
-      return {
-        success: true,
-        id: data.id,
-      };
+      return { success: true, id: data.id };
     }
-
     return { success: false };
   },
 
   getCustomer(id) {
-    if (customers.hasOwnProperty(id)) {
-      return customers[id];
-    }
-
-    return { success: false };
+    return customers[id] ?? { success: false };
   },
 
   updateCustomer(id, data) {
-    if (customers.hasOwnProperty(id) && data && data.name && data.id === id) {
+    if (customers[id] && data && data.name && data.id === id) {
       customers[id] = data;
       return { success: true };
     }
-
     return { success: false };
   },
 
   removeCustomer(id) {
-    if (customers.hasOwnProperty(id)) {
+    if (customers[id]) {
       delete customers[id];
       return { success: true };
     }
-
     return { success: false };
   },
 };
@@ -131,38 +68,31 @@ wss.on('connection', async (ws) => {
   const api = await initializeServer({
     ws,
     root,
-    preprocessResponse: ({ data }) => {
-      return JSON.parse(data);
-    },
+    preprocessResponse: ({ data }) => JSON.parse(data),
   });
 
-  // await api.root.updateList(root.listCustomers());
-
-  /*
-   Just am example of sending message to client. If more than one client works on customers, they will get updated.
-  */
+  // Push an updated list to the client every 2.5 s
   const intervalId = setInterval(async () => {
     try {
       await api.root.updateList(root.listCustomers());
-    } catch (error) {
-      console.log(error);
+    } catch {
+      // client disconnected
     }
   }, 2500);
-  //*/
 
   ws.onclose = () => clearInterval(intervalId);
 });
 
 app.use(express.static('.'));
-//app.use(express.static('./examples/websocket-interface/'));
-console.log(process.cwd());
-const server = app.listen(8081);
-console.log('Server started...');
+
+const server = app.listen(8081, () => {
+  console.log('WebSocket Interface example running at http://localhost:8081');
+});
 
 server.on('upgrade', (req, sock, head) => {
-  if (!req.url === '/rpc') {
+  if (req.url !== '/rpc') {
     sock.destroy();
+    return;
   }
-
   wss.handleUpgrade(req, sock, head, (ws) => wss.emit('connection', ws, req));
 });

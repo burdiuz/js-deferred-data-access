@@ -16,7 +16,8 @@ export const initializeWorker = async ({
   initialize({
     ...params,
     type: InterfaceType.GUEST,
-    sendMessage: (message) => (messagePort as MessagePort).postMessage(message),
+    sendMessage: (message: unknown) =>
+      (messagePort as MessagePort).postMessage(message),
     ...createSubscriberFns(eventEmitter),
   });
 
@@ -37,7 +38,7 @@ export const initializeHost = async ({
   return initialize({
     ...params,
     type: InterfaceType.HOST,
-    sendMessage: (message) => (instance as MessagePort).postMessage(message),
+    sendMessage: (message:unknown) => (instance as MessagePort).postMessage(message),
     ...createSubscriberFns(instance),
   });
 };

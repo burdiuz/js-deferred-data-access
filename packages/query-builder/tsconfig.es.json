@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.lib.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "../../dist/query-builder",
+    "declarationDir": "../../dist/query-builder",
+    "declaration": true
+  }
+}

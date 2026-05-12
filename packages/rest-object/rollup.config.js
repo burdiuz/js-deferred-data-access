@@ -1,14 +1,14 @@
 import typescript from '@rollup/plugin-typescript';
 import resolve from '@rollup/plugin-node-resolve';
 import commonJS from '@rollup/plugin-commonjs';
-import { terser } from 'rollup-plugin-terser';
+import terser from '@rollup/plugin-terser';
 import copy from 'rollup-plugin-copy';
 
 export default [
   {
     input: './index.ts',
     output: {
-      file: '../../dist/rest-object/dist/rest-object.umd.js',
+      file: '../../dist/rest-object/rest-object.umd.js',
       format: 'umd',
       name: 'RESTObject',
       sourcemap: true,
@@ -17,7 +17,11 @@ export default [
       copy({
         targets: [
           {
-            src: ['README.md', 'LICENSE', 'package.json'],
+            src: ['README.md', 'SKILL.md', 'package.json'],
+            dest: '../../dist/rest-object',
+          },
+          {
+            src: ['../../LICENSE'],
             dest: '../../dist/rest-object',
           },
         ],
@@ -25,6 +29,7 @@ export default [
       }),
       typescript({
         tsconfig: './tsconfig.lib.json',
+        outDir: '../../dist/rest-object',
       }),
       resolve(),
       commonJS({
@@ -35,14 +40,16 @@ export default [
   },
   {
     input: './index.ts',
+    external: [/^@actualwave\/deferred-data-access/],
     output: {
-      file: '../../dist/rest-object/dist/rest-object.js',
+      file: '../../dist/rest-object/rest-object.js',
       format: 'cjs',
       sourcemap: true,
     },
     plugins: [
       typescript({
         tsconfig: './tsconfig.lib.json',
+        outDir: '../../dist/rest-object',
       }),
     ],
   },

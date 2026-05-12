@@ -5,10 +5,10 @@ import { createResource, Resource } from './resource';
 import { isValidTarget } from './utils';
 
 export class ResourcePool extends IdOwner {
-  // { [string]: weakref }
+  // id → weakref(target): allows lookup by resource id
   private refs = new WeakValueMap();
 
-  // { [weakref]: Resource }
+  // target → Resource: allows lookup by target object
   private resources = new WeakMap();
 
   get active() {
@@ -16,25 +16,35 @@ export class ResourcePool extends IdOwner {
   }
 
   set(target: object, type?: string): Resource | null {
-    let resource = null;
-
     if (!isValidTarget(target)) {
-      return resource;
+      return null;
     }
 
-    resource = this.resources.get(target);
+    const existing = this.resources.get(target);
 
-    if (!resource) {
-      resource = createResource(this, target, type);
-      this.refs.set(resource.id, target);
-      this.resources.set(target, resource);
+    if (existing) {
+      return existing;
     }
+
+    const resource = createResource(this, target, type);
+    this.refs.set(resource.id, target);
+    this.resources.set(target, resource);
 
     return resource;
   }
 
-  has(target: object) {
-    return this.resources.has(target);
+  /**
+   * Returns true only when the target is registered AND its weakref is still
+   * alive. Checks both maps to avoid the asymmetry where WeakMap.has() returns
+   * true for a target whose WeakValueMap entry has already been collected.
+   */
+  has(target: object): boolean {
+    if (!this.resources.has(target)) {
+      return false;
+    }
+    const resource: Resource | undefined = this.resources.get(target);
+    // Confirm the forward ref is still alive too
+    return resource !== undefined && this.refs.get(resource.id) !== undefined;
   }
 
   get({ id }: { id: string }): unknown {
@@ -45,12 +55,12 @@ export class ResourcePool extends IdOwner {
     return this.refs.get(id);
   }
 
-  getResource(target: object): Resource {
+  getResource(target: object): Resource | undefined {
     return this.resources.get(target);
   }
 
   remove(target: object): boolean {
-    const resource = this.resources.get(target);
+    const resource: Resource | undefined = this.resources.get(target);
 
     if (resource) {
       this.refs.delete(resource.id);
@@ -60,11 +70,13 @@ export class ResourcePool extends IdOwner {
     return false;
   }
 
-  clear() {
-    for (const key of this.refs.keys()) {
+  clear(): void {
+    this.refs.forEach((_value, key) => {
       const target = this.refs.get(key);
-      this.resources.delete(target);
-    }
+      if (target !== undefined) {
+        this.resources.delete(target);
+      }
+    });
 
     this.refs.clear();
   }
