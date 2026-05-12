@@ -28,7 +28,6 @@
     "typescript": "^6.0.3"
   },
   "dependencies": {
-    "@actualwave/weak-storage": "^0.1.0",
-    "tslib": "^2.7.0"
+    "@actualwave/weak-storage": "^0.1.0"
   }
 }

@@ -14,7 +14,6 @@
     "directory": "../../dist/deferred-data-access"
   },
   "dependencies": {
-    "@actualwave/weak-storage": "^0.1.1",
-    "tslib": "^2.8.1"
+    "@actualwave/weak-storage": "^0.1.1"
   }
 }

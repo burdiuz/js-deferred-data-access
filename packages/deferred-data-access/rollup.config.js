@@ -50,7 +50,7 @@ export default [
   },
   {
     input: './index-module.ts',
-    external: ['@actualwave/weak-storage', 'tslib'],
+    external: ['@actualwave/weak-storage'],
     output: {
       file: '../../dist/deferred-data-access/deferred-data-access.js',
       format: 'cjs',
