@@ -4,12 +4,20 @@ import {
   isResourceObject,
   Resource,
   ResourceObject,
+  ResourcePool,
 } from '@actualwave/deferred-data-access/resource';
 import { PropertyName } from '@actualwave/deferred-data-access/utils';
 import { RequestMessage } from './types';
 
-const registry = getRegistry();
-export const pool = registry.createPool();
+let pool: ResourcePool;
+
+export const getPool = () => {
+  if (!pool) {
+    pool = getRegistry().createPool();
+  }
+
+  return pool;
+};
 
 const extractResourceFrom = (value: unknown): any => {
   if (!isResourceObject(value as any)) {
@@ -53,7 +61,7 @@ const commandDispatch: Partial<Record<ProxyCommand, CommandDispatch>> = {
     const [exeContext, args] = value as [unknown, unknown[]];
     return target.apply(
       extractResourceFrom(exeContext),
-      (args as unknown[]).map(extractResourceFrom)
+      (args as unknown[]).map(extractResourceFrom),
     );
   },
 
@@ -72,7 +80,7 @@ export const applyRemoteRequest = ({
   if (type !== ProxyCommand.APPLY && !target) {
     throw new Error(
       // Fix typo: "excute" → "execute"
-      `Cannot execute command ${type}/${String(name)} on non-existent target (${target}).`
+      `Cannot execute command ${type}/${String(name)} on non-existent target (${target}).`,
     );
   }
 
@@ -80,7 +88,7 @@ export const applyRemoteRequest = ({
 
   if (!dispatch) {
     throw new Error(
-      `Unknown command type "${type}" cannot be applied remotely.`
+      `Unknown command type "${type}" cannot be applied remotely.`,
     );
   }
 
@@ -92,7 +100,7 @@ export const applyRemoteRequest = ({
   }
 
   if (result !== null && result !== undefined && typeof result === 'function') {
-    const resource = pool.set(result) as Resource;
+    const resource = getPool().set(result) as Resource;
     return resource.toObject();
   }
 

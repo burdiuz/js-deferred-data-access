@@ -6,8 +6,14 @@ import copy from 'rollup-plugin-copy';
 
 const name = 'proxy-guard';
 
+const onwarn = (warning, warn) => {
+  if (warning.code === 'UNRESOLVED_IMPORT') throw new Error(warning.message);
+  warn(warning);
+};
+
 export default [
   {
+    onwarn,
     input: './index.ts',
     output: { file: `../../dist/${name}/${name}.umd.js`, format: 'umd', name: 'GuardedProxy', sourcemap: true },
     plugins: [
@@ -25,6 +31,7 @@ export default [
     ],
   },
   {
+    onwarn,
     input: './index.ts',
     external: [/^@actualwave\/deferred-data-access/],
     output: { file: `../../dist/${name}/${name}.js`, format: 'cjs', sourcemap: true },

@@ -1,4 +1,5 @@
-import { ResourcePoolRegistry } from './resource-pool-registry';
+import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { ResourcePoolRegistry, getRegistry, setRegistry } from './resource-pool-registry';
 import { ResourcePool } from './resource-pool';
 import { getDefaultResourcePool } from './default-resource-pool';
 
@@ -98,5 +99,33 @@ describe('ResourcePoolRegistry', () => {
       // JS delete returns true even if key didn't exist
       expect(registry.remove('nonexistent-id')).toBe(true);
     });
+  });
+});
+
+describe('getRegistry / setRegistry', () => {
+  const original = getRegistry();
+
+  afterEach(() => {
+    setRegistry(original);
+  });
+
+  it('should return a ResourcePoolRegistry instance', () => {
+    expect(getRegistry()).toBeInstanceOf(ResourcePoolRegistry);
+  });
+
+  it('should return the same singleton on every call', () => {
+    expect(getRegistry()).toBe(getRegistry());
+  });
+
+  it('should return the replacement after setRegistry', () => {
+    const replacement = new ResourcePoolRegistry();
+    setRegistry(replacement);
+    expect(getRegistry()).toBe(replacement);
+  });
+
+  it('should restore the original when set back', () => {
+    setRegistry(new ResourcePoolRegistry());
+    setRegistry(original);
+    expect(getRegistry()).toBe(original);
   });
 });

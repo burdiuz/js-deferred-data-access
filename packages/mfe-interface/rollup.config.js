@@ -4,8 +4,14 @@ import commonJS from '@rollup/plugin-commonjs';
 import terser from '@rollup/plugin-terser';
 import copy from 'rollup-plugin-copy';
 
+const onwarn = (warning, warn) => {
+  if (warning.code === 'UNRESOLVED_IMPORT') throw new Error(warning.message);
+  warn(warning);
+};
+
 export default [
   {
+    onwarn,
     input: './index.ts',
     output: {
       file: '../../dist/mfe-interface/mfe-interface.umd.js',
@@ -38,6 +44,7 @@ export default [
     ],
   },
   {
+    onwarn,
     input: './index.ts',
     external: [/^@actualwave\/deferred-data-access/],
     output: {

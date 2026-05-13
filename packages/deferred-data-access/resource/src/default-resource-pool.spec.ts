@@ -1,4 +1,5 @@
-import { getDefaultResourcePool } from './default-resource-pool';
+import { describe, it, expect, afterEach } from '@jest/globals';
+import { getDefaultResourcePool, setDefaultResourcePool } from './default-resource-pool';
 import { ResourcePool } from './resource-pool';
 
 describe('getDefaultResourcePool', () => {
@@ -21,5 +22,25 @@ describe('getDefaultResourcePool', () => {
   it('should be active', () => {
     const pool = getDefaultResourcePool();
     expect(pool.active).toBe(true);
+  });
+});
+
+describe('setDefaultResourcePool', () => {
+  const original = getDefaultResourcePool();
+
+  afterEach(() => {
+    setDefaultResourcePool(original);
+  });
+
+  it('should replace the singleton returned by getDefaultResourcePool', () => {
+    const replacement = new ResourcePool();
+    setDefaultResourcePool(replacement);
+    expect(getDefaultResourcePool()).toBe(replacement);
+  });
+
+  it('should restore the original when set back', () => {
+    setDefaultResourcePool(new ResourcePool());
+    setDefaultResourcePool(original);
+    expect(getDefaultResourcePool()).toBe(original);
   });
 });

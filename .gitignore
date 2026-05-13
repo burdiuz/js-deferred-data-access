@@ -18,6 +18,7 @@ node_modules
 .settings/
 .history/
 .vscode/
+.yalc/
 *.sublime-workspace
 
 # IDE - VSCode
@@ -30,6 +31,7 @@ node_modules
 # misc
 /.sass-cache
 /connect.lock
+yalc.lock
 /coverage
 /libpeerconnection.log
 npm-debug.log

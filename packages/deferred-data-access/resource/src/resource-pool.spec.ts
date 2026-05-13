@@ -1,11 +1,20 @@
+import { afterEach, beforeEach, describe, expect, it } from '@jest/globals';
+import type { IFinalizationRegistryConstructor } from '@actualwave/weak-storage';
 import { ResourcePool } from './resource-pool';
 import { Resource } from './resource';
+import {
+  setCustomFinalizationRegistryClass,
+} from './finalization-registry';
 
 describe('ResourcePool', () => {
   let pool: ResourcePool;
 
   beforeEach(() => {
     pool = new ResourcePool();
+  });
+
+  afterEach(() => {
+    setCustomFinalizationRegistryClass(undefined);
   });
 
   describe('constructor', () => {
@@ -21,6 +30,36 @@ describe('ResourcePool', () => {
 
     it('should have active=true when created', () => {
       expect(pool.active).toBe(true);
+    });
+
+    it('should use the custom FinalizationRegistryClass when none explicitly provided', () => {
+      let instantiated = false;
+      const MockRegistry = class {
+        constructor(_cb: (key: unknown) => void) { instantiated = true; }
+        register() {}
+      } as unknown as IFinalizationRegistryConstructor;
+
+      setCustomFinalizationRegistryClass(MockRegistry);
+      new ResourcePool();
+      expect(instantiated).toBe(true);
+    });
+
+    it('should use an explicitly provided FinalizationRegistryClass over the custom one', () => {
+      let customUsed = false;
+      let explicitUsed = false;
+      const CustomRegistry = class {
+        constructor() { customUsed = true; }
+        register() {}
+      } as unknown as IFinalizationRegistryConstructor;
+      const ExplicitRegistry = class {
+        constructor() { explicitUsed = true; }
+        register() {}
+      } as unknown as IFinalizationRegistryConstructor;
+
+      setCustomFinalizationRegistryClass(CustomRegistry);
+      new ResourcePool(ExplicitRegistry);
+      expect(explicitUsed).toBe(true);
+      expect(customUsed).toBe(false);
     });
   });
 

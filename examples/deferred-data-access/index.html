@@ -75,8 +75,11 @@
       <h4>Command log</h4>
       <div class="log" id="log"></div>
       <div style="margin-top:12px">
-        <h4>Handler code <small>(conceptual)</small></h4>
-        <pre class="code">const wrap = handle(async (command, context) => {
+        <h4>Handler code</h4>
+        <pre class="code">const { handle } = DeferredDataAccess;
+const { ProxyCommand } = DeferredDataAccess;
+
+const wrap = handle(async (command, context) => {
   const target = await context;
 
   switch (command.type) {
@@ -101,8 +104,11 @@ const name  = await proxy.user.name; // → handler fires</pre>
   </div>
 </div>
 
+<script src="/dist/deferred-data-access/deferred-data-access.umd.js"></script>
 <script>
-// Minimal inline implementation of the DDA proxy concept
+const { handle } = DeferredDataAccess;
+const { ProxyCommand } = DeferredDataAccess;
+
 const target = {
   user: { name: 'Alice', age: 30, role: 'admin' },
   settings: { theme: 'light', lang: 'en' },
@@ -110,53 +116,41 @@ const target = {
   add(a, b)  { return a + b; },
 };
 
-const log = document.getElementById('log');
+const logEl = document.getElementById('log');
 const logLine = (cls, text) => {
   const d = document.createElement('div');
   d.className = cls;
   d.textContent = text;
-  log.appendChild(d);
-  log.scrollTop = log.scrollHeight;
+  logEl.appendChild(d);
+  logEl.scrollTop = logEl.scrollHeight;
 };
 
-// Command handler (simulated)
-const commandLog = [];
-function makeProxy(obj, path) {
-  return new Proxy(obj, {
-    get(t, name) {
-      if (typeof name === 'symbol' || name === 'then' || name === 'catch' || name === 'finally') return t[name];
-      const val = t[name];
-      const full = path ? `${path}.${name}` : name;
-      if (typeof val === 'function') {
-        return (...args) => {
-          const result = val.apply(t, args);
-          commandLog.push({ type: 'METHOD_CALL', path: full, args, result });
-          logLine('cmd', `→ METHOD_CALL  ${full}(${args.map(a=>JSON.stringify(a)).join(', ')})`);
-          logLine('res', `   result: ${JSON.stringify(result)}`);
-          return Promise.resolve(result);
-        };
-      }
-      if (val !== null && typeof val === 'object') return makeProxy(val, full);
-      commandLog.push({ type: 'GET', path: full, result: val });
-      logLine('cmd', `→ GET  ${full}`);
-      logLine('res', `   value: ${JSON.stringify(val)}`);
-      return Promise.resolve(val);
-    },
-    set(t, name, newVal) {
-      if (typeof name === 'symbol') { t[name] = newVal; return true; }
-      const full = path ? `${path}.${name}` : name;
-      logLine('cmd', `→ SET  ${full} = ${JSON.stringify(newVal)}`);
-      t[name] = newVal;
-      updateDisplay();
-      return true;
-    },
-  });
-}
-const proxy = makeProxy(target, '');
+const wrap = handle(async (command, context) => {
+  const t = await context;
+  logLine('cmd', `→ ${command.type}  ${String(command.name ?? '')}${command.value !== undefined ? '  ' + JSON.stringify(command.value) : ''}`);
 
-function resolvePath(obj, dotPath) {
-  return dotPath.split('.').reduce((o, k) => o?.[k], obj);
+  switch (command.type) {
+    case ProxyCommand.GET:
+      return t[command.name];
+
+    case ProxyCommand.SET:
+      t[command.name] = command.value;
+      updateDisplay();
+      return command.value;
+
+    case ProxyCommand.METHOD_CALL:
+      return t[command.name](...(command.value ?? []));
+
+    default:
+      throw new Error(`Unhandled command: ${command.type}`);
+  }
+});
+
+function makeProxy(obj) {
+  return wrap(obj);
 }
+
+let proxy = makeProxy(target);
 
 async function doGet() {
   const key = document.getElementById('get-key').value.trim();
@@ -164,10 +158,9 @@ async function doGet() {
   try {
     const parts = key.split('.');
     let cur = proxy;
-    for (const p of parts) cur = cur[p];
-    const val = await cur;
-    logLine('res', `   → ${JSON.stringify(val)}`);
-  } catch(e) {
+    for (const p of parts) cur = await cur[p];
+    logLine('res', `   → ${JSON.stringify(cur)}`);
+  } catch (e) {
     logLine('err', `   error: ${e.message}`);
   }
 }
@@ -177,26 +170,30 @@ async function doSet() {
   const raw = document.getElementById('set-val').value.trim();
   let val; try { val = JSON.parse(raw); } catch { val = raw; }
   logLine('info', `proxy.${key} = ${JSON.stringify(val)}`);
-  const parts = key.split('.');
-  let cur = proxy;
-  for (const p of parts.slice(0, -1)) cur = cur[p];
-  cur[parts[parts.length - 1]] = val;
+  try {
+    const parts = key.split('.');
+    let cur = proxy;
+    for (const p of parts.slice(0, -1)) cur = await cur[p];
+    cur[parts[parts.length - 1]] = val;
+  } catch (e) {
+    logLine('err', `   error: ${e.message}`);
+  }
 }
 
 async function doCall() {
   const name = document.getElementById('call-name').value.trim();
   const raw  = document.getElementById('call-args').value.trim();
   const args = raw ? [raw] : [];
-  logLine('info', `await proxy.${name}(${args.map(a=>JSON.stringify(a)).join(', ')})`);
+  logLine('info', `await proxy.${name}(${args.map(a => JSON.stringify(a)).join(', ')})`);
   try {
     const result = await proxy[name](...args);
     logLine('res', `   → ${JSON.stringify(result)}`);
-  } catch(e) {
+  } catch (e) {
     logLine('err', `   error: ${e.message}`);
   }
 }
 
-function clearLog() { log.innerHTML = ''; }
+function clearLog() { logEl.innerHTML = ''; }
 
 function updateDisplay() {
   document.getElementById('target-display').textContent = JSON.stringify(target, null, 2);

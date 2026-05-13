@@ -1,12 +1,26 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import { IdOwner } from '@actualwave/deferred-data-access/utils';
-import { WeakValueMap } from '@actualwave/weak-storage';
+import {
+  WeakValueMap,
+  type IFinalizationRegistryConstructor,
+} from '@actualwave/weak-storage';
 import { createResource, Resource } from './resource';
 import { isValidTarget } from './utils';
+import { getCustomFinalizationRegistryClass } from './finalization-registry';
 
 export class ResourcePool extends IdOwner {
   // id → weakref(target): allows lookup by resource id
-  private refs = new WeakValueMap();
+  private refs: WeakValueMap;
+
+  constructor(
+    FinalizationRegistry:
+      | IFinalizationRegistryConstructor
+      | null
+      | undefined = getCustomFinalizationRegistryClass(),
+  ) {
+    super();
+    this.refs = new WeakValueMap(FinalizationRegistry);
+  }
 
   // target → Resource: allows lookup by target object
   private resources = new WeakMap();

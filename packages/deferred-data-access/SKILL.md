@@ -18,7 +18,7 @@ metadata:
 | `@actualwave/deferred-data-access` | `handle` |
 | `.../command` | `Command`, `CommandChain`, `createCommandHandler` |
 | `.../proxy` | `ProxyCommand`, `wrapWithProxy`, `isWrappedWithProxy`, `unwrapProxy`, `generateProxyCommand` |
-| `.../resource` | `Resource`, `ResourcePool`, `ResourcePoolRegistry`, `getDefaultResourcePool`, `isResourceObject`, `createResource` |
+| `.../resource` | `Resource`, `ResourcePool`, `ResourcePoolRegistry`, `getDefaultResourcePool`, `setDefaultResourcePool`, `getRegistry`, `setRegistry`, `getCustomFinalizationRegistryClass`, `setCustomFinalizationRegistryClass`, `isResourceObject`, `createResource` |
 | `.../record` | `recordHandlerCalls`, `latestCall`, `latestCallFor`, `clearLatestCalls` |
 | `.../utils` | `IdOwner`, `generateId`, `createUIDGenerator`, `isReservedPropertyName`, `ReservedPropertyNames`, `reject` |
 | `.../interface` | `initialize`, `InterfaceType`, `MessageType`, `createSubscriberFns`, `findEventEmitter`, `findMessagePort` |
@@ -55,6 +55,24 @@ command.forEach(n => path.push(String(n.name))); // deepest-first
 const nodes = [...command];    // head … tail via Symbol.iterator
 command.withoutPrev();          // immutable copy, prev severed — never mutate prev directly
 ```
+
+## Resource system
+
+All singletons are lazily created — no pool or registry is instantiated at module load time.
+
+```typescript
+import {
+  getDefaultResourcePool, setDefaultResourcePool,
+  getRegistry, setRegistry,
+  getCustomFinalizationRegistryClass, setCustomFinalizationRegistryClass,
+} from '@actualwave/deferred-data-access/resource';
+```
+
+- `getDefaultResourcePool()` / `setDefaultResourcePool(pool)` — module-level default `ResourcePool` singleton.
+- `getRegistry()` / `setRegistry(registry)` — module-level `ResourcePoolRegistry` singleton. The registry auto-registers the default pool on first creation.
+- `getCustomFinalizationRegistryClass()` / `setCustomFinalizationRegistryClass(cls)` — module-level fallback `FinalizationRegistry` class passed to every new `ResourcePool`. Set this before any pool is created in environments where `globalThis.FinalizationRegistry` is absent (e.g. Hermes/React Native). Pass `null` to explicitly disable GC cleanup.
+- `ResourcePool` constructor: `new ResourcePool(FinalizationRegistry?)` — explicit argument takes precedence over the module-level setting.
+- `ResourcePoolRegistry.createPool()` — creates and registers a new pool; uses the module-level `FinalizationRegistry` class via `ResourcePool`'s constructor default.
 
 ## `initialize()` (cross-context)
 

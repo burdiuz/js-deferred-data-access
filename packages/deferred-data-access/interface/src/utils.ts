@@ -8,7 +8,7 @@ import {
   isWrappedWithProxy,
 } from '@actualwave/deferred-data-access/proxy';
 import { RequestMessage, ResponseMessage } from './types';
-import { pool } from './request';
+import { getPool } from './request';
 import { Resource } from '@actualwave/deferred-data-access/resource';
 
 export enum InterfaceType {
@@ -44,7 +44,7 @@ const lookupForResource = async (value: unknown): Promise<unknown> => {
   }
 
   if (typeof value === 'function') {
-    const resource = pool.set(value) as Resource;
+    const resource = getPool().set(value) as Resource;
     return resource.toObject();
   }
 
@@ -71,7 +71,7 @@ export const createRequestMessage =
   async (
     commandChain: ICommandList,
     context?: Promise<unknown>,
-    id = generateMessageId()
+    id = generateMessageId(),
   ): Promise<RequestMessage> => {
     const command = commandChain.toObject();
     const contextTarget = await context;
@@ -106,7 +106,7 @@ export const createResponseMessage =
   (
     { id, source: target }: RequestMessage,
     value: unknown,
-    error?: { message: string }
+    error?: { message: string },
   ): ResponseMessage => ({
     id,
     type: MessageType.RESPONSE,
@@ -138,7 +138,7 @@ interface ResolveOrTimeoutConfig<T> {
     | Promise<T>
     | ((
         resolve: (data: T) => void,
-        reject: (data: unknown) => void
+        reject: (data: unknown) => void,
       ) => unknown);
   timeout: number;
   timeoutError: string;
@@ -172,12 +172,18 @@ export const resolveOrTimeout = <T>({
   // Clear the timeout if the main promise wins the race
   return Promise.race<T>([
     promise.then(
-      (v) => { clearTimeout(timeoutHandle); return v; },
-      (e) => { clearTimeout(timeoutHandle); throw e; }
+      (v) => {
+        clearTimeout(timeoutHandle);
+        return v;
+      },
+      (e) => {
+        clearTimeout(timeoutHandle);
+        throw e;
+      },
     ),
     timeoutPromise,
   ]);
 };
 
 export const getMessageEventData = (event: any) =>
-  event instanceof Event ? (event as Event & { data: any }).data : event;
+  event != null && typeof event === 'object' && 'data' in event ? event.data : event;

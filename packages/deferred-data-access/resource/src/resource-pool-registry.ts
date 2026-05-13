@@ -53,13 +53,15 @@ export class ResourcePoolRegistry extends IdOwner {
   }
 }
 
-const generateGetRegistry =
-  (registry?: ResourcePoolRegistry) => (): ResourcePoolRegistry => {
-    if (!registry) {
-      registry = new ResourcePoolRegistry();
-    }
+let defaultRegistry: ResourcePoolRegistry | undefined;
 
-    return registry;
-  };
+export const getRegistry = (): ResourcePoolRegistry => {
+  if (!defaultRegistry) {
+    defaultRegistry = new ResourcePoolRegistry();
+  }
+  return defaultRegistry;
+};
 
-  export const getRegistry = generateGetRegistry();
+export const setRegistry = (registry: ResourcePoolRegistry): void => {
+  defaultRegistry = registry;
+};

@@ -33,6 +33,6 @@
     "directory": "../../dist/broadcast-interface"
   },
   "dependencies": {
-    "@actualwave/deferred-data-access": "^2.1.0"
+    "@actualwave/deferred-data-access": "^2.1.1"
   }
 }

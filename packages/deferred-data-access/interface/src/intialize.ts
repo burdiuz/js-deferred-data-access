@@ -9,7 +9,7 @@ import {
   ICommandChain,
 } from '@actualwave/deferred-data-access/utils';
 import { handshake } from './handshake';
-import { pool, applyRemoteRequest } from './request';
+import { getPool, applyRemoteRequest } from './request';
 import {
   HandshakeData,
   MessageBase,
@@ -35,7 +35,7 @@ export const initialize = async ({
 }: InitConfig) => {
   const id = initId || generateId();
   const root = apiRoot
-    ? (pool.set(apiRoot as any) as Resource).toObject()
+    ? (getPool().set(apiRoot as any) as Resource).toObject()
     : undefined;
 
   const {
@@ -52,7 +52,10 @@ export const initialize = async ({
   } as HandshakeData);
 
   // Tracks in-flight requests: messageId → { resolve, reject }
-  const pendingRequests = new Map<string, { resolve: (v: unknown) => void; reject: (e: unknown) => void }>();
+  const pendingRequests = new Map<
+    string,
+    { resolve: (v: unknown) => void; reject: (e: unknown) => void }
+  >();
 
   const isMessage = createIsMessage(id);
   const createRequest = createRequestMessage(id, remoteId);
@@ -73,7 +76,7 @@ export const initialize = async ({
           sendMessage(createResponse(request, value));
         } catch (error: any) {
           sendMessage(
-            createResponse(request, undefined, { message: error.message })
+            createResponse(request, undefined, { message: error.message }),
           );
         }
         break;
@@ -103,20 +106,20 @@ export const initialize = async ({
   const stop = () => unsubscribe(messageHandler);
 
   if (!remoteRoot) {
-    return { stop, pool };
+    return { stop, pool: getPool() };
   }
 
   const wrap = handle(
     async (
       command: ICommandList,
       context: CommandContext | undefined,
-      wrap: (context: CommandContext, command?: ICommandChain) => unknown
+      wrap: (context: CommandContext, command?: ICommandChain) => unknown,
     ) => {
       const { responseTimeout } = params;
 
       const msgId = generateMessageId();
       const timeoutError = `Could not receive command ${command.type}/${String(
-        command.name
+        command.name,
       )} response in ${responseTimeout}ms.`;
 
       const resultPromise = resolveOrTimeout({
@@ -147,14 +150,14 @@ export const initialize = async ({
 
       return resultPromise;
     },
-    false
+    false,
   );
 
   return {
     stop,
-    pool,
     wrap,
     pendingRequests,
+    pool: getPool(),
     root: remoteRoot ? wrap(remoteRoot) : null,
   };
 };

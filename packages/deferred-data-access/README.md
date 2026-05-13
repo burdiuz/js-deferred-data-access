@@ -241,7 +241,7 @@ import {
   isResourceObject,
 } from '@actualwave/deferred-data-access/resource';
 
-const pool = getDefaultResourcePool(); // module-level singleton
+const pool = getDefaultResourcePool(); // lazily-created singleton
 
 // Register an object
 const resource = pool.set(myObject);
@@ -264,11 +264,41 @@ if (isResourceObject(value)) {
 Multiple pools can be managed through `ResourcePoolRegistry`:
 
 ```typescript
-import { ResourcePoolRegistry } from '@actualwave/deferred-data-access/resource';
+import { getRegistry } from '@actualwave/deferred-data-access/resource';
 
-const registry = new ResourcePoolRegistry(); // auto-registers the default pool
+const registry = getRegistry(); // lazily-created singleton
 const pool = registry.createPool();
 registry.get(pool.id); // → pool
+```
+
+### Custom FinalizationRegistry
+
+In environments where `globalThis.FinalizationRegistry` is absent or needs to be replaced (e.g. React Native / Hermes), set a custom implementation before any pools are created:
+
+```typescript
+import { setCustomFinalizationRegistryClass } from '@actualwave/deferred-data-access/resource';
+
+setCustomFinalizationRegistryClass(MyFinalizationRegistryPolyfill);
+// All ResourcePools created after this call will use MyFinalizationRegistryPolyfill.
+// Pass null to explicitly disable GC-based cleanup.
+```
+
+The constructor of `ResourcePool` also accepts a `FinalizationRegistry` directly, which takes precedence over the module-level setting:
+
+```typescript
+const pool = new ResourcePool(MyFinalizationRegistryPolyfill);
+```
+
+### Replacing singletons
+
+```typescript
+import {
+  setDefaultResourcePool,
+  setRegistry,
+} from '@actualwave/deferred-data-access/resource';
+
+setDefaultResourcePool(myPool);   // replace the default pool singleton
+setRegistry(myRegistry);          // replace the default registry singleton
 ```
 
 ---
@@ -350,7 +380,7 @@ await initialize({
 | `@actualwave/deferred-data-access` | `handle` |
 | `@actualwave/deferred-data-access/command` | `Command`, `CommandChain`, `createCommandHandler` |
 | `@actualwave/deferred-data-access/proxy` | `ProxyCommand`, `wrapWithProxy`, `isWrappedWithProxy`, `unwrapProxy`, `generateProxyCommand` |
-| `@actualwave/deferred-data-access/resource` | `Resource`, `ResourcePool`, `ResourcePoolRegistry`, `getDefaultResourcePool`, `isResourceObject`, `createResource` |
+| `@actualwave/deferred-data-access/resource` | `Resource`, `ResourcePool`, `ResourcePoolRegistry`, `getDefaultResourcePool`, `setDefaultResourcePool`, `getRegistry`, `setRegistry`, `getCustomFinalizationRegistryClass`, `setCustomFinalizationRegistryClass`, `isResourceObject`, `createResource` |
 | `@actualwave/deferred-data-access/record` | `recordHandlerCalls`, `latestCall`, `latestCallFor`, `clearLatestCalls` |
 | `@actualwave/deferred-data-access/utils` | `IdOwner`, `generateId`, `createUIDGenerator`, `isReservedPropertyName`, `ReservedPropertyNames`, `reject` |
 | `@actualwave/deferred-data-access/interface` | `initialize`, `InterfaceType`, `MessageType`, `createSubscriberFns`, `findEventEmitter`, `findMessagePort` |
