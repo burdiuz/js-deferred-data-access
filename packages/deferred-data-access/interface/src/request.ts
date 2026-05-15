@@ -67,6 +67,9 @@ const commandDispatch: Partial<Record<ProxyCommand, CommandDispatch>> = {
 
   [ProxyCommand.METHOD_CALL]: (target, name, value) =>
     target[name](...(value as unknown[]).map(extractResourceFrom)),
+
+  [ProxyCommand.CONSTRUCT]: (target, _name, value) =>
+    new target(...(value as unknown[]).map(extractResourceFrom)),
 };
 
 export const applyRemoteRequest = ({
@@ -99,9 +102,11 @@ export const applyRemoteRequest = ({
     return result;
   }
 
-  if (result !== null && result !== undefined && typeof result === 'function') {
-    const resource = getPool().set(result) as Resource;
-    return resource.toObject();
+  if (result !== null && result !== undefined) {
+    if (typeof result === 'function' || type === ProxyCommand.CONSTRUCT) {
+      const resource = getPool().set(result as object) as Resource;
+      return resource.toObject();
+    }
   }
 
   return result;

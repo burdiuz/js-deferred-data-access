@@ -42,6 +42,7 @@ handle(handler, lazy?) → wrap(target) → Proxy
 | `DELETE_PROPERTY` `'P:del'` | `delete proxy.prop` |
 | `APPLY` `'P:apply'` | `proxy(args)` |
 | `METHOD_CALL` `'P:call'` | `proxy.method(args)` *(lazy only)* |
+| `CONSTRUCT` `'P:new'` | `new proxy(args)` |
 
 ## Lazy vs reactive
 
@@ -104,3 +105,4 @@ Jest 30, ts-jest. `moduleNameMapper` in `jest.config.js` + `paths` in `tsconfig.
 - `APPLY` in reactive mode has no `name` — derive from preceding GET's path.
 - `Command.type`, `Command.name`, `Resource.pool`, `IdOwner.id` are runtime non-writable.
 - `isReservedPropertyName('then')` → `true`; symbol keys always → `false`.
+- **`CONSTRUCT` over `initialize()` — hold a strong reference.** The resource pool stores values via `WeakRef`. The GC may collect the constructed instance at any time if no strong reference exists outside the pool. Always assign the result of a `CONSTRUCT` call to a variable or collection that outlives its use; never let the pool be the sole owner.

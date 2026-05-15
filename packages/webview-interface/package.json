@@ -1,6 +1,6 @@
 {
   "name": "@actualwave/webview-interface",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "main": "webview-interface.js",
   "module": "index.js",
   "types": "index.d.ts",
@@ -28,6 +28,6 @@
     "url": "https://github.com/burdiuz/js-deferred-data-access.git"
   },
   "dependencies": {
-    "@actualwave/deferred-data-access": "^2.1.1"
+    "@actualwave/deferred-data-access": "^2.1.2"
   }
 }

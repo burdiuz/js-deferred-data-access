@@ -1,6 +1,6 @@
 {
   "name": "@actualwave/deferred-data-access",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "main": "index.js",
   "module": "index.es.js",
   "types": "index.d.ts",
@@ -10,6 +10,17 @@
     "test:coverage": "jest --coverage"
   },
   "type": "module",
+  "homepage": "https://github.com/burdiuz/js-deferred-data-access/tree/master/packages/iframe-interface",
+  "bugs": {
+    "url": "https://github.com/burdiuz/js-deferred-data-access/issues",
+    "email": "burdiuz@gmail.com"
+  },
+  "license": "MIT",
+  "author": "Oleg Galaburda <burdiuz@gmail.com> (http://actualwave.com/)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/burdiuz/js-deferred-data-access.git"
+  },
   "publishConfig": {
     "directory": "../../dist/deferred-data-access"
   },

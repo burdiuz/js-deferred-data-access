@@ -8,6 +8,7 @@ describe('ProxyCommand enum', () => {
     expect(ProxyCommand.APPLY).toBe('P:apply');
     expect(ProxyCommand.DELETE_PROPERTY).toBe('P:del');
     expect(ProxyCommand.METHOD_CALL).toBe('P:call');
+    expect(ProxyCommand.CONSTRUCT).toBe('P:new');
   });
 });
 

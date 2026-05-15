@@ -107,8 +107,15 @@ Imported from `@actualwave/deferred-data-access/proxy`:
 | `ProxyCommand.DELETE_PROPERTY` | `'P:del'` | `delete proxy.prop` |
 | `ProxyCommand.APPLY` | `'P:apply'` | `proxy(args)` |
 | `ProxyCommand.METHOD_CALL` | `'P:call'` | `proxy.method(args)` *(lazy mode only — collapses GET + APPLY)* |
+| `ProxyCommand.CONSTRUCT` | `'P:new'` | `new proxy(args)` |
 
 `METHOD_CALL` is only generated in lazy mode when a `GET` is immediately followed by an `APPLY`. It carries the method name in `command.name` and the arguments in `command.value`.
+
+`CONSTRUCT` fires when the proxy is used as a constructor (`new proxy(args)`). The arguments are passed in `command.value`. When used over the cross-context interface (`initialize()`), the newly created instance is automatically registered in the resource pool and returned as a resource descriptor, so the caller receives a proxy to the remote instance.
+
+> **Important — GC hazard with CONSTRUCT over `initialize()`:**  
+> The resource pool stores values through `WeakRef` (via `WeakValueMap`). If no strong reference to the constructed instance is held on the side that created it, the garbage collector may collect it at any time. Once collected, `pool.getById(id)` returns `undefined` and any subsequent method call on the remote proxy will throw `"Resource does not exist"`.  
+> **Always store the result of a `CONSTRUCT` call in a variable (or a collection) that outlives its use.** Do not rely on the pool itself to keep the instance alive.
 
 ### Command shape
 
@@ -161,6 +168,9 @@ const handler = async (command, context, wrap) => {
 
     case ProxyCommand.DELETE_PROPERTY:
       return delete target[command.name];
+
+    case ProxyCommand.CONSTRUCT:
+      return new (target as new (...args: unknown[]) => unknown)(...command.value as unknown[]);
   }
 };
 ```

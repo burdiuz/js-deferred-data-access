@@ -34,6 +34,8 @@ export const followCommandChain = async <T = unknown>(
       return target[name as PropertyName];
     case ProxyCommand.APPLY:
       return target.apply(getMethodCallContext(head), value as never[]);
+    case ProxyCommand.CONSTRUCT:
+      return new target(...(value as unknown[]));
     default:
       throw new Error(
         `Command "${type}" cannot be followed. Only ProxyCommand.GET and ProxyCommand.APPLY are supported by followCommandChain.`

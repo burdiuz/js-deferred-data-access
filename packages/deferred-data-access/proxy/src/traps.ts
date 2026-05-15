@@ -34,6 +34,12 @@ const createSetTrap =
     return true;
   };
 
+const createConstructTrap =
+  (handler: ProxyHandler) =>
+  ({ target }: ProxyWrapper, args: never[]) => {
+    return handler(ProxyCommand.CONSTRUCT, undefined, args, target);
+  };
+
 const createDeletePropertyTrap =
   (handler: ProxyHandler) => (wrapper: ProxyWrapper, name: PropertyName) => {
     if (isNameExcluded(name)) {
@@ -72,6 +78,7 @@ export const createProxyTrapsObject = (
 ): { [key: string]: (...args: any[]) => unknown } => ({
   get: createGetTrap(handler),
   apply: createApplyTrap(handler),
+  construct: createConstructTrap(handler),
   set: createSetTrap(handler),
   deleteProperty: createDeletePropertyTrap(handler),
   has: proxyHasTrap,

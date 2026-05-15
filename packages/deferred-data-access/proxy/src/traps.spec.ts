@@ -113,6 +113,22 @@ describe('createProxyTrapsObject', () => {
     });
   });
 
+  describe('construct trap', () => {
+    it('should call handler with CONSTRUCT command and args', () => {
+      const target = Promise.resolve({});
+      const wrapper = makeWrapper(target);
+      traps.construct(wrapper as any, ['arg1', 'arg2'] as any, {} as any);
+      expect(handler).toHaveBeenCalledWith(ProxyCommand.CONSTRUCT, undefined, ['arg1', 'arg2'], target);
+    });
+
+    it('should pass empty args array when no args provided', () => {
+      const target = Promise.resolve({});
+      const wrapper = makeWrapper(target);
+      traps.construct(wrapper as any, [] as any, {} as any);
+      expect(handler).toHaveBeenCalledWith(ProxyCommand.CONSTRUCT, undefined, [], target);
+    });
+  });
+
   describe('has trap', () => {
     it('should return false for normal property names (prevents Promise from awaiting)', () => {
       const wrapper = makeWrapper(Promise.resolve({}));

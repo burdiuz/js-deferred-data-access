@@ -12,6 +12,7 @@ export enum ProxyCommand {
   DELETE_PROPERTY = 'P:del',
   // If proxy works in lazy mode and APPLY command has previous GET command, this will be generated.
   METHOD_CALL = 'P:call',
+  CONSTRUCT = 'P:new',
 }
 
 export const generateProxyCommand = (
